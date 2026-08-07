@@ -1,0 +1,93 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseNpmAudit > matches the recorded shape 1`] = `
+[
+  {
+    "advisoryId": "GHSA-C2QF-RXJJ-QQGW",
+    "aliases": [
+      "GHSA-C2QF-RXJJ-QQGW",
+      "NPM-1096540",
+    ],
+    "ecosystem": "npm",
+    "fingerprint": "0b15264267dde1bf",
+    "fixedIn": "5.7.2",
+    "kind": "SCA",
+    "packageName": "semver",
+    "severity": "moderate",
+    "sources": [
+      {
+        "ruleId": "GHSA-C2QF-RXJJ-QQGW",
+        "tool": "npm-audit",
+      },
+    ],
+    "title": "semver vulnerable to Regular Expression Denial of Service",
+    "transitive": false,
+    "vulnerableRange": "<5.7.2",
+  },
+  {
+    "advisoryId": "GHSA-XVCH-5GV4-984H",
+    "aliases": [
+      "GHSA-XVCH-5GV4-984H",
+      "NPM-1096466",
+    ],
+    "ecosystem": "npm",
+    "fingerprint": "38111e82da35b608",
+    "fixedIn": "0.2.4",
+    "kind": "SCA",
+    "packageName": "minimist",
+    "severity": "critical",
+    "sources": [
+      {
+        "ruleId": "GHSA-XVCH-5GV4-984H",
+        "tool": "npm-audit",
+      },
+    ],
+    "title": "Prototype Pollution in minimist",
+    "transitive": true,
+    "vulnerableRange": "<0.2.4",
+  },
+  {
+    "advisoryId": "CVE-2022-25883",
+    "aliases": [
+      "CVE-2022-25883",
+      "NPM-1088388",
+    ],
+    "ecosystem": "npm",
+    "fingerprint": "49ea30e3fc8de394",
+    "fixedIn": "5.7.2",
+    "kind": "SCA",
+    "packageName": "semver",
+    "severity": "high",
+    "sources": [
+      {
+        "ruleId": "CVE-2022-25883",
+        "tool": "npm-audit",
+      },
+    ],
+    "title": "Regular expression denial of service in semver",
+    "transitive": false,
+    "vulnerableRange": "<5.7.2",
+  },
+  {
+    "advisoryId": "GHSA-72XF-G2V4-QVF3",
+    "aliases": [
+      "GHSA-72XF-G2V4-QVF3",
+      "NPM-1096477",
+    ],
+    "ecosystem": "npm",
+    "fingerprint": "7e66e64b5a01bf3e",
+    "kind": "SCA",
+    "packageName": "tough-cookie",
+    "severity": "moderate",
+    "sources": [
+      {
+        "ruleId": "GHSA-72XF-G2V4-QVF3",
+        "tool": "npm-audit",
+      },
+    ],
+    "title": "tough-cookie Prototype Pollution vulnerability",
+    "transitive": true,
+    "vulnerableRange": "<4.1.3",
+  },
+]
+`;

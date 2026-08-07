@@ -1,0 +1,91 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "minimist": {
+      "name": "minimist",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1096466,
+          "name": "minimist",
+          "dependency": "minimist",
+          "title": "Prototype Pollution in minimist",
+          "url": "https://github.com/advisories/GHSA-xvch-5gv4-984h",
+          "severity": "critical",
+          "cwe": ["CWE-1321"],
+          "cvss": { "score": 9.8, "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" },
+          "range": "<0.2.4"
+        }
+      ],
+      "effects": ["mkdirp"],
+      "range": "<0.2.4",
+      "nodes": ["node_modules/minimist"],
+      "fixAvailable": { "name": "minimist", "version": "0.2.4", "isSemVerMajor": false }
+    },
+    "mkdirp": {
+      "name": "mkdirp",
+      "severity": "critical",
+      "isDirect": true,
+      "via": ["minimist"],
+      "effects": [],
+      "range": "0.4.1 - 0.5.1",
+      "nodes": ["node_modules/mkdirp"],
+      "fixAvailable": { "name": "mkdirp", "version": "1.0.4", "isSemVerMajor": true }
+    },
+    "semver": {
+      "name": "semver",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1096540,
+          "name": "semver",
+          "dependency": "semver",
+          "title": "semver vulnerable to Regular Expression Denial of Service",
+          "url": "https://github.com/advisories/GHSA-c2qf-rxjj-qqgw",
+          "severity": "moderate",
+          "cwe": ["CWE-1333"],
+          "range": "<5.7.2"
+        },
+        {
+          "source": 1088388,
+          "name": "semver",
+          "dependency": "semver",
+          "title": "Regular expression denial of service in semver",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-25883",
+          "severity": "high",
+          "range": "<5.7.2"
+        }
+      ],
+      "effects": [],
+      "range": "<5.7.2",
+      "nodes": ["node_modules/semver"],
+      "fixAvailable": { "name": "semver", "version": "5.7.2", "isSemVerMajor": false }
+    },
+    "tough-cookie": {
+      "name": "tough-cookie",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1096477,
+          "name": "tough-cookie",
+          "dependency": "tough-cookie",
+          "title": "tough-cookie Prototype Pollution vulnerability",
+          "url": "https://github.com/advisories/GHSA-72xf-g2v4-qvf3",
+          "severity": "moderate",
+          "range": "<4.1.3"
+        }
+      ],
+      "effects": ["request"],
+      "range": "<4.1.3",
+      "nodes": ["node_modules/tough-cookie"],
+      "fixAvailable": { "name": "request", "version": "2.88.0", "isSemVerMajor": true }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": { "info": 0, "low": 0, "moderate": 2, "high": 0, "critical": 2, "total": 4 },
+    "dependencies": { "prod": 12, "dev": 340, "total": 352 }
+  }
+}
