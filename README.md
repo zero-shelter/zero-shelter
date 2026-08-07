@@ -1,36 +1,84 @@
 # zero-shelter
 
-> **⚠️ 한 줄 소개는 아직 확정 전입니다.** 팀 논의 후 채웁니다.
-> 후보와 근거는 [Discussion #1](https://github.com/zero-shelter/zero-shelter/discussions) 참고.
+Turns scanner output into a short, deterministic list of what to fix now.
 
-Local-first, deterministic security tooling for AI-assisted development.
-No LLM at runtime, no network egress, no telemetry.
+Local-first. No LLM at runtime, no network calls of its own, no telemetry.
 
-2026 오픈소스 개발자대회 출품작 · Apache-2.0
+> **Status: early.** The ingest layer is being built. Nothing is published to npm
+> yet. See the [v1 milestone](https://github.com/zero-shelter/zero-shelter/milestone/4)
+> for what "usable" means and how far off it is.
 
----
+## The problem
 
-## Status
+Run the scanners on a real project and you get hundreds of warnings. Maybe five
+of them are worth doing something about today. Finding those five costs more
+attention than fixing them, so after a while nobody opens the report at all.
 
-이 저장소는 이제 막 시작했습니다. 지금 있는 것은 결정론 게이트(`src/normalize.ts`)와
-지문 계산(`src/fingerprint.ts`)뿐입니다.
+There is no shortage of tools that find things. What is missing is the part that
+decides which of them matter right now.
 
-진행 상황은 [Issues](https://github.com/zero-shelter/zero-shelter/issues)를 보세요.
+`npm audit` is the clearest case. It reports the same advisory once for every
+package that transitively pulls in the vulnerable one, and it has no idea which
+of those you can actually act on.
+
+## What v1 does
+
+```
+npm audit --json        ─┐
+                         ├─→ normalize ─→ merge ─→ rank ─→ ratchet ─→ "fix these N"
+osv-scanner (if present) ─┘
+```
+
+One command, same behaviour locally and in CI:
+
+```bash
+npx zero-shelter judge
+```
+
+`npm audit` always runs — if a project has a lockfile it has npm, so there is
+nothing to install first. Other scanners are used when they happen to be on
+`PATH` and skipped quietly when they are not. You are never told to go install
+something before you can see output.
+
+The ratchet is the part that makes it survivable on an existing codebase.
+A legacy repo will light up with hundreds of findings on the first run, and
+telling people to fix all of them is the same as telling them to ignore the
+tool. Instead the first run records what is already there, and after that you
+only hear about what is new.
+
+Why dependencies before anything else, and why the merge step is harder than it
+looks: [`docs/v1-scope.md`](./docs/v1-scope.md).
 
 ## Design invariants
 
-바뀌면 안 되는 것들입니다. 새 코드가 이 중 하나를 어기면 리뷰에서 막습니다.
+These do not change. A patch that breaks one gets rejected on that basis alone.
 
-| | 왜 |
+| Invariant | Why |
 |---|---|
-| 런타임에 LLM을 쓰지 않는다 | 같은 입력이면 항상 같은 결과여야 합니다. 그리고 코드를 밖으로 보내지 않습니다 |
-| 네트워크로 나가지 않는다 | 로컬에서 완결되어야 오프라인·폐쇄망에서 검증할 수 있습니다 |
-| 부동소수점 점수를 쓰지 않는다 | 정수만 씁니다. 반올림이 플랫폼마다 다르면 순위가 흔들립니다 |
-| 시크릿 원본을 보관하지 않는다 | 파서 안에서 즉시 sha256하고 버립니다 |
-| 지문에 들어가는 문자열은 `normalize.ts`를 거친다 | 정규화 경로가 둘이면 지문도 둘이 됩니다 |
+| No LLM at runtime | The same input has to produce the same output, every time, on every machine. And your code stays on your machine. |
+| No network calls of our own | Results have to be reproducible offline. External scanners we shell out to are their own business, and we say so plainly rather than claiming more than we do. |
+| Integer arithmetic only in scoring | Floating point rounds differently across platforms. A ranking that shifts by host makes every number we publish true only on the machine that produced it. |
+| Secrets are hashed at parse time, originals discarded | A security tool that leaks the secrets it finds has no reason to exist. |
+| Everything fingerprinted goes through `src/normalize.ts` | Two normalization paths means two fingerprints for the same finding. |
 
-CI는 ubuntu·macOS·Windows × Node 20·22에서 같은 지문이 나오는지 검사합니다.
-한 곳이라도 다르면 우리가 발표할 모든 숫자가 그 기계에서만 참인 숫자가 됩니다.
+CI runs the suite on Ubuntu, macOS and Windows and asserts fixed hash values, so
+a host-dependent fingerprint fails the build instead of quietly making our
+published numbers machine-specific.
+
+## Honesty about what we measure
+
+We are benchmarking against externally labelled data, and we will publish the
+result whether or not it flatters us.
+
+If our ranking turns out to be about as accurate as sorting by severity, that is
+what the README will say. The claim we are making is not *better precision* —
+it is *far less noise at the same precision*, which is both easier to defend and
+more useful in practice.
+
+Labelling is done by two people independently, with inter-rater agreement
+reported. It is not done by a model: proving a tool works using ground truth the
+tool's own vendor generated is circular, and we would not believe it from anyone
+else either.
 
 ## Development
 
@@ -38,22 +86,26 @@ CI는 ubuntu·macOS·Windows × Node 20·22에서 같은 지문이 나오는지 
 npm ci
 npm test
 npm run typecheck
-npm run third-party   # THIRD_PARTY.md 재생성
+npm run third-party   # regenerate THIRD_PARTY.md
 ```
 
-Node 20 이상이 필요합니다.
+Node 20 or later.
 
 ## Contributing
 
-리뷰 통과 조건이 일반적인 프로젝트와 다릅니다.
+Contributions are welcome, including disagreement with the design.
 
-> **이 코드를 깨뜨리는 입력을 하나 제시하지 못하면 승인하지 않습니다.**
+One thing about review is unusual here, so it is worth stating up front:
 
-코멘트 개수로는 통과시키지 않습니다. 에이전트가 400줄을 3분에 쓰면 사람도 3분에
-승인하게 되는데, 그러면 코드와 테스트가 같은 오해를 공유한 채로 머지됩니다.
-반례를 만들어보는 것이 실제로 읽었다는 유일한 증거입니다.
+> **A reviewer who cannot describe an input that breaks the change does not
+> approve it.**
 
-자세한 내용은 [CONTRIBUTING](https://github.com/zero-shelter/.github/blob/main/CONTRIBUTING.md)에 있습니다.
+Not comment count. An agent can write four hundred lines in three minutes, and a
+human will approve four hundred lines in three minutes to match — at which point
+the code and its tests share the same misunderstanding and no one notices.
+Trying to break something is the only evidence that anyone read it.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 

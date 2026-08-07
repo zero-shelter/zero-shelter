@@ -1,115 +1,125 @@
-# v1 범위
+# v1 scope
 
-> 무엇을 만들고 무엇을 안 만드는지, 그리고 **왜 그렇게 좁혔는지**.
-> 언어: 지금은 한국어로 씁니다. 영문 전환은 포지셔닝 결정과 함께 정합니다.
+What v1 does, what it deliberately leaves out, and why the line is drawn there.
+
+## The pain we are removing
+
+Run the scanners and you get hundreds of warnings. Perhaps five deserve
+attention today, and identifying those five costs more than fixing them. So the
+report stops being opened.
+
+There is no shortage of things that find problems. What is missing is the part
+that decides.
+
+## What v1 does
+
+```
+npm audit --json         ─┐
+                          ├─→ normalize ─→ merge ─→ rank ─→ ratchet ─→ "fix these N"
+osv-scanner (if present) ─┘
+```
+
+One command, `npx zero-shelter judge`, behaving the same locally and in CI.
+
+## What v1 does not do
+
+No SAST, no secret scanning, no prompt-time hooks, no natural-language rule
+packs. Those are sequenced later rather than dropped, for the reason below.
 
 ---
 
-## 우리가 없애려는 고통
+## Why dependencies first
 
-스캐너를 돌리면 경고가 수백 개 쏟아집니다. 그중 지금 손대야 하는 건 대여섯 개인데,
-그걸 골라내는 데 사람 시간이 다 들어갑니다. 결국 아무도 안 봅니다.
+The original framing was "ingest output from several scanners and merge it."
+Checking which pairs actually overlap showed that most of the combinations we
+had in mind have nothing to merge.
 
-경보기는 이미 넘칩니다. 없는 건 **판정**입니다.
-
-## v1이 하는 일
-
-```
-npm audit --json          ─┐
-                           ├─→ 정규화 ─→ 별칭 병합 ─→ 랭킹 ─→ ratchet ─→ "지금 고칠 N개"
-osv-scanner (있으면)      ─┘
-```
-
-`npx zero-shelter judge` 한 줄. 로컬에서도 CI에서도 같은 명령입니다.
-
-## v1이 안 하는 일
-
-SAST, 시크릿 탐지, 프롬프트 훅, 한국어 룰팩. 전부 나중입니다.
-**빠진 게 아니라 순서를 미룬 것**이고, 미룬 이유는 아래에 있습니다.
-
----
-
-## 왜 의존성부터인가
-
-처음에는 "여러 스캐너 출력을 다 받아서 합친다"로 잡았습니다. 그런데 조합을 하나씩
-따져보니 **합칠 게 없는 조합이 대부분**이었습니다.
-
-| 조합 | 겹치나 |
+| Pair | Overlaps? |
 |---|---|
-| semgrep(SAST) + npm audit(SCA) | ❌ 서로 다른 걸 찾습니다. 같은 걸 두 번 보고할 일이 없습니다 |
-| semgrep + gitleaks | ❌ 마찬가지 |
-| **npm audit + osv-scanner** | ✅ **같은 취약점을 GHSA / CVE / OSV로 각각 부릅니다** |
-| gitleaks + trufflehog | ✅ 같은 시크릿을 둘 다 잡습니다 |
-| semgrep + opengrep | ⚠ 포크라 거의 같은 출력. 중복 제거의 의미가 없습니다 |
+| semgrep (SAST) + npm audit (SCA) | No. They look for different things and never report the same finding. |
+| semgrep + gitleaks | No, same reason. |
+| **npm audit + osv-scanner** | **Yes. The same advisory under GHSA, CVE and OSV names.** |
+| gitleaks + trufflehog | Yes. The same secret found by both. |
+| semgrep + opengrep | Technically, but opengrep is a semgrep fork, so the outputs are near-identical and deduplicating them proves nothing. |
 
-중복은 **같은 계층 안에서 두 도구를 돌릴 때** 생깁니다. 그리고 실무에서 그게
-흔한 건 의존성과 시크릿 둘뿐입니다. SAST를 두 개 돌리는 팀은 거의 없습니다.
+Duplication happens **within a layer**, when two tools cover the same ground. In
+practice that means dependencies and secrets. Very few teams run two SAST
+engines.
 
-그래서 v1은 **겹침이 확실히 존재하는 곳**에서 시작합니다. 여기서 판정이 실제로
-동작한다는 걸 숫자로 보인 다음에 계층을 넓힙니다. 순서를 반대로 하면 "합쳤다"고
-말하면서 실제로는 나란히 놓기만 하게 됩니다.
+So v1 starts where the overlap provably exists. Once the judgment works there and
+we have numbers to show it, the layers widen. Doing it in the other order
+produces something that says "merged" while in fact placing results side by side.
 
-`npm audit`을 고른 추가 이유가 있습니다. npm이 있으면 항상 돌아갑니다.
-설치 요구사항이 0이라 첫 실행이 절대 실패하지 않습니다.
+`npm audit` earns its place for a second reason: if a project has a lockfile it
+has npm. Zero setup, so the first run never fails for want of a dependency.
 
-## 왜 스캐너를 우리가 돌리나
+## Why we invoke scanners instead of only reading their output
 
-받아만 오면 `npx zero-shelter`를 쳤을 때 아무 일도 안 일어납니다.
-첫 경험이 죽고, 두 번째로 오는 사람이 없습니다.
+Reading only from files means `npx zero-shelter` does nothing on its own. The
+first run is the only one most people give a tool, and one that produces nothing
+does not get a second.
 
-그렇다고 다 돌려주기도 어렵습니다. **semgrep은 npm으로 설치가 안 됩니다**
-(PyPI나 바이너리뿐). npm 도구라면서 파이썬을 깔라고 하는 순간 설치 경험이 무너집니다.
+Running everything is not an option either. **semgrep cannot be installed from
+npm** — it ships via PyPI and prebuilt binaries. An npm tool that asks you to
+install Python has already lost the setup it was supposed to save.
 
-그래서 이렇게 합니다.
+So:
 
-- `npm audit`은 **항상** 돌립니다. npm이 이미 있으니 전제 조건이 없습니다
-- 그 외 스캐너는 **PATH에 있으면 쓰고, 없으면 조용히 건너뜁니다**
-- 이미 뽑아둔 출력 파일이 있으면 `--input`으로 받습니다 (CI에서 유용)
+- `npm audit` always runs. No preconditions.
+- Anything else runs **if it is on `PATH`**, and is skipped silently otherwise.
+- Pre-existing output can be supplied with `--input`, which is what CI usually
+  wants.
 
-없는 도구를 설치하라고 요구하지 않습니다.
+Nothing is ever a prerequisite.
 
-## 왜 CI/PR이 1순위인가
+## Why CI and pull requests come first
 
-노이즈 고통이 제일 큰 자리이고, ratchet이 자연스러운 유일한 자리입니다.
-"이 PR이 새로 만든 문제만" — 로컬에서는 애매한 말이 CI에서는 정확한 말이 됩니다.
+That is where the noise costs the most, and the only context where the ratchet
+has an unambiguous meaning. "Only what this change introduced" is vague locally
+and precise on a pull request.
 
-## 왜 ratchet이 v1에 들어가나
+## Why the ratchet ships in v1
 
-한 번 써보고 마는 도구와 계속 쓰는 도구의 차이는 **재방문 이유**입니다.
+The difference between a tool people try and a tool people keep is whether there
+is a reason to run it a second time.
 
-레거시 저장소에 처음 돌리면 경고가 수백 개입니다. 그걸 다 고치라고 하면 아무도
-안 씁니다. "오늘부터 늘지 않게 한다"가 현실적인 시작점이고, 그러려면 어제 무시한 걸
-오늘 또 묻지 않아야 합니다.
+A legacy repository produces hundreds of findings on the first run. Demanding
+all of them be fixed is equivalent to being ignored. "Do not let it get worse
+from today" is the achievable version, and it requires that yesterday's
+dismissals stay dismissed.
 
-이게 없으면 두 번째 실행이 첫 번째와 똑같아서 짜증만 남습니다.
-그래서 나중에 붙이는 기능이 아니라 v1의 일부입니다.
+Without it, the second run is identical to the first, which is merely annoying.
+So it is not a later feature. It is part of what makes v1 a product.
 
----
+## Constraints this places on the implementation
 
-## 지키는 것
+From the invariants in the [README](../README.md#design-invariants), the ones
+that bite hardest in v1:
 
-`README.md`의 Design invariants를 따릅니다. 그중 v1에서 특히 걸리는 것:
+- **Integer arithmetic only in ranking.** Platform-dependent rounding would make
+  the ordering host-specific, and every published number with it.
+- **Everything fingerprinted goes through `src/normalize.ts`.** No exceptions.
+- **No network calls of our own.** `npm audit` contacts the registry; that is npm
+  doing its job. We describe our guarantee precisely — that *we* add no traffic —
+  rather than claiming to be offline in a way we are not.
 
-- **정수 연산만.** 랭킹 점수에 부동소수점을 쓰지 않습니다. 반올림이 플랫폼마다 다르면
-  순위가 흔들리고, 그러면 우리가 발표하는 모든 숫자가 그 기계에서만 참인 숫자가 됩니다
-- **지문에 들어가는 문자열은 `src/normalize.ts`를 거칩니다.** 예외 없습니다
-- **네트워크로 나가지 않습니다.** `npm audit`은 레지스트리를 조회하므로, 오프라인 주장은
-  "우리가 추가로 나가지 않는다"로 정확히 말합니다
+## What we will say about accuracy
 
-## 정직하게 말할 것
+If the benchmark shows our ranking is about as accurate as sorting by severity,
+we publish that.
 
-judge-bench에서 우리 정확도가 단순 severity 정렬과 비슷하게 나오면 **그대로 발표합니다.**
+What we are claiming is not better precision. It is a large reduction in noise at
+comparable precision, which is both easier to defend and closer to what actually
+helps. Claiming precision we cannot demonstrate invites exactly the check that
+disproves it.
 
-우리가 파는 건 정확도가 아니라 **노이즈 감소**입니다. 더 정확하다고 주장하는 순간
-심사위원이 검증하고 무너집니다. 같은 정확도로 경고를 90% 줄였다는 게 훨씬 방어하기
-쉽고, 실제로 유용한 주장이기도 합니다.
+## Order of expansion
 
-## 넓히는 순서
+After v1 works end to end:
 
-v1이 끝까지 돌아간 다음입니다.
+1. **Secrets** (gitleaks + trufflehog) — the second layer where overlap is real.
+2. **SAST ingest** (SARIF) — here the goal is one ordered list rather than
+   deduplication, since the overlap is thin.
+3. **Developer-intent rules and prompt-time hooks.**
 
-1. 시크릿 계층 (gitleaks + trufflehog) — 겹침이 확실한 두 번째 자리
-2. SAST 인입 (SARIF) — 중복 제거보다 "한 줄로 세우기"가 목적
-3. 개발자 의도 룰팩 · 프롬프트 훅
-
-각 단계는 앞 단계가 judge-bench에서 숫자로 증명된 뒤에 시작합니다.
+Each step begins only after the previous one has been measured on the benchmark.
