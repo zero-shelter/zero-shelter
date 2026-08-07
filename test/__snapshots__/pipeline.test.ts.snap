@@ -1,0 +1,77 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseOsv > matches the recorded shape 1`] = `
+[
+  {
+    "advisoryId": "CVE-2021-44906",
+    "aliases": [
+      "CVE-2021-44906",
+      "GHSA-XVCH-5GV4-984H",
+    ],
+    "ecosystem": "npm",
+    "fingerprint": "469ff9a8989fd21e",
+    "fixAvailable": true,
+    "fixedIn": "0.2.4",
+    "kind": "SCA",
+    "packageName": "minimist",
+    "severity": "critical",
+    "sources": [
+      {
+        "ruleId": "GHSA-xvch-5gv4-984h",
+        "tool": "osv-scanner",
+        "toolVersion": "1.9.0",
+      },
+    ],
+    "title": "Prototype Pollution in minimist",
+    "transitive": true,
+    "vulnerableRange": "< 0.2.4",
+  },
+  {
+    "advisoryId": "CVE-2022-25883",
+    "aliases": [
+      "CVE-2022-25883",
+      "GHSA-C2QF-RXJJ-QQGW",
+    ],
+    "ecosystem": "npm",
+    "fingerprint": "49ea30e3fc8de394",
+    "fixAvailable": true,
+    "fixedIn": "5.7.2",
+    "kind": "SCA",
+    "packageName": "semver",
+    "severity": "moderate",
+    "sources": [
+      {
+        "ruleId": "GHSA-c2qf-rxjj-qqgw",
+        "tool": "osv-scanner",
+        "toolVersion": "1.9.0",
+      },
+    ],
+    "title": "semver vulnerable to Regular Expression Denial of Service",
+    "transitive": true,
+    "vulnerableRange": "< 5.7.2",
+  },
+  {
+    "advisoryId": "OSV-2020-1234",
+    "aliases": [
+      "OSV-2020-1234",
+    ],
+    "ecosystem": "npm",
+    "fingerprint": "ff656d8115f4f202",
+    "fixAvailable": true,
+    "fixedIn": "4.17.12",
+    "kind": "SCA",
+    "packageName": "lodash",
+    "severity": "high",
+    "sources": [
+      {
+        "ruleId": "OSV-2020-1234",
+        "tool": "osv-scanner",
+        "toolVersion": "1.9.0",
+      },
+    ],
+    "title": "Prototype pollution in lodash",
+    "transitive": true,
+    "vulnerableRange": ">= 4.0.0 < 4.17.12",
+  },
+]
+`;

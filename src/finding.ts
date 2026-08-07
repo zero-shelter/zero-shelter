@@ -45,6 +45,15 @@ export interface ScaFinding {
   readonly packageName: string;
   /** Version range the advisory applies to, verbatim from the source. */
   readonly vulnerableRange: string;
+  /**
+   * Whether any fix exists at all.
+   *
+   * Distinct from {@link fixedIn} on purpose. npm audit answers this with a
+   * bare `true` far more often than it names a version — it means "an upgrade
+   * path exists", sometimes only by bumping a parent package. Collapsing the
+   * two would rank every one of those as unfixable.
+   */
+  readonly fixAvailable: boolean;
   /** First version that is not affected, when the source states one. */
   readonly fixedIn?: string;
 
@@ -115,9 +124,21 @@ function aliasPrefixRank(alias: string): number {
   return 3;
 }
 
-/** Sort and deduplicate an alias set so equal sets serialize identically. */
+/**
+ * Canonicalize an alias set: upper-case, deduplicated, sorted.
+ *
+ * Case matters more than it looks. npm audit's advisory URLs spell GHSA ids in
+ * lower case while osv-scanner emits them upper case, and the merge step joins
+ * on exact string equality — so without a single normalization point the two
+ * tools report the same advisory and never recognise each other.
+ *
+ * Every advisory namespace we handle (CVE, GHSA, OSV, PYSEC, RUSTSEC, GO) is
+ * upper-case by convention, so folding case cannot collide two distinct ids.
+ */
 export function normalizeAliases(aliases: Iterable<string>): string[] {
-  return [...new Set(aliases)].sort(compare);
+  return [...new Set([...aliases].map((alias) => alias.trim().toUpperCase()))]
+    .filter((alias) => alias.length > 0)
+    .sort(compare);
 }
 
 /**

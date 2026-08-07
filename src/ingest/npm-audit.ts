@@ -90,6 +90,7 @@ function toFinding(
     advisoryId,
     aliases,
     transitive: entry["isDirect"] !== true,
+    fixAvailable: entry["fixAvailable"] !== false && entry["fixAvailable"] !== undefined,
     sources: [{ tool: TOOL, ruleId: advisoryId }],
   };
 
@@ -111,12 +112,14 @@ function aliasesOf(advisory: Record<string, unknown>): string[] {
   const url = asString(advisory["url"]);
   if (url !== undefined) {
     const ghsa = /GHSA-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}-[23456789cfghjmpqrvwx]{4}/i.exec(url);
-    if (ghsa) aliases.push(ghsa[0].toUpperCase());
+    if (ghsa) aliases.push(ghsa[0]);
 
     const cve = /CVE-\d{4}-\d{4,}/i.exec(url);
-    if (cve) aliases.push(cve[0].toUpperCase());
+    if (cve) aliases.push(cve[0]);
   }
 
+  // Case folding happens once, in normalizeAliases. Doing it here as well
+  // would mean two places to keep in step.
   const source = advisory["source"];
   if (typeof source === "number" && Number.isInteger(source)) {
     aliases.push(`NPM-${source}`);
@@ -148,10 +151,11 @@ function severityOf(
 /**
  * The version to upgrade to, when npm can name one.
  *
- * `fixAvailable` describes what to install, which is not always this package —
- * npm may be telling us to bump a parent instead. Only report it when it is
- * about the package the advisory is filed against, so `fixedIn` never claims a
- * version that belongs to something else.
+ * `fixAvailable` is usually the bare value `true`, meaning a fix exists and
+ * `npm audit fix` can reach it. Only the object form names a version, and even
+ * then it may name a *parent* package to bump rather than this one. Reporting
+ * that version here would tell the reader to install a version of this package
+ * that was never published, so we return nothing unless the names match.
  */
 function fixedVersionOf(
   packageName: string,

@@ -14,7 +14,8 @@
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "third-party": "node scripts/third-party.mjs"
+    "third-party": "node scripts/third-party.mjs",
+    "judge": "node dist/bin.js judge"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -27,5 +28,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "bin": {
+    "zero-shelter": "./dist/bin.js"
   }
 }

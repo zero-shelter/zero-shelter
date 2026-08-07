@@ -139,6 +139,20 @@ describe("pickAdvisoryId", () => {
 
 describe("normalizeAliases", () => {
   it("deduplicates and orders so equal sets serialize identically", () => {
-    expect(normalizeAliases(["b", "a", "b"])).toEqual(["a", "b"]);
+    expect(normalizeAliases(["B", "A", "B"])).toEqual(["A", "B"]);
+  });
+
+  /**
+   * npm audit spells GHSA ids lower case inside advisory URLs and osv-scanner
+   * emits them upper case. The merge step joins on exact equality, so folding
+   * case here is what lets the two tools recognise the same advisory at all.
+   */
+  it("folds case so sources that disagree on spelling still join", () => {
+    expect(normalizeAliases(["ghsa-xvch-5gv4-984h"])).toEqual(["GHSA-XVCH-5GV4-984H"]);
+    expect(normalizeAliases(["cve-2021-1", "CVE-2021-1"])).toHaveLength(1);
+  });
+
+  it("drops blank entries rather than carrying an alias that joins everything", () => {
+    expect(normalizeAliases(["", "  ", "CVE-2021-1"])).toEqual(["CVE-2021-1"]);
   });
 });
