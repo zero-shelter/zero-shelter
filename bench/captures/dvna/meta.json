@@ -1,0 +1,11 @@
+{
+  "repo": "appsecco/dvna",
+  "sha": "9ba473add536f66ac9007966acb2a775dd31277a",
+  "capturedWith": {
+    "npm": "11.4.2",
+    "osv-scanner": "2.5.0"
+  },
+  "notes": [
+    "package-lock.json absent at pinned commit; generated at capture time against the live registry"
+  ]
+}

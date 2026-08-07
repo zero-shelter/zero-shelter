@@ -1,0 +1,34 @@
+{
+  "note": "Benchmark targets, pinned by commit. These are other people's repositories on purpose: a benchmark over fixtures we authored proves nothing.",
+  "pinnedAt": "2026-08-07",
+  "repos": [
+    {
+      "name": "juice-shop",
+      "github": "juice-shop/juice-shop",
+      "sha": "a520e158cb65c43d24e2c55d84f09b05a2511a03",
+      "license": "MIT",
+      "why": "OWASP's deliberately vulnerable app — dense, well-understood findings"
+    },
+    {
+      "name": "nodegoat",
+      "github": "OWASP/NodeGoat",
+      "sha": "c5cb68a7084e4ae7dcc60e6a98768720a81841e8",
+      "license": "Apache-2.0",
+      "why": "OWASP training app, dormant since 2023 — a legacy backlog"
+    },
+    {
+      "name": "dvna",
+      "github": "appsecco/dvna",
+      "sha": "9ba473add536f66ac9007966acb2a775dd31277a",
+      "license": "MIT",
+      "why": "Damn Vulnerable Node App — old lockfile, heavy transitive noise"
+    },
+    {
+      "name": "hackathon-starter",
+      "github": "sahat/hackathon-starter",
+      "sha": "4ee09b39f109c6dbda85872679d1fbdda00319fc",
+      "license": "MIT",
+      "why": "Actively maintained starter — the near-clean case a judge tool must not spam"
+    }
+  ]
+}

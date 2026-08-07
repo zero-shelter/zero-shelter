@@ -1,0 +1,26 @@
+# Label each row: real (worth fixing here), noise (not actionable in this repo), dup (same issue as another row — name its fingerprint in notes)
+fingerprint	source	package	advisory	severity	title	label	notes
+09cc1589a7b57999	npm-audit	brace-expansion	GHSA-MH99-V99M-4GVG	high	brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash		
+09cc1589a7b57999	npm-audit	brace-expansion	GHSA-MH99-V99M-4GVG	high	brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash		
+1e7a493c562a37af	npm-audit	brace-expansion	GHSA-RGW5-RVV9-X895	high	brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation		
+1e7a493c562a37af	npm-audit	brace-expansion	GHSA-RGW5-RVV9-X895	high	brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation		
+26a18eece5d119e8	osv-scanner	undici	CVE-2026-13697	high	undici vulnerable to cross-user information disclosure and parse-time crash via degenerate private cache directives		
+2b4076b435f0eda6	npm-audit	ip-address	GHSA-4XRF-JV44-H6HH	moderate	ip-address: a CIDR suffix on the parsed address suppresses special-use classification and can bypass SSRF and trust-boundary checks		
+43ad4ca6e3757539	npm-audit	ip-address	GHSA-MWP4-54F8-5FHR	high	ip-address: Address4 decodes leading-zero octets as decimal while resolvers decode them as octal, allowing SSRF and trust-boundary bypass		
+498d1e915dd78dae	osv-scanner	undici	CVE-2026-15157	moderate	undici vulnerable to CRLF Injection via blob-like body 'type' property		
+4fd04976a9bf7e8f	osv-scanner	ip-address	CVE-2026-54272	moderate	ip-address: misclassification of IPv4-mapped/NAT64 IPv6 addresses can bypass SSRF and trust-boundary checks		
+5727c6f802771e3a	npm-audit	undici	GHSA-V3R7-H72X-CJCM	moderate	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields		
+5e8ef4da1d1e9461	npm-audit	ip-address	GHSA-22JQ-VG5J-6VGG	moderate	ip-address: misclassification of IPv4-mapped/NAT64 IPv6 addresses can bypass SSRF and trust-boundary checks		
+702219b45c9518f8	npm-audit	undici	GHSA-8XCM-R25X-G524	moderate	undici vulnerable to downstream response desynchronization via retry interceptor		
+76bda69c17b0d90b	npm-audit	js-yaml	GHSA-PM4M-PH32-GHV5	high	js-yaml: Exponential parsing time in flow collections leads to denial of service		
+76bda69c17b0d90b	osv-scanner	js-yaml	GHSA-PM4M-PH32-GHV5	high	js-yaml: Exponential parsing time in flow collections leads to denial of service		
+7be1f414f47d0160	osv-scanner	undici	CVE-2026-14643	moderate	undici vulnerable to cross-user information disclosure via whitespace around equals in Cache-Control directives		
+8216034cc116e7a3	osv-scanner	brace-expansion	CVE-2026-69152	high	brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation		
+98f629ff190cf452	osv-scanner	undici	CVE-2026-16728	moderate	undici vulnerable to downstream response desynchronization via retry interceptor		
+9c0448dc3225acec	npm-audit	undici	GHSA-M8RV-5G2X-5CG5	moderate	undici vulnerable to CRLF Injection via blob-like body 'type' property		
+a08a66c1179663d1	osv-scanner	ip-address	CVE-2026-69192	high	ip-address: Address4 decodes leading-zero octets as decimal while resolvers decode them as octal, allowing SSRF and trust-boundary bypass		
+b6b4c110549eeef5	npm-audit	undici	GHSA-JR45-8VMC-QM54	moderate	undici vulnerable to cross-user information disclosure via whitespace around equals in Cache-Control directives		
+c20ab1f4c2041b3c	npm-audit	undici	GHSA-4CWX-7WF7-3272	high	undici vulnerable to cross-user information disclosure and parse-time crash via degenerate private cache directives		
+ceee4cd19f987488	osv-scanner	ip-address	CVE-2026-69198	moderate	ip-address: a CIDR suffix on the parsed address suppresses special-use classification and can bypass SSRF and trust-boundary checks		
+e3887b6d4b203113	osv-scanner	undici	CVE-2026-16729	moderate	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields		
+eed9c417453284e4	osv-scanner	brace-expansion	CVE-2026-14257	high	brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash		

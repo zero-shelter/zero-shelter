@@ -1,0 +1,157 @@
+# Label each row: real (worth fixing here), noise (not actionable in this repo), dup (same issue as another row — name its fingerprint in notes)
+fingerprint	source	package	advisory	severity	title	label	notes
+031d45d6ad18808d	osv-scanner	undici	CVE-2026-22036	moderate	Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion		
+08d59ada6ff00a98	npm-audit	jsonwebtoken	GHSA-HJRF-2M68-5959	moderate	jsonwebtoken's insecure implementation of key retrieval function could lead to Forgeable Public/Private Tokens from RSA to HMAC		
+0c71ca710f58c984	npm-audit	lodash	GHSA-F23M-R3PF-42RH	moderate	lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`		
+0e2c453e0d5a9427	osv-scanner	tar	CVE-2026-23950	high	Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS		
+0f5b53d9d769b550	osv-scanner	socket.io	CVE-2024-38355	moderate	socket.io has an unhandled 'error' event		
+127966064c4b177b	osv-scanner	undici	CVE-2026-1525	moderate	Undici has an HTTP Request/Response Smuggling issue		
+12ccdf80089992ad	osv-scanner	jws	CVE-2016-1000223	high	Forgeable Public/Private Tokens in jws		
+1556232da3129f08	npm-audit	tar	GHSA-23HP-3JRH-7FPW	critical	node-tar: Decompression/parse DoS via unlimited input		
+16249f5000d8521d	npm-audit	decompress	GHSA-MP2F-45PM-3CG9	critical	Decompress: Archive extraction can create files and links outside of the target directory		
+16b7760835606031	npm-audit	tar	GHSA-R292-9MHP-454M	moderate	node-tar: Uncontrolled recursion in mapHas/filesFilter allows uncatchable stack-overflow DoS via crafted long-path tar with member selection		
+16b7760835606031	osv-scanner	tar	GHSA-R292-9MHP-454M	moderate	node-tar: Uncontrolled recursion in mapHas/filesFilter allows uncatchable stack-overflow DoS via crafted long-path tar with member selection		
+1a991b8ec8717322	osv-scanner	lodash.set	CVE-2020-8203	high	Prototype Pollution in lodash		
+1ac2ad1a6fbeb9fc	osv-scanner	moment	CVE-2022-24785	high	Path Traversal: 'dir/../../filename' in moment.locale		
+1db0056004ccb6e6	osv-scanner	tar	CVE-2026-26960	high	Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction		
+1f549ff57b734461	npm-audit	undici	GHSA-V9P9-HFJ2-HCW8	high	Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation		
+1ff1b8dddeb1a162	npm-audit	tar	GHSA-QFFP-2RHF-9H96	high	tar has Hardlink Path Traversal via Drive-Relative Linkpath		
+207ae20f1fb56179	osv-scanner	tar	CVE-2026-59871	moderate	node-tar: Process crash via PAX numeric path type confusion		
+24260ae0af148650	npm-audit	minimatch	GHSA-3PPC-4F35-3M26	high	minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern		
+253b3674a80963d0	npm-audit	jsonwebtoken	GHSA-QWPH-4952-7XR6	moderate	jsonwebtoken vulnerable to signature validation bypass due to insecure default algorithm in jwt.verify()		
+25585a2ee27e1d4b	osv-scanner	tar	CVE-2026-29786	high	tar has Hardlink Path Traversal via Drive-Relative Linkpath		
+2a711265b6b81bad	npm-audit	undici	GHSA-P88M-4JFJ-68FV	moderate	undici vulnerable to HTTP header injection via Set-Cookie percent-decoding		
+2c8bfe2273740bf8	osv-scanner	tar	CVE-2026-53655	moderate	node-tar applies PAX size override to intermediary GNU long-name/long-link headers, causing tar parser interpretation differential (file smuggling)		
+2d0bbfe475a0af4a	npm-audit	ws	GHSA-96HV-2XVQ-FX4P	high	ws: Memory exhaustion DoS from tiny fragments and data chunks		
+2dfd585fb8ebe3f3	osv-scanner	multer	CVE-2025-7338	high	Multer vulnerable to Denial of Service via unhandled exception from malformed request		
+2e0c495173e03c0c	osv-scanner	notevil	CVE-2021-23771	moderate	Sandbox escape in notevil and argencoders-notevil		
+30c7e03d201562e0	osv-scanner	undici	CVE-2026-12151	high	undici WebSocket client vulnerable to denial of service via fragment count bypass		
+31293d8a50ea0d59	npm-audit	http-cache-semantics	GHSA-RC47-6667-2J5J	high	http-cache-semantics vulnerable to Regular Expression Denial of Service		
+33b655463b358f82	osv-scanner	tar	CVE-2026-31802	high	node-tar Symlink Path Traversal via Drive-Relative Linkpath		
+34f3dd5f1f829009	npm-audit	undici	GHSA-G8M3-5G58-FQ7M	low	undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching		
+37b4dabaeb1ed066	npm-audit	sanitize-html	GHSA-3J7M-HMH3-9JMP	moderate	Cross-Site Scripting in sanitize-html		
+38026d7d9b752078	npm-audit	ws	GHSA-3H5V-Q93C-6H6Q	high	ws affected by a DoS when handling a request with many HTTP headers		
+38419faff211212c	osv-scanner	lodash	CVE-2025-13465	moderate	lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`		
+3a91310e9839f435	npm-audit	tar	GHSA-8QQ5-RM4J-MR97	high	node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization		
+3bb35d2c93172824	osv-scanner	socket.io-parser	CVE-2026-69185	high	Socket.IO: Zero-attachment Memory Exhaustion		
+3cf6e56a58506c11	npm-audit	tar	GHSA-9PPJ-QMQM-Q256	high	node-tar Symlink Path Traversal via Drive-Relative Linkpath		
+3d66fa77cd6ab860	npm-audit	notevil	GHSA-8G4M-CJM2-96WQ	moderate	Sandbox escape in notevil and argencoders-notevil		
+3e3afc8c2d7ed6f0	npm-audit	tar	GHSA-83G3-92JG-28CX	high	Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction		
+41c7f3165f8dfe70	osv-scanner	@tootallnate/once	CVE-2026-3449	low	@tootallnate/once vulnerable to Incorrect Control Flow Scoping		
+4515e014bb35d4f0	osv-scanner	sanitize-html	CVE-2019-25225	moderate	sanitize-html is vulnerable to XSS through incomprehensive sanitization		
+4963f24e4a1b5a65	npm-audit	base64url	GHSA-RVG8-PWQ2-XJ7Q	moderate	Out-of-bounds Read in base64url		
+4963f24e4a1b5a65	osv-scanner	base64url	GHSA-RVG8-PWQ2-XJ7Q	moderate	Out-of-bounds Read in base64url		
+498d1e915dd78dae	osv-scanner	undici	CVE-2026-15157	moderate	undici vulnerable to CRLF Injection via blob-like body 'type' property		
+4a4dc36dc4014da6	npm-audit	lodash	GHSA-4XC9-XHRJ-V574	high	Prototype Pollution in lodash		
+4a9919877b6a96ca	osv-scanner	undici	CVE-2026-1526	high	Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression		
+4b3de1a66d60ee04	osv-scanner	jsonwebtoken	CVE-2022-23539	high	jsonwebtoken unrestricted key type could lead to legacy keys usage 		
+4bbdc2ccf3e2c2f5	osv-scanner	lodash	CVE-2018-16487	high	Prototype Pollution in lodash		
+4c0d022e21c3d9a9	osv-scanner	lodash	CVE-2018-3721	moderate	Prototype Pollution in lodash		
+50fc9624ac8a571d	npm-audit	express-jwt	GHSA-6G6M-M6H5-W9GF	high	Authorization bypass in express-jwt		
+56a9201ac0f546b7	osv-scanner	sanitize-html	CVE-2024-21501	moderate	sanitize-html Information Exposure vulnerability		
+56fcf93f5a74d0a7	osv-scanner	http-cache-semantics	CVE-2022-25881	high	http-cache-semantics vulnerable to Regular Expression Denial of Service		
+5727c6f802771e3a	npm-audit	undici	GHSA-V3R7-H72X-CJCM	moderate	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields		
+59a84277b858347f	npm-audit	jsonwebtoken	GHSA-8CF7-32GW-WR33	high	jsonwebtoken unrestricted key type could lead to legacy keys usage 		
+5a5babfb702f566a	osv-scanner	tar	CVE-2026-59875	moderate	node-tar: Uncaught Exception DoS via NUL byte in PAX path/linkpath records		
+5b980ae0b2666d99	osv-scanner	sanitize-html	CVE-2021-26539	moderate	Improper Input Validation in sanitize-html		
+5f45efea75d7eab3	npm-audit	tar	GHSA-8X88-C5MF-7J5W	high	node-tar: Negative tar entry size causes infinite loop in archive replace		
+60862f257cc7fdb4	npm-audit	socket.io-parser	GHSA-CQMJ-92XF-R6R9	moderate	Insufficient validation when decoding a Socket.IO packet		
+60e74b63196de0e2	npm-audit	crypto-js	GHSA-RG76-677X-56Q9	critical	crypto-js: Insufficient Entropy in Cryptographic Secret Generation via Vulnerable CryptoJS Dependency Chain		
+60f659eba606bc74	npm-audit	sanitize-html	GHSA-XC6G-GGRC-QQ4R	moderate	Cross-Site Scripting in sanitize-html		
+63b407b27b0b7015	npm-audit	tar	GHSA-W8WR-V893-VJVP	moderate	node-tar: Process crash via PAX numeric path type confusion		
+665a5b7899e8d507	osv-scanner	minimatch	CVE-2026-27903	high	minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments		
+67c0661a7258421a	osv-scanner	multer	CVE-2026-3304	high	Multer vulnerable to Denial of Service via incomplete cleanup		
+692c7adf70efdd50	osv-scanner	undici	CVE-2026-9679	moderate	undici vulnerable to HTTP header injection via Set-Cookie percent-decoding		
+6b501514c54d6359	osv-scanner	parseuri	CVE-2024-36751	moderate	parse-uri Regular expression Denial of Service (ReDoS)		
+6c0aeca2deaccbd1	osv-scanner	decompress	CVE-2026-10732	moderate	decompress: Arbitrary File Write via Archive Extraction (Zip Slip)		
+6d595b0af92a930d	osv-scanner	ws	CVE-2024-37890	high	ws affected by a DoS when handling a request with many HTTP headers		
+6df2ef630d17b9cf	npm-audit	file-type	GHSA-5V7R-6R5C-R473	moderate	file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header		
+702219b45c9518f8	npm-audit	undici	GHSA-8XCM-R25X-G524	moderate	undici vulnerable to downstream response desynchronization via retry interceptor		
+7054569d773862bb	npm-audit	undici	GHSA-2MJP-6Q6P-2QXM	moderate	Undici has an HTTP Request/Response Smuggling issue		
+766768e043209ad0	osv-scanner	@cyclonedx/cyclonedx-npm	CVE-2026-55849	high	@cyclonedx/cyclonedx-npm: Shell Injection via Unsanitized --workspace Argument		
+76deaab400b4950f	npm-audit	lodash.set	GHSA-P6MC-M468-83GW	high	Prototype Pollution in lodash		
+7721a545e5651d25	npm-audit	moment	GHSA-87VV-R9J6-G5QV	moderate	Regular Expression Denial of Service in moment		
+77468c2ea01d1250	npm-audit	undici	GHSA-G9MF-H72J-4RW9	moderate	Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion		
+7ce09bf6f275bc27	npm-audit	moment	GHSA-8HFJ-J24R-96C4	high	Path Traversal: 'dir/../../filename' in moment.locale		
+7d1b4347986b4a77	npm-audit	decompress	GHSA-H39J-R5QQ-R9MM	moderate	decompress: Arbitrary File Write via Archive Extraction (Zip Slip)		
+7ded636baa44e038	npm-audit	engine.io	GHSA-R7QP-CFHV-P84W	moderate	Uncaught exception in engine.io		
+7f77d8a190887087	osv-scanner	tar	CVE-2026-59873	critical	node-tar: Decompression/parse DoS via unlimited input		
+80a6e24047af6be2	osv-scanner	multer	CVE-2025-47935	high	Multer vulnerable to Denial of Service via memory leaks from unclosed streams		
+825a7af11fbc836e	osv-scanner	minimatch	CVE-2026-27904	high	minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions		
+82b013a64b58e923	osv-scanner	undici	CVE-2026-11525	low	undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching		
+83dd997038fee905	npm-audit	lodash	GHSA-35JH-R3H4-6JHM	high	Command Injection in lodash		
+87851c6a658ad330	osv-scanner	got	CVE-2022-33987	moderate	Got allows a redirect to a UNIX socket		
+887269bbbdf52be3	osv-scanner	crypto-js	CVE-2026-71851	critical	crypto-js: Insufficient Entropy in Cryptographic Secret Generation via Vulnerable CryptoJS Dependency Chain		
+8aca7b7876ea9ddd	osv-scanner	crypto-js	CVE-2023-46233	critical	crypto-js PBKDF2 1,000 times weaker than specified in 1993 and 1.3M times weaker than current standard		
+8c654fef9c5c84cb	osv-scanner	engine.io	CVE-2022-41940	moderate	Uncaught exception in engine.io		
+8cbbb26e82b75915	osv-scanner	lodash	CVE-2021-23337	high	Command Injection in lodash		
+8d44946c3ad120d0	osv-scanner	uuid	CVE-2026-41907	moderate	uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided		
+8f19b9288a1547c4	npm-audit	socket.io	GHSA-25HC-QCG6-38WJ	moderate	socket.io has an unhandled 'error' event		
+8f782def50aaf8c8	npm-audit	got	GHSA-PFRX-2Q88-QQ97	moderate	Got allows a redirect to a UNIX socket		
+8fdc04f61637e919	osv-scanner	undici	CVE-2026-6733	low	undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse		
+912ae1d162840ee1	npm-audit	socket.io-parser	GHSA-677M-J7P3-52F9	high	socket.io allows an unbounded number of binary attachments		
+913bcd92bbf5340c	npm-audit	minimatch	GHSA-7R86-CG39-JMMJ	high	minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments		
+91549ef44a7b52c2	osv-scanner	multer	CVE-2025-47944	high	Multer vulnerable to Denial of Service from maliciously crafted requests		
+94297d94fcb2c226	npm-audit	lodash	GHSA-FVQR-27WR-82FM	moderate	Prototype Pollution in lodash		
+9553408d1eb9025f	osv-scanner	cookie	CVE-2024-47764	low	cookie accepts cookie name, path, and domain with out of bounds characters		
+98f629ff190cf452	osv-scanner	undici	CVE-2026-16728	moderate	undici vulnerable to downstream response desynchronization via retry interceptor		
+9a374a7cfe9d652b	osv-scanner	engine.io	CVE-2026-59725	high	Socket.IO: Engine.IO Polling Transport Connection Exhaustion		
+9b812146f060ba73	npm-audit	jsonwebtoken	GHSA-C7HR-J4MJ-J2W6	critical	Verification Bypass in jsonwebtoken		
+9c0448dc3225acec	npm-audit	undici	GHSA-M8RV-5G2X-5CG5	moderate	undici vulnerable to CRLF Injection via blob-like body 'type' property		
+9cba8a6a9a26e012	npm-audit	cookie	GHSA-PXG6-PF52-XH8X	low	cookie accepts cookie name, path, and domain with out of bounds characters		
+9ccf2ab0a340c95e	npm-audit	crypto-js	GHSA-XWCQ-PM8M-C4VF	critical	crypto-js PBKDF2 1,000 times weaker than specified in 1993 and 1.3M times weaker than current standard		
+9dc151380f62ef6c	osv-scanner	express-jwt	CVE-2020-15084	high	Authorization bypass in express-jwt		
+9dedfcebe954c504	npm-audit	sanitize-html	GHSA-MJXR-4V3X-Q3M4	moderate	Improper Input Validation in sanitize-html		
+a0efd1b4923c4457	osv-scanner	sanitize-html	CVE-2022-25887	high	Sanitize-html Vulnerable To REDoS Attacks		
+a425b86f1a7942e7	osv-scanner	jsonwebtoken	CVE-2022-23540	moderate	jsonwebtoken vulnerable to signature validation bypass due to insecure default algorithm in jwt.verify()		
+a45269f533b96775	npm-audit	undici	GHSA-4992-7RV2-5PVQ	moderate	Undici has CRLF Injection in undici via `upgrade` option		
+a56a427d1757a4a3	osv-scanner	multer	CVE-2026-2359	high	Multer vulnerable to Denial of Service via resource exhaustion		
+ac5a481100c338ec	osv-scanner	tar	CVE-2026-59874	high	node-tar: Negative tar entry size causes infinite loop in archive replace		
+ad432766df053b01	osv-scanner	socket.io-parser	CVE-2026-33151	high	socket.io allows an unbounded number of binary attachments		
+ae5dbe3d9fb55e2d	npm-audit	engine.io	GHSA-R635-G3XR-VW7X	high	Socket.IO: Engine.IO Polling Transport Connection Exhaustion		
+ae70e8024fa9477f	npm-audit	sanitize-html	GHSA-CGFM-XWP7-2CVR	high	Sanitize-html Vulnerable To REDoS Attacks		
+af90dbe7be37029a	osv-scanner	tar	CVE-2026-24842	high	node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal		
+b089cdefefd115cd	osv-scanner	jws	CVE-2025-65945	high	auth0/node-jws Improperly Verifies HMAC Signature		
+b24dc4ec87e08544	npm-audit	tar	GHSA-GVWX-54WH-QM9J	moderate	node-tar: Uncaught Exception DoS via NUL byte in PAX path/linkpath records		
+b81ea7a96c948d03	osv-scanner	ws	CVE-2026-48779	high	ws: Memory exhaustion DoS from tiny fragments and data chunks		
+baa367152d66d6b5	osv-scanner	file-type	CVE-2026-31808	moderate	file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header		
+bee7f9e5dae9dc36	npm-audit	sanitize-html	GHSA-RM97-X556-Q36H	moderate	sanitize-html Information Exposure vulnerability		
+c04a4a83451ac32a	osv-scanner	undici	CVE-2026-2229	high	Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation		
+c42d60d334eeea8f	osv-scanner	tar	CVE-2026-23745	high	node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization		
+c46f969a94c7272e	osv-scanner	multer	CVE-2026-5079	high	Multer vulnerable to Denial of Service via deeply nested field names		
+c4a4290bc7d19d5f	npm-audit	jws	GHSA-GJCW-V447-2W7Q	high	Forgeable Public/Private Tokens in jws		
+c4b8a83962df2d97	npm-audit	tar	GHSA-34X7-HFP2-RC4V	high	node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal		
+c4ffc297aede7703	npm-audit	sanitize-html	GHSA-RJQQ-98F6-6J3R	moderate	Improper Input Validation in sanitize-html		
+c5deed4e11ff5c80	npm-audit	undici	GHSA-VRM6-8VPV-QV8Q	high	Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression		
+c6c0e1bd4a5187a1	osv-scanner	decompress	CVE-2026-53486	critical	Decompress: Archive extraction can create files and links outside of the target directory		
+cafab7dda505ff7d	osv-scanner	moment	CVE-2017-18214	high	Regular Expression Denial of Service in moment		
+cbb4861139880352	npm-audit	tar	GHSA-VMF3-W455-68VH	moderate	node-tar applies PAX size override to intermediary GNU long-name/long-link headers, causing tar parser interpretation differential (file smuggling)		
+cc6da0fbeb1a58e9	npm-audit	jws	GHSA-869P-CJFG-CM3X	high	auth0/node-jws Improperly Verifies HMAC Signature		
+cdc85831bd1b8b84	npm-audit	undici	GHSA-VXPW-J846-P89Q	high	undici WebSocket client vulnerable to denial of service via fragment count bypass		
+cdece332295ade0a	osv-scanner	jsonwebtoken	CVE-2022-23541	moderate	jsonwebtoken's insecure implementation of key retrieval function could lead to Forgeable Public/Private Tokens from RSA to HMAC		
+d0e2118062e5ad48	npm-audit	minimatch	GHSA-23C5-XMQV-RM74	high	minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions		
+d42b5578e3cca8dd	osv-scanner	sanitize-html	CVE-2016-1000237	moderate	Cross-Site Scripting in sanitize-html		
+d65b84ef4077f532	osv-scanner	undici	CVE-2026-1527	moderate	Undici has CRLF Injection in undici via `upgrade` option		
+d90d6282f9d706ef	osv-scanner	sanitize-html	CVE-2021-26540	moderate	Improper Input Validation in sanitize-html		
+d97440c94a2738bd	npm-audit	@cyclonedx/cyclonedx-npm	GHSA-V75R-VX73-82PJ	high	@cyclonedx/cyclonedx-npm: Shell Injection via Unsanitized --workspace Argument		
+da3c7358e454a90a	osv-scanner	moment	CVE-2016-4055	moderate	Regular Expression Denial of Service in moment		
+de24f7c1b8eeac06	osv-scanner	lodash	CVE-2019-10744	critical	Prototype Pollution in lodash		
+e00c9ddc54a1d534	osv-scanner	multer	CVE-2026-3520	high	Multer Vulnerable to Denial of Service via Uncontrolled Recursion		
+e2a4919118f55d69	npm-audit	@tootallnate/once	GHSA-VPQ2-C234-7XJ6	low	@tootallnate/once vulnerable to Incorrect Control Flow Scoping		
+e3887b6d4b203113	osv-scanner	undici	CVE-2026-16729	moderate	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields		
+e429069c91d92bf4	osv-scanner	sanitize-html	CVE-2017-16016	moderate	Cross-Site Scripting in sanitize-html		
+e9f7d1577243284e	npm-audit	moment	GHSA-446M-MV8F-Q348	high	Regular Expression Denial of Service in moment		
+e9f9570dbc3fcb21	osv-scanner	multer	CVE-2025-48997	high	Multer vulnerable to Denial of Service via unhandled exception		
+ebd91d330040cd19	npm-audit	sanitize-html	GHSA-QHXP-V273-G94H	moderate	sanitize-html is vulnerable to XSS through incomprehensive sanitization		
+eebaf72e24461847	npm-audit	tar	GHSA-R6Q2-HW4H-H46W	high	Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS		
+f622b11bd1a25b48	npm-audit	socket.io-parser	GHSA-2M8V-J782-FHVR	high	Socket.IO: Zero-attachment Memory Exhaustion		
+f652ccb52846051f	osv-scanner	jsonwebtoken	CVE-2015-9235	critical	Verification Bypass in jsonwebtoken		
+faae346b24848874	osv-scanner	socket.io-parser	CVE-2023-32695	moderate	Insufficient validation when decoding a Socket.IO packet		
+fcbc9b0d17861d38	npm-audit	parseuri	GHSA-6FX8-H7JM-663J	moderate	parse-uri Regular expression Denial of Service (ReDoS)		
+fecc190c29d0cdef	osv-scanner	minimatch	CVE-2026-26996	high	minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern		
+fecc437bddf2e9a8	npm-audit	uuid	GHSA-W5HQ-G745-H8PQ	moderate	uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided		
+ff42463dc0ec8f19	npm-audit	undici	GHSA-35P6-XMWP-9G52	low	undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse		
+ff54d8e240f72ba0	npm-audit	marsdb	GHSA-5MRR-RGP6-X4GR	critical	Command Injection in marsdb		
+ff54d8e240f72ba0	osv-scanner	marsdb	GHSA-5MRR-RGP6-X4GR	critical	Command Injection in marsdb		
+ff64245cbeb7aa3a	osv-scanner	messageformat	CVE-2025-57349	low	messageformat has a prototype pollution vulnerability		
+fff5bce689ef200b	npm-audit	lodash	GHSA-JF85-CPCP-J695	critical	Prototype Pollution in lodash		

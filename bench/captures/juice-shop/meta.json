@@ -1,0 +1,11 @@
+{
+  "repo": "juice-shop/juice-shop",
+  "sha": "a520e158cb65c43d24e2c55d84f09b05a2511a03",
+  "capturedWith": {
+    "npm": "11.4.2",
+    "osv-scanner": "2.5.0"
+  },
+  "notes": [
+    "package-lock.json absent at pinned commit; generated at capture time against the live registry"
+  ]
+}

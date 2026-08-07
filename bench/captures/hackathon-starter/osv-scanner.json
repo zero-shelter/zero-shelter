@@ -1,0 +1,1815 @@
+{
+  "results": [
+    {
+      "source": {
+        "path": "/Users/ab180/conductor/workspaces/opensource-explore/pangyo-v3/_workspace/zero-shelter/bench/captures/hackathon-starter/workdir/package-lock.json",
+        "type": "lockfile"
+      },
+      "packages": [
+        {
+          "package": {
+            "name": "brace-expansion",
+            "version": "2.1.2",
+            "ecosystem": "npm"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-mh99-v99m-4gvg"
+              ],
+              "aliases": [
+                "CVE-2026-14257",
+                "GHSA-mh99-v99m-4gvg"
+              ],
+              "max_severity": "7.5"
+            },
+            {
+              "ids": [
+                "GHSA-rgw5-rvv9-x895"
+              ],
+              "aliases": [
+                "CVE-2026-69152",
+                "GHSA-rgw5-rvv9-x895"
+              ],
+              "max_severity": "7.5"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "4.0.0"
+                        },
+                        {
+                          "fixed": "5.0.8"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "3.0.0"
+                        },
+                        {
+                          "fixed": "3.0.3"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "2.0.0"
+                        },
+                        {
+                          "fixed": "2.1.3"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.1.17"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-14257"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-400",
+                  "CWE-770"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-07-24T21:53:14Z",
+                "nvd_published_at": "2026-07-23T14:17:00Z",
+                "severity": "HIGH"
+              },
+              "details": "### Summary\n\n`expand()` bounds the *number* of results it produces (the `max` option,\n`100_000` by default) but not their *length*. By chaining many brace groups,\nan attacker keeps the result count under `max` while making every result grow\nwith the number of groups. Building `max` long results — plus the intermediate\narrays combined at each brace group — exhausts memory and crashes the Node\nprocess with an **uncatchable** out-of-memory error. `try/catch` around\n`expand()` does not help: the fatal error terminates the process.\n\nA ~7.5 KB input (`'{a,b}'.repeat(1500)`) is enough to crash a default Node\nprocess.\n\n### Details\n\nFor `N` chained brace groups such as `'{a,b}'.repeat(N)`:\n\n- the result count is `2^N`, immediately capped at `max` (`100_000`), so the\n  `max` protection appears to hold, but\n- each result is `N` characters long, so the total output size is\n  `max × N` characters, which grows without bound in `N`.\n\n`expand_` combines each brace set with the fully-expanded tail:\n\n```js\nconst post = m.post.length ? expand_(m.post, max, false) : ['']\n...\nfor (let j = 0; j \u003c N.length; j++) {\n  for (let k = 0; k \u003c post.length \u0026\u0026 expansions.length \u003c max; k++) {\n    const expansion = pre + N[j] + post[k]   // grows one group longer per level\n    ...\n    expansions.push(expansion)\n  }\n}\n```\n\nThe loop guard `expansions.length \u003c max` limits how many strings are built, but\nnothing limits how long they get. Each recursion level materializes another\narray of up to `max` strings, one character longer than the level below, and —\nbecause V8 represents `pre + N[j] + post[k]` as a cons-string (rope) that\nreferences `post[k]` — those intermediate strings stay reachable through the\nwhole chain. Memory therefore scales with `max × N`.\n\nMeasured on `5.0.7` (`'{a,b}'.repeat(N)`, default `max`):\n\n| groups (N) | input bytes | result count | peak RSS |\n|---|---|---|---|\n| 20 | 100 | 100,000 | ~80 MB |\n| 50 | 250 | 100,000 | ~214 MB |\n| 100 | 500 | 100,000 | ~409 MB |\n| 300 | 1,500 | 100,000 | ~1,148 MB |\n| 1500 | 7,500 | — | **OOM crash** |\n\n### Proof of concept\n\n```js\nconst { expand } = require('brace-expansion')\n\n// ~7.5 KB input — crashes the process with a fatal, uncatchable OOM:\n//   FATAL ERROR: ... JavaScript heap out of memory\ntry {\n  expand('{a,b}'.repeat(1500))\n} catch (e) {\n  // never reached — the process is already dead\n}\n```\n\n### Impact\n\nAny application that passes attacker-influenced strings to\n`brace-expansion.expand()` — directly, or transitively via `minimatch` / `glob`\nbrace patterns — can be crashed by a small request. Because the failure is a\nfatal V8 out-of-memory error rather than a thrown exception, it cannot be caught\nand it takes down the whole worker/process, denying service.\n\n### Remediation\n\nUpgrade to a patched release. The fix bounds the total number of characters a\nsingle `expand()` call may accumulate (`EXPANSION_MAX_LENGTH`, default\n`4_000_000`, configurable via a new `maxLength` option), applied inside the\noutput-building loops so intermediate arrays are bounded too. Once the limit is\nreached, output is truncated — consistent with how `max` already truncates —\ninstead of growing without bound. The limit sits well above any realistic\nexpansion (100,000 results hitting `max` measure ~1M characters), so legitimate\ninput is unaffected.\n\nAfter the fix, `'{a,b}'.repeat(1500)` returns a bounded, truncated result in\n~0.7 s using ~340 MB and never crashes, including under a constrained 512 MB\nheap.\n\nThe fix bounds memory but the algorithm still rebuilds intermediate arrays at\neach level (roughly `O(N × maxLength)` work on this input class). A streaming\nrewrite that produces output in `O(total output size)` can be a non-urgent\nfollow-up.\n\nIf immediate upgrade isn't possible, avoid passing untrusted input to\n`expand()` / glob brace patterns, or pass a small explicit `max` **and**\n`maxLength`.",
+              "id": "GHSA-mh99-v99m-4gvg",
+              "modified": "2026-07-31T19:45:20.213748264Z",
+              "published": "2026-07-24T21:53:14Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-mh99-v99m-4gvg"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-14257"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/pull/129"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/pull/130"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/pull/136"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/139d015104e71433ad52a41d19467c48ecbb2c7d"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/a1bd33999ea75262c4749fff3bbb0d1372bd07b5"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/cb4b9e47cc2ec777c14b2b4492fb431a56f6a031"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/d13ff455a58b0d56704f0111e3c2a0b16ceb06eb"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/juliangruber/brace-expansion"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://www.npmjs.com/package/brace-expansion"
+                }
+              ],
+              "related": [
+                "CGA-369p-jq5q-2j43"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.1.18"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "2.0.0"
+                        },
+                        {
+                          "fixed": "2.1.4"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "3.0.0"
+                        },
+                        {
+                          "fixed": "3.0.6"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "4.0.0"
+                        },
+                        {
+                          "fixed": "5.0.9"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-69152"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-400",
+                  "CWE-770"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T16:35:32Z",
+                "nvd_published_at": "2026-08-03T17:16:45Z",
+                "severity": "HIGH"
+              },
+              "details": "### Summary\n\nThe `maxLength` mitigation added in `5.0.8` for GHSA-mh99-v99m-4gvg / CVE-2026-14257 is incomplete. It bounds the accumulator where results are *combined*, but not the intermediate arrays that feed it. A ~25 KB input still crashes the Node process with an **uncatchable** out-of-memory error, so `try/catch` around `expand()` does not help.\n\nA second, related path in the same function lets a ~400 KB input block the event loop for over two minutes without ever exceeding the memory bound.\n\n### Details\n\n`maxLength` was enforced in `combine()`, the single place output grows. Two arrays are built *before* `combine()` runs, and neither was bounded.\n\n**1. Comma alternatives accumulate without a running total (memory exhaustion)**\n\nEach alternative in `{a,b,c,...}` is expanded by its own recursive `expand_()` call, so each receives a full, independent `maxLength` allowance. The results were then concatenated into a single `values` array with no cumulative limit:\n\n```js\nvalues = []\nfor (let j = 0; j \u003c n.length; j++) {\n  values.push.apply(values, expand_(n[j], max, maxLength, false))\n}\n\nacc = combine(acc, pre, values, max, maxLength, ...)\n```\n\nWith `A` alternatives, `values` can reach `A * maxLength` characters before `combine()` gets a chance to truncate it. At the default `maxLength` of 4,000,000 and 400 alternatives, that is well past any default heap.\n\n**2. Padded sequences ignore `maxLength` while generating (CPU exhaustion)**\n\n`expandSequence()` was bounded by `max` (the result *count*) but never consulted `maxLength`. A padded sequence's element width follows the input, so `{0...01..100000}` with a wide pad generates `max` elements, each as wide as the input, only for `combine()` to discard all but a handful.\n\nMemory stays flat here, because V8 represents the padded strings as cons-strings, which is likely why this path was not caught alongside the original issue. The cost is time: work proportional to `max * width`.\n\n| pad width | input bytes | results kept | time (5.0.8) | time (patched) |\n|---|---|---|---|---|\n| 20,000 | 20 KB | 199 | ~7.3 s | ~20 ms |\n| 100,000 | 100 KB | 39 | ~32 s | ~20 ms |\n| 400,000 | 400 KB | 9 | ~124 s | ~18 ms |\n\nOutput is byte-identical before and after the fix; only the wasted work is removed.\n\n### Proof of concept\n\nMemory exhaustion, against `5.0.8`:\n\n```js\nimport { expand } from 'brace-expansion'\n\nconst part = '{' + '0'.repeat(50) + '1..100000}'\nconst input = '{' + Array(400).fill(part).join(',') + '}'  // ~25 KB\n\ntry {\n  expand(input)\n} catch (e) {\n  // never reached - the process is already dead\n}\n```\n\n```\nFATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory\nAborted\n```\n\nEvent-loop stall, against `5.0.8`:\n\n```js\nimport { expand } from 'brace-expansion'\n\n// ~400 KB input, returns 9 results after roughly two minutes of blocking CPU\nexpand('{' + '0'.repeat(400_000) + '1..100000}')\n```\n\n### Impact\n\nDenial of service. Any application that passes attacker-controlled input to `expand()`, directly or transitively through a glob or pattern-matching library, can be remotely crashed or stalled. The out-of-memory variant terminates the process and cannot be handled with `try/catch`.\n\nApplications already on `5.0.8` are affected: the `5.0.8` mitigation does not cover these paths.\n\n### Patches\n\nBoth intermediate arrays are now bounded as they are built, using the same `max` and `maxLength` limits already applied in `combine()`:\n\n- `values` tracks a running result count and character length while alternatives are appended, and stops once either bound is reached.\n- `expandSequence()` accepts `maxLength` and stops generating once the sequence's own characters reach it.\n\nAs with the existing limits, output is truncated rather than allowed to grow without bound, which matches how `max` already behaves. The defaults sit well above any realistic expansion, so legitimate input is unaffected.\n\n### Workarounds\n\nIf upgrading is not immediately possible, avoid passing untrusted input to `expand()` or to glob brace patterns, or pass an explicitly small `max` **and** `maxLength`.\n\nNote that a small `maxLength` alone was not sufficient on affected versions: it was applied per alternative rather than cumulatively, which is the root of the first issue above.\n\n### Credits\n\nThe memory-exhaustion bypass was reported by Alessio Della Libera, CEO \u0026 Co-founder at [Numyra](https://numyra.ai/).\n\nThe sequence-generation issue was found while verifying that report.",
+              "id": "GHSA-rgw5-rvv9-x895",
+              "modified": "2026-08-04T21:27:00.495135395Z",
+              "published": "2026-08-03T16:35:32Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-rgw5-rvv9-x895"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-69152"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/139d015104e71433ad52a41d19467c48ecbb2c7d"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/1e30c930238d7162802d88a94189182def178dac"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/688a99eeaab02627c2b89ba8ba4821fecfa659cf"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/cb4b9e47cc2ec777c14b2b4492fb431a56f6a031"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/juliangruber/brace-expansion"
+                }
+              ],
+              "related": [
+                "CGA-7234-5hj8-j5q9"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "brace-expansion",
+            "version": "5.0.7",
+            "ecosystem": "npm"
+          },
+          "dependency_groups": [
+            "dev"
+          ],
+          "groups": [
+            {
+              "ids": [
+                "GHSA-mh99-v99m-4gvg"
+              ],
+              "aliases": [
+                "CVE-2026-14257",
+                "GHSA-mh99-v99m-4gvg"
+              ],
+              "max_severity": "7.5"
+            },
+            {
+              "ids": [
+                "GHSA-rgw5-rvv9-x895"
+              ],
+              "aliases": [
+                "CVE-2026-69152",
+                "GHSA-rgw5-rvv9-x895"
+              ],
+              "max_severity": "7.5"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "4.0.0"
+                        },
+                        {
+                          "fixed": "5.0.8"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "3.0.0"
+                        },
+                        {
+                          "fixed": "3.0.3"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "2.0.0"
+                        },
+                        {
+                          "fixed": "2.1.3"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-mh99-v99m-4gvg/GHSA-mh99-v99m-4gvg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.1.17"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-14257"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-400",
+                  "CWE-770"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-07-24T21:53:14Z",
+                "nvd_published_at": "2026-07-23T14:17:00Z",
+                "severity": "HIGH"
+              },
+              "details": "### Summary\n\n`expand()` bounds the *number* of results it produces (the `max` option,\n`100_000` by default) but not their *length*. By chaining many brace groups,\nan attacker keeps the result count under `max` while making every result grow\nwith the number of groups. Building `max` long results — plus the intermediate\narrays combined at each brace group — exhausts memory and crashes the Node\nprocess with an **uncatchable** out-of-memory error. `try/catch` around\n`expand()` does not help: the fatal error terminates the process.\n\nA ~7.5 KB input (`'{a,b}'.repeat(1500)`) is enough to crash a default Node\nprocess.\n\n### Details\n\nFor `N` chained brace groups such as `'{a,b}'.repeat(N)`:\n\n- the result count is `2^N`, immediately capped at `max` (`100_000`), so the\n  `max` protection appears to hold, but\n- each result is `N` characters long, so the total output size is\n  `max × N` characters, which grows without bound in `N`.\n\n`expand_` combines each brace set with the fully-expanded tail:\n\n```js\nconst post = m.post.length ? expand_(m.post, max, false) : ['']\n...\nfor (let j = 0; j \u003c N.length; j++) {\n  for (let k = 0; k \u003c post.length \u0026\u0026 expansions.length \u003c max; k++) {\n    const expansion = pre + N[j] + post[k]   // grows one group longer per level\n    ...\n    expansions.push(expansion)\n  }\n}\n```\n\nThe loop guard `expansions.length \u003c max` limits how many strings are built, but\nnothing limits how long they get. Each recursion level materializes another\narray of up to `max` strings, one character longer than the level below, and —\nbecause V8 represents `pre + N[j] + post[k]` as a cons-string (rope) that\nreferences `post[k]` — those intermediate strings stay reachable through the\nwhole chain. Memory therefore scales with `max × N`.\n\nMeasured on `5.0.7` (`'{a,b}'.repeat(N)`, default `max`):\n\n| groups (N) | input bytes | result count | peak RSS |\n|---|---|---|---|\n| 20 | 100 | 100,000 | ~80 MB |\n| 50 | 250 | 100,000 | ~214 MB |\n| 100 | 500 | 100,000 | ~409 MB |\n| 300 | 1,500 | 100,000 | ~1,148 MB |\n| 1500 | 7,500 | — | **OOM crash** |\n\n### Proof of concept\n\n```js\nconst { expand } = require('brace-expansion')\n\n// ~7.5 KB input — crashes the process with a fatal, uncatchable OOM:\n//   FATAL ERROR: ... JavaScript heap out of memory\ntry {\n  expand('{a,b}'.repeat(1500))\n} catch (e) {\n  // never reached — the process is already dead\n}\n```\n\n### Impact\n\nAny application that passes attacker-influenced strings to\n`brace-expansion.expand()` — directly, or transitively via `minimatch` / `glob`\nbrace patterns — can be crashed by a small request. Because the failure is a\nfatal V8 out-of-memory error rather than a thrown exception, it cannot be caught\nand it takes down the whole worker/process, denying service.\n\n### Remediation\n\nUpgrade to a patched release. The fix bounds the total number of characters a\nsingle `expand()` call may accumulate (`EXPANSION_MAX_LENGTH`, default\n`4_000_000`, configurable via a new `maxLength` option), applied inside the\noutput-building loops so intermediate arrays are bounded too. Once the limit is\nreached, output is truncated — consistent with how `max` already truncates —\ninstead of growing without bound. The limit sits well above any realistic\nexpansion (100,000 results hitting `max` measure ~1M characters), so legitimate\ninput is unaffected.\n\nAfter the fix, `'{a,b}'.repeat(1500)` returns a bounded, truncated result in\n~0.7 s using ~340 MB and never crashes, including under a constrained 512 MB\nheap.\n\nThe fix bounds memory but the algorithm still rebuilds intermediate arrays at\neach level (roughly `O(N × maxLength)` work on this input class). A streaming\nrewrite that produces output in `O(total output size)` can be a non-urgent\nfollow-up.\n\nIf immediate upgrade isn't possible, avoid passing untrusted input to\n`expand()` / glob brace patterns, or pass a small explicit `max` **and**\n`maxLength`.",
+              "id": "GHSA-mh99-v99m-4gvg",
+              "modified": "2026-07-31T19:45:20.213748264Z",
+              "published": "2026-07-24T21:53:14Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-mh99-v99m-4gvg"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-14257"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/pull/129"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/pull/130"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/pull/136"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/139d015104e71433ad52a41d19467c48ecbb2c7d"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/a1bd33999ea75262c4749fff3bbb0d1372bd07b5"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/cb4b9e47cc2ec777c14b2b4492fb431a56f6a031"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/d13ff455a58b0d56704f0111e3c2a0b16ceb06eb"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/juliangruber/brace-expansion"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://www.npmjs.com/package/brace-expansion"
+                }
+              ],
+              "related": [
+                "CGA-369p-jq5q-2j43"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "1.1.18"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "2.0.0"
+                        },
+                        {
+                          "fixed": "2.1.4"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "3.0.0"
+                        },
+                        {
+                          "fixed": "3.0.6"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-rgw5-rvv9-x895/GHSA-rgw5-rvv9-x895.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "brace-expansion",
+                    "purl": "pkg:npm/brace-expansion"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "4.0.0"
+                        },
+                        {
+                          "fixed": "5.0.9"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-69152"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-400",
+                  "CWE-770"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T16:35:32Z",
+                "nvd_published_at": "2026-08-03T17:16:45Z",
+                "severity": "HIGH"
+              },
+              "details": "### Summary\n\nThe `maxLength` mitigation added in `5.0.8` for GHSA-mh99-v99m-4gvg / CVE-2026-14257 is incomplete. It bounds the accumulator where results are *combined*, but not the intermediate arrays that feed it. A ~25 KB input still crashes the Node process with an **uncatchable** out-of-memory error, so `try/catch` around `expand()` does not help.\n\nA second, related path in the same function lets a ~400 KB input block the event loop for over two minutes without ever exceeding the memory bound.\n\n### Details\n\n`maxLength` was enforced in `combine()`, the single place output grows. Two arrays are built *before* `combine()` runs, and neither was bounded.\n\n**1. Comma alternatives accumulate without a running total (memory exhaustion)**\n\nEach alternative in `{a,b,c,...}` is expanded by its own recursive `expand_()` call, so each receives a full, independent `maxLength` allowance. The results were then concatenated into a single `values` array with no cumulative limit:\n\n```js\nvalues = []\nfor (let j = 0; j \u003c n.length; j++) {\n  values.push.apply(values, expand_(n[j], max, maxLength, false))\n}\n\nacc = combine(acc, pre, values, max, maxLength, ...)\n```\n\nWith `A` alternatives, `values` can reach `A * maxLength` characters before `combine()` gets a chance to truncate it. At the default `maxLength` of 4,000,000 and 400 alternatives, that is well past any default heap.\n\n**2. Padded sequences ignore `maxLength` while generating (CPU exhaustion)**\n\n`expandSequence()` was bounded by `max` (the result *count*) but never consulted `maxLength`. A padded sequence's element width follows the input, so `{0...01..100000}` with a wide pad generates `max` elements, each as wide as the input, only for `combine()` to discard all but a handful.\n\nMemory stays flat here, because V8 represents the padded strings as cons-strings, which is likely why this path was not caught alongside the original issue. The cost is time: work proportional to `max * width`.\n\n| pad width | input bytes | results kept | time (5.0.8) | time (patched) |\n|---|---|---|---|---|\n| 20,000 | 20 KB | 199 | ~7.3 s | ~20 ms |\n| 100,000 | 100 KB | 39 | ~32 s | ~20 ms |\n| 400,000 | 400 KB | 9 | ~124 s | ~18 ms |\n\nOutput is byte-identical before and after the fix; only the wasted work is removed.\n\n### Proof of concept\n\nMemory exhaustion, against `5.0.8`:\n\n```js\nimport { expand } from 'brace-expansion'\n\nconst part = '{' + '0'.repeat(50) + '1..100000}'\nconst input = '{' + Array(400).fill(part).join(',') + '}'  // ~25 KB\n\ntry {\n  expand(input)\n} catch (e) {\n  // never reached - the process is already dead\n}\n```\n\n```\nFATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory\nAborted\n```\n\nEvent-loop stall, against `5.0.8`:\n\n```js\nimport { expand } from 'brace-expansion'\n\n// ~400 KB input, returns 9 results after roughly two minutes of blocking CPU\nexpand('{' + '0'.repeat(400_000) + '1..100000}')\n```\n\n### Impact\n\nDenial of service. Any application that passes attacker-controlled input to `expand()`, directly or transitively through a glob or pattern-matching library, can be remotely crashed or stalled. The out-of-memory variant terminates the process and cannot be handled with `try/catch`.\n\nApplications already on `5.0.8` are affected: the `5.0.8` mitigation does not cover these paths.\n\n### Patches\n\nBoth intermediate arrays are now bounded as they are built, using the same `max` and `maxLength` limits already applied in `combine()`:\n\n- `values` tracks a running result count and character length while alternatives are appended, and stops once either bound is reached.\n- `expandSequence()` accepts `maxLength` and stops generating once the sequence's own characters reach it.\n\nAs with the existing limits, output is truncated rather than allowed to grow without bound, which matches how `max` already behaves. The defaults sit well above any realistic expansion, so legitimate input is unaffected.\n\n### Workarounds\n\nIf upgrading is not immediately possible, avoid passing untrusted input to `expand()` or to glob brace patterns, or pass an explicitly small `max` **and** `maxLength`.\n\nNote that a small `maxLength` alone was not sufficient on affected versions: it was applied per alternative rather than cumulatively, which is the root of the first issue above.\n\n### Credits\n\nThe memory-exhaustion bypass was reported by Alessio Della Libera, CEO \u0026 Co-founder at [Numyra](https://numyra.ai/).\n\nThe sequence-generation issue was found while verifying that report.",
+              "id": "GHSA-rgw5-rvv9-x895",
+              "modified": "2026-08-04T21:27:00.495135395Z",
+              "published": "2026-08-03T16:35:32Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-rgw5-rvv9-x895"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-69152"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/139d015104e71433ad52a41d19467c48ecbb2c7d"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/1e30c930238d7162802d88a94189182def178dac"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/688a99eeaab02627c2b89ba8ba4821fecfa659cf"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/juliangruber/brace-expansion/commit/cb4b9e47cc2ec777c14b2b4492fb431a56f6a031"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/juliangruber/brace-expansion"
+                }
+              ],
+              "related": [
+                "CGA-7234-5hj8-j5q9"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "ip-address",
+            "version": "10.2.0",
+            "ecosystem": "npm"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-22jq-vg5j-6vgg"
+              ],
+              "aliases": [
+                "CVE-2026-54272",
+                "GHSA-22jq-vg5j-6vgg"
+              ],
+              "max_severity": "6.9"
+            },
+            {
+              "ids": [
+                "GHSA-4xrf-jv44-h6hh"
+              ],
+              "aliases": [
+                "CVE-2026-69198",
+                "GHSA-4xrf-jv44-h6hh"
+              ],
+              "max_severity": "6.9"
+            },
+            {
+              "ids": [
+                "GHSA-mwp4-54f8-5fhr"
+              ],
+              "aliases": [
+                "CVE-2026-69192",
+                "GHSA-mwp4-54f8-5fhr"
+              ],
+              "max_severity": "7.7"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "last_known_affected_version_range": "\u003c= 10.2.0",
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-22jq-vg5j-6vgg/GHSA-22jq-vg5j-6vgg.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "ip-address",
+                    "purl": "pkg:npm/ip-address"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "10.1.1"
+                        },
+                        {
+                          "fixed": "10.2.1"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-54272"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-20",
+                  "CWE-918"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:52:33Z",
+                "nvd_published_at": "2026-07-27T18:16:56Z",
+                "severity": "MODERATE"
+              },
+              "details": "### Summary\n\n`Address6`'s special-property checks misclassify IPv4-mapped (`::ffff:0:0/96`) and NAT64 well-known (`64:ff9b::/96`) IPv6 addresses. These checks classify an address by its IPv6 wrapper rather than by the IPv4 address it embeds, so `isLoopback()`, `isLinkLocal()`, `isMulticast()`, and `isUnspecified()` all return `false` for literals such as `::ffff:127.0.0.1` or `::ffff:169.254.169.254` that actually route to loopback, RFC 1918, or link-local (cloud-metadata) destinations. `Address6` also had no `isPrivate()` method, so a mapped RFC 1918 address could not be detected at all.\n\nAn application that builds a network trust-boundary decision on these checks (for example, a filter intended to block Server-Side Request Forgery, or SSRF) may therefore treat an internal target as external and allow the request. SSRF is an attack in which a user-supplied address coaxes the server into making a request to an internal destination the user could not otherwise reach, such as a loopback service or a cloud metadata endpoint.\n\n### Details\n\n`Address6.getType()` classifies an address by matching it against a table of known IPv6 special-use prefixes, returning `Global unicast` when nothing matches. That table had no entry for the IPv4-mapped range (`::ffff:0:0/96`), so every mapped address fell through to `Global unicast`; NAT64 addresses matched their own `NAT64 …` labels. The boolean checks `isLoopback`, `isUnspecified`, and `isMulticast` compared `getType()` against a fixed label and so returned `false`, while `isLinkLocal` and `isULA` checked only the native IPv6 ranges.\n\nThe library already exposed `isMapped4()` and `to4()`, but did not apply them inside these checks, so a mapped or NAT64 address was never normalized to its embedded IPv4 address before classification. The underlying CIDR matching is correct; the defect is that the special-use table omitted the IPv4-mapped range and the checks performed no embedded-IPv4 normalization.\n\n### Affected versions\n\n`\u003e= 10.1.1, \u003c= 10.2.0`. The `is*` classification API was introduced for `Address4` in 10.1.1 and extended to `Address6` in 10.2.0. Releases before 10.1.1 do not expose this API and are not affected through this vector.\n\n### Impact\n\nThe misclassification covers the entire `::ffff:0:0/96` range, in both dotted and hex notation and case-insensitively, plus the `64:ff9b::/96` NAT64 well-known prefix:\n\n| Address | Reported as | Actually points at |\n|---|---|---|\n| `::ffff:127.0.0.1` / `::ffff:7f00:1` | Global unicast | loopback (`127.0.0.0/8`) |\n| `::ffff:10.0.0.1` | Global unicast | RFC 1918 `10/8` |\n| `::ffff:172.16.5.5` | Global unicast | RFC 1918 `172.16/12` |\n| `::ffff:192.168.1.1` | Global unicast | RFC 1918 `192.168/16` |\n| `::ffff:169.254.169.254` / `::ffff:a9fe:a9fe` | Global unicast | link-local / cloud metadata (IMDS) |\n| `::ffff:100.64.0.1` | Global unicast | CGNAT `100.64/10` |\n| `::ffff:0.0.0.0` / `::ffff:255.255.255.255` | Global unicast | unspecified / broadcast |\n| `64:ff9b::7f00:1` / `64:ff9b::a9fe:a9fe` | NAT64 (well-known) | loopback / IMDS via NAT64 |\n\nFor IPv4-mapped addresses the host OS routes to the IPv4 stack, so the misclassification is reachable on any dual-stack host. For NAT64, the classification bypass is unconditional but end-to-end reachability additionally requires a NAT64/DNS64 gateway in the deployment network.\n\n### Proof of concept\n\nA guard assembled from these checks lets internal hosts through:\n\n```js\nconst { Address4, Address6 } = require('ip-address');\n\n// true =\u003e block as internal, false =\u003e allow outbound\nfunction isBlocked(host) {\n  try {\n    const a = new Address4(host);\n    return a.isPrivate() || a.isLoopback() || a.isLinkLocal() || a.isCGNAT()\n        || a.isMulticast() || a.isUnspecified() || a.isBroadcast();\n  } catch {}\n  try {\n    const a = new Address6(host);\n    return a.isLoopback() || a.isLinkLocal() || a.isULA()\n        || a.isMulticast() || a.isUnspecified();\n  } catch {}\n  return false;\n}\n\nfor (const h of ['127.0.0.1', '::1', '10.0.0.1', '8.8.8.8',\n                 '::ffff:127.0.0.1', '::ffff:10.0.0.1',\n                 '::ffff:169.254.169.254', '64:ff9b::7f00:1']) {\n  console.log(isBlocked(h) ? 'BLOCK ' : 'ALLOW ', h);\n}\n```\n\nOn affected versions this prints (note that every `::ffff:…` and `64:ff9b::…` internal target is allowed):\n\n```\nBLOCK  127.0.0.1\nBLOCK  ::1\nBLOCK  10.0.0.1\nALLOW  8.8.8.8\nALLOW  ::ffff:127.0.0.1\nALLOW  ::ffff:10.0.0.1\nALLOW  ::ffff:169.254.169.254\nALLOW  64:ff9b::7f00:1\n```\n\nThe first three lines (native loopback, native IPv6 loopback, and a literal RFC 1918 address) are blocked as expected; the IPv4-mapped and NAT64 forms of the same internal destinations are allowed through.\n\n### Remediation\n\nUpgrade to the patched release. In the fix, `Address6` normalizes IPv4-mapped and NAT64 well-known addresses to their embedded IPv4 address before classifying, via a new `embeddedIPv4()` helper that `isLoopback`, `isLinkLocal`, `isMulticast`, and `isUnspecified` consult first. `Address6` also gains `isPrivate()`, `isCGNAT()`, and `isBroadcast()` for parity with `Address4`, and `getType()` now labels the `::ffff:0:0/96` range as `IPv4-mapped`. After upgrading, `new Address6('::ffff:127.0.0.1').isLoopback()` returns `true` and `new Address6('::ffff:10.0.0.1').isPrivate()` returns `true`.\n\nIf you cannot upgrade immediately, normalize embedded IPv4 addresses yourself before classifying: call `to4()` on any address where `isMapped4()` (or membership in `64:ff9b::/96`) is true, and run your IPv4 checks against the result.\n\n### A note on SSRF defense\n\nThese methods are address classifiers, not a complete SSRF defense. Regardless of this fix, a robust SSRF guard must resolve the hostname and validate the *resolved* IP against the socket it connects to, and account for DNS rebinding and redirects. Treat these checks as one layer, not the only one.\n\n### Credit\n\nReported by @OV-0-VO.",
+              "id": "GHSA-22jq-vg5j-6vgg",
+              "modified": "2026-08-04T21:26:58.439853625Z",
+              "published": "2026-08-03T19:52:33Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/security/advisories/GHSA-22jq-vg5j-6vgg"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-54272"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/commit/4a1f613f4c1bec915677dea923c10aaa09361ef9"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/beaugunderson/ip-address"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/releases/tag/v10.2.1"
+                }
+              ],
+              "related": [
+                "CGA-4hx9-47mf-jr9v"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:L/VI:N/VA:N/SC:H/SI:N/SA:N",
+                  "type": "CVSS_V4"
+                }
+              ],
+              "summary": "ip-address: misclassification of IPv4-mapped/NAT64 IPv6 addresses can bypass SSRF and trust-boundary checks"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "last_known_affected_version_range": "\u003c= 10.2.1",
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-4xrf-jv44-h6hh/GHSA-4xrf-jv44-h6hh.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "ip-address",
+                    "purl": "pkg:npm/ip-address"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "10.1.1"
+                        },
+                        {
+                          "fixed": "10.2.2"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-69198"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-20",
+                  "CWE-918"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:59:33Z",
+                "nvd_published_at": null,
+                "severity": "MODERATE"
+              },
+              "details": "### Summary\n\nEvery special-use classification method is built on `isInSubnet`, which short-circuits to `false` whenever the address's own subnet mask is *shorter* than the reference range's mask. That mask comes verbatim from the CIDR suffix on the parsed input, so appending a suffix such as `/0` suppresses classification entirely: `isLoopback()`, `isPrivate()`, `isLinkLocal()`, `isCGNAT()`, `isMulticast()`, `isUnspecified()`, `isBroadcast()`, `isULA()`, and `getType()` all report an internal address as unremarkable, while `correctForm()` and `address` still return the real internal target.\n\nAn application that builds a network trust-boundary decision on these checks (for example a filter intended to block Server-Side Request Forgery, or SSRF) may therefore treat an internal target as external and allow the request. SSRF is an attack in which a user-supplied address coaxes the server into making a request to an internal destination the user could not otherwise reach, such as a loopback service or a cloud metadata endpoint.\n\n### Details\n\n`isInSubnet` in `src/common.ts` opens with a guard that compares the two prefix lengths:\n\n```js\nexport function isInSubnet(this, address) {\n  if (this.subnetMask \u003c address.subnetMask) {\n    return false;                                  // \u003c-- reached before any bit comparison\n  }\n\n  if (this.mask(address.subnetMask) === address.mask()) {\n    return true;\n  }\n\n  return false;\n}\n```\n\nThat guard is correct for the question `isInSubnet` is named for — whether one *network* is contained in another, where a `/0` network genuinely is not inside a `/8`. It is wrong for classification, which asks a question about the address itself and must not depend on the prefix the caller happened to write. `/0` is shorter than every reference prefix in the special-use tables (loopback `/8`, link-local `/16`, CGNAT `/10`, ULA `/7`, multicast `/4`), so for a classification call the bit comparison is never reached and the method returns `false`.\n\nThe underlying bit comparison is correct, and `mask(n)` already returns the first `n` bits of the full parsed address independently of `subnetMask` — the defect is solely that the containment guard sits in the classification path. Host bits are retained through parsing, so `correctForm()` still yields the real target and the address remains fully usable for connecting.\n\n`/0` is the universal case because it is shorter than every reference prefix, but any suffix shorter than the specific range being tested has the same effect: `10.0.0.5/7` defeats `isPrivate()` for `10.0.0.0/8`.\n\n### Affected versions\n\n`\u003e= 10.1.1, \u003c= 10.2.1`. The `is*` classification API was introduced for `Address4` in 10.1.1 and extended to `Address6` in 10.2.0; releases before 10.1.1 do not expose it and are not affected through this vector. The containment guard itself is much older, but `isInSubnet` alone is a subnet-containment predicate whose behavior here is correct.\n\nThis also defeats the fix released in 10.2.1 for GHSA-22jq-vg5j-6vgg: that release classifies IPv4-mapped and NAT64 addresses by their embedded IPv4 address, but the normalization is reached through `isInSubnet`, so `::ffff:127.0.0.1/0` reverts to being reported as non-internal.\n\n### Impact\n\nEvery classifier is affected on both `Address4` and `Address6`. The sole exception is `Address6.isLinkLocal()` for *native* `fe80::/10` addresses, which compares raw bits directly; its IPv4-mapped path is still affected.\n\n| Address | Reported as | Actually points at |\n|---|---|---|\n| `127.0.0.1/0` | not loopback | loopback (`127.0.0.0/8`) |\n| `10.0.0.1/0`, `10.0.0.5/7` | not private | RFC 1918 `10/8` |\n| `172.16.5.5/0` | not private | RFC 1918 `172.16/12` |\n| `192.168.1.1/0` | not private | RFC 1918 `192.168/16` |\n| `169.254.169.254/0` | not link-local | link-local / cloud metadata (IMDS) |\n| `100.64.0.1/0` | not CGNAT | CGNAT `100.64/10` |\n| `0.0.0.0/0`, `255.255.255.255/0` | not unspecified / not broadcast | unspecified / broadcast |\n| `::1/0` | not loopback | IPv6 loopback |\n| `fc00::1/0` | not ULA, not private | IPv6 ULA `fc00::/7` |\n| `ff02::1/0` | not multicast | IPv6 multicast |\n| `::ffff:127.0.0.1/0` | not loopback | loopback, via IPv4-mapped |\n| `::ffff:169.254.169.254/0` | not link-local | IMDS, via IPv4-mapped |\n| `64:ff9b::7f00:1/0` | not loopback | loopback, via NAT64 |\n\n`getType()` returns `Global unicast` for all of the IPv6 cases above, and `getScope()` follows it.\n\n### Reachability\n\nA CIDR suffix is not legal in a URL host, so this is not reachable through the most common SSRF shape. `new URL('http://127.0.0.1/0')` parses `hostname` as `127.0.0.1` and `pathname` as `/0`, and a guard that classifies the extracted hostname is unaffected. Exploitation requires an application that accepts a bare address string that may carry a suffix and passes it to the constructor before classifying — for example an allow/deny field, a webhook target, or a proxy destination taken as a plain host rather than parsed out of a URL.\n\n### Proof of concept\n\n`npm i ip-address@10.2.1`, then:\n\n```js\nconst { Address4, Address6 } = require('ip-address');\n\n// true =\u003e block as internal, false =\u003e allow outbound\nfunction isBlocked(host) {\n  try {\n    const a = new Address4(host);\n    return a.isPrivate() || a.isLoopback() || a.isLinkLocal() || a.isCGNAT()\n        || a.isMulticast() || a.isUnspecified() || a.isBroadcast();\n  } catch {}\n  try {\n    const a = new Address6(host);\n    return a.isPrivate() || a.isLoopback() || a.isLinkLocal() || a.isULA()\n        || a.isMulticast() || a.isUnspecified();\n  } catch {}\n  return false;\n}\n\nfor (const h of ['127.0.0.1', '10.0.0.1', '::1',\n                 '127.0.0.1/0', '10.0.0.5/7', '169.254.169.254/0',\n                 '::1/0', '::ffff:127.0.0.1/0', '64:ff9b::7f00:1/0']) {\n  console.log(isBlocked(h) ? 'BLOCK ' : 'ALLOW ', h, '-\u003e', new (h.includes(':') ? Address6 : Address4)(h).correctForm());\n}\n```\n\nOn affected versions every suffixed internal target is allowed, and `correctForm()` shows the request would reach the real internal address:\n\n```\nBLOCK  127.0.0.1 -\u003e 127.0.0.1\nBLOCK  10.0.0.1 -\u003e 10.0.0.1\nBLOCK  ::1 -\u003e ::1\nALLOW  127.0.0.1/0 -\u003e 127.0.0.1\nALLOW  10.0.0.5/7 -\u003e 10.0.0.5\nALLOW  169.254.169.254/0 -\u003e 169.254.169.254\nALLOW  ::1/0 -\u003e ::1\nALLOW  ::ffff:127.0.0.1/0 -\u003e ::ffff:7f00:1\nALLOW  64:ff9b::7f00:1/0 -\u003e 64:ff9b::7f00:1\n```\n\nThe first three lines are blocked as expected; the same destinations with a CIDR suffix are allowed through.\n\n### Remediation\n\nUpgrade to the patched release. In the fix, classification no longer consults the address's own prefix: a new `isHostInSubnet()` compares the address's host bits against the reference range only, and every classifier (`isLoopback`, `isPrivate`, `isLinkLocal`, `isCGNAT`, `isMulticast`, `isUnspecified`, `isBroadcast`, `isULA`, `isMapped4`, `isTeredo`, `is6to4`, `isDocumentation`, `getType`, and the IPv4-mapped/NAT64 normalization behind `embeddedIPv4`) uses it. `isInSubnet` keeps its subnet-containment semantics unchanged, including the guard that a wider network is not contained in a narrower one. After upgrading, `new Address4('127.0.0.1/0').isLoopback()` returns `true`.\n\nIf you cannot upgrade immediately, strip the suffix before classifying by re-parsing `addressMinusSuffix`:\n\n```js\nconst parsed = new Address4(userInput);\nconst host = new Address4(parsed.addressMinusSuffix);   // classify this one\n```\n\n### A note on SSRF defense\n\nThese methods are address classifiers, not a complete SSRF defense. Regardless of this fix, a robust SSRF guard must resolve the hostname and validate the *resolved* IP against the socket it connects to, and account for DNS rebinding and redirects. Treat these checks as one layer, not the only one.\n\n### Credit\n\nReported by @hi-im-glitchless.",
+              "id": "GHSA-4xrf-jv44-h6hh",
+              "modified": "2026-08-04T21:27:00.697711100Z",
+              "published": "2026-08-03T19:59:33Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/security/advisories/GHSA-4xrf-jv44-h6hh"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/commit/488fe9bc7c35363b4b090494fc38c266d217740d"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/beaugunderson/ip-address"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/releases/tag/v10.2.2"
+                }
+              ],
+              "related": [
+                "CGA-2cm6-q4c4-8mch"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:L/VI:N/VA:N/SC:H/SI:N/SA:N",
+                  "type": "CVSS_V4"
+                }
+              ],
+              "summary": "ip-address: a CIDR suffix on the parsed address suppresses special-use classification and can bypass SSRF and trust-boundary checks"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "last_known_affected_version_range": "\u003c= 10.3.0",
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-mwp4-54f8-5fhr/GHSA-mwp4-54f8-5fhr.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "ip-address",
+                    "purl": "pkg:npm/ip-address"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "10.3.1"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-69192"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-20",
+                  "CWE-918"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:59:44Z",
+                "nvd_published_at": null,
+                "severity": "HIGH"
+              },
+              "details": "### Summary\n\n`Address4` accepts an octet written with a leading zero and decodes it as decimal, while the WHATWG URL host parser, `inet_aton`, and `getaddrinfo` all decode a leading zero as octal. The library and the network stack therefore disagree about which host a string names. `new Address4('012.0.0.1')` reports `correctForm()` of `12.0.0.1` and `isPrivate()` of `false`, but `fetch('http://012.0.0.1/')` connects to `10.0.0.1`.\n\nAn application that builds a network trust-boundary decision on these checks (for example a filter intended to block Server-Side Request Forgery, or SSRF) will classify an internal target as external and allow the request. SSRF is an attack in which a user-supplied address coaxes the server into making a request to an internal destination the user could not otherwise reach, such as a loopback service or a cloud metadata endpoint.\n\n### Details\n\n`Address4.parse` gates untrusted input on `RE_ADDRESS` (`src/v4/constants.ts:5`), whose per-octet alternative is:\n\n```\n(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\n```\n\nThe `[01]?[0-9][0-9]?` branch matches a leading zero, so `012` passes validation. Every downstream decode then reads the octet with `parseInt(part, 10)` (`src/common.ts:87`), yielding 12. A resolver reading the same string treats the leading `0` as base 8 and yields 10.\n\nThe defect is in the parse gate rather than in any one classifier, so every consumer of `Address4` inherits it: `isPrivate()`, `isLoopback()`, `isLinkLocal()`, `isCGNAT()`, `isInSubnet()`, `isHostInSubnet()`, and `correctForm()` are all computed from the mis-decoded octets.\n\n`Address6` already rejects this notation on its IPv4-in-IPv6 path, throwing \"IPv4 addresses can't have leading zeroes.\" (`src/ipv6.ts:751-762`), so `Address4` is the outlier within the library.\n\n### Affected versions\n\n`\u003c= 10.3.0`. Unlike GHSA-22jq-vg5j-6vgg and GHSA-4xrf-jv44-h6hh, which were bounded below by the `is*` classification API introduced in 10.1.1, this defect is in `parse` and reaches every release: a guard built on `isInSubnet()` against the RFC 1918 ranges is affected in versions predating that API.\n\n### Impact\n\nThe disagreement runs in both directions. Under-blocking is the security-relevant case; over-blocking is a correctness and availability problem.\n\n| Input | `correctForm()` | Classified as | Resolver reaches | Effect |\n|---|---|---|---|---|\n| `012.0.0.1` | `12.0.0.1` | public | `10.0.0.1` | internal target allowed |\n| `012.012.012.012` | `12.12.12.12` | public | `10.10.10.10` | internal target allowed |\n| `010.0.0.1` | `10.0.0.1` | private | `8.0.0.1` | public target blocked |\n\nReachable targets are those whose leading octet is expressible as a three-character octal literal, which covers the whole of `10.0.0.0/8` and `0.0.0.0/8`. A four-character octet such as `0177` for 127 is rejected by the regex, so loopback is not reachable through this path; see the note on rejection below for why rejection is not the same as safety.\n\n### Reachability\n\nA leading-zero address is a legal URL host, so this is reachable through the ordinary URL path with no unusual application shape required:\n\n```js\nnew URL('http://012.0.0.1/').hostname   // '10.0.0.1'\n```\n\nThis distinguishes it from GHSA-4xrf-jv44-h6hh, where the `/0` CIDR suffix could not survive URL parsing and exploitation therefore required an application that accepted a bare suffix-bearing string. Here the attack rides the same code path a normal user-supplied URL takes.\n\n### Proof of concept\n\n`npm i ip-address@10.3.0`, then:\n\n```js\nconst { Address4 } = require('ip-address');\n\n// A guard of the shape the library documents.\nfunction isBlocked(host) {\n  return Address4.isValid(host) \u0026\u0026 new Address4(host).isPrivate();\n}\n\nfor (const h of ['10.0.0.1', '012.0.0.1', '012.012.012.012']) {\n  console.log(isBlocked(h) ? 'BLOCK' : 'ALLOW', h,\n              '-\u003e resolver reaches', new URL('http://' + h + '/').hostname);\n}\n```\n\nOn affected versions:\n\n```\nBLOCK 10.0.0.1 -\u003e resolver reaches 10.0.0.1\nALLOW 012.0.0.1 -\u003e resolver reaches 10.0.0.1\nALLOW 012.012.012.012 -\u003e resolver reaches 10.10.10.10\n```\n\nThe literal RFC 1918 address is blocked as expected; the octal-ambiguous spellings of the same destinations are allowed through.\n\n### Remediation\n\nUpgrade to the patched release. In the fix, `Address4.parse` rejects any octet with a leading zero followed by further digits, mirroring the check `Address6` already applies at `src/ipv6.ts:751`, and `RE_ADDRESS` is tightened so those forms no longer appear in the valid corpus. After upgrading, `Address4.isValid('012.0.0.1')` returns `false` and the constructor throws `AddressError`.\n\nThis rejects input that previous releases accepted. An application that deliberately feeds zero-padded addresses such as `010.010.010.010` from a legacy system must strip the padding before parsing.\n\nIf you cannot upgrade immediately, reject any host whose octets carry a leading zero before you parse it:\n\n```js\nif (host.split('.').some((octet) =\u003e /^0\\d/.test(octet))) throw new Error('ambiguous address');\n```\n\n### A note on SSRF defense\n\nThese methods are address classifiers, not a complete SSRF defense. Regardless of this fix, a robust SSRF guard must resolve the hostname and validate the *resolved* IP against the socket it connects to, and account for DNS rebinding and redirects. Treat these checks as one layer, not the only one.\n\nOne specific pitfall is worth naming, because the fix above does not remove it. `Address4.isValid()` returning `false` means \"this is not a dotted-quad IPv4 literal\"; it does not mean \"this is not an address that will reach an internal host\". Every one of the following is rejected by `isValid()` and still resolves to loopback:\n\n```\n0177.0.0.1    0x7f.0.0.1    0x7f000001    2130706433\n127.1         127.0.1       127.0.0.1.    １２７.0.0.1\n```\n\nA guard shaped `if (Address4.isValid(h)) { check() } else { treatAsHostname() }` therefore routes all of them past the IP check. Rejecting these is correct behavior for an IPv4 parser and is not changed by this advisory, but a guard must treat \"not a valid literal\" as a case to resolve and re-check, never as a case to allow.",
+              "id": "GHSA-mwp4-54f8-5fhr",
+              "modified": "2026-08-04T21:26:57.623327132Z",
+              "published": "2026-08-03T19:59:44Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/security/advisories/GHSA-mwp4-54f8-5fhr"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/commit/56368cb3d66c73ba0ee9b6b834fd31b22c2fd71e"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/beaugunderson/ip-address"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/beaugunderson/ip-address/releases/tag/v10.3.1"
+                }
+              ],
+              "related": [
+                "CGA-592h-q6c7-9f56"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:L/VI:N/VA:N/SC:H/SI:N/SA:N",
+                  "type": "CVSS_V4"
+                }
+              ],
+              "summary": "ip-address: Address4 decodes leading-zero octets as decimal while resolvers decode them as octal, allowing SSRF and trust-boundary bypass"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "js-yaml",
+            "version": "5.2.1",
+            "ecosystem": "npm"
+          },
+          "dependency_groups": [
+            "dev"
+          ],
+          "groups": [
+            {
+              "ids": [
+                "GHSA-pm4m-ph32-ghv5"
+              ],
+              "aliases": [
+                "GHSA-pm4m-ph32-ghv5"
+              ],
+              "max_severity": "7.5"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "last_known_affected_version_range": "\u003c= 5.2.1",
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-pm4m-ph32-ghv5/GHSA-pm4m-ph32-ghv5.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "js-yaml",
+                    "purl": "pkg:npm/js-yaml"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "5.0.0"
+                        },
+                        {
+                          "fixed": "5.2.2"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-407"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-07-24T16:47:36Z",
+                "nvd_published_at": null,
+                "severity": "HIGH"
+              },
+              "details": "### Summary\nParsing a small YAML document can take exponential time. An application that calls `load()` or `loadAll()` on untrusted input can be hung by a payload under 200 bytes.\n\n### Details\nWhen an entry in a flow sequence turns out to be a `key: value` pair, the parser rewinds and parses that entry a second time as the key.\nIf the key is itself a nested flow sequence of the same shape, every level is parsed twice, so the total work is O(2^n) in the nesting depth. The default `maxDepth` of 100 does not help, because the time is already unmanageable at about 30 to 40 levels.\n\nRoot cause, potentially the: `readFlowCollection` in [parser.ts](https://github.com/nodeca/js-yaml/blob/master/src/parser/parser.ts), the `restoreState` followed by a second `parseNode` further down.\n\n\n### PoC\n\n```javascript\nconst yaml = require('js-yaml')\nconst n = 30\nyaml.load('[ '.repeat(n) + '1' + ' ]: 0'.repeat(n))\n```\n\nWith default options: 22 levels takes about 1 second, 26 levels about 17 seconds, 30 levels over 2 minutes. The input stays under 200 bytes and grows linearly with `n`.\n\n### Impact\nDenial of service. A single small request can keep one CPU busy for minutes or longer and blocks the Node event loop, so one request can stall the whole process. No anchors, aliases, merges, tags, or non default options are required, and it reproduces on the default schema.",
+              "id": "GHSA-pm4m-ph32-ghv5",
+              "modified": "2026-07-28T03:14:46.327326259Z",
+              "published": "2026-07-24T16:47:36Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodeca/js-yaml/security/advisories/GHSA-pm4m-ph32-ghv5"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodeca/js-yaml/commit/3e5240f9cbe645ce5afb58524954a13c8539c853"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/nodeca/js-yaml"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodeca/js-yaml/releases/tag/5.2.2"
+                }
+              ],
+              "related": [
+                "CGA-xpg6-jjcp-vx7x"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "js-yaml: Exponential parsing time in flow collections leads to denial of service"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "undici",
+            "version": "7.28.0",
+            "ecosystem": "npm"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-4cwx-7wf7-3272"
+              ],
+              "aliases": [
+                "CVE-2026-13697",
+                "GHSA-4cwx-7wf7-3272"
+              ],
+              "max_severity": "7.4"
+            },
+            {
+              "ids": [
+                "GHSA-8xcm-r25x-g524"
+              ],
+              "aliases": [
+                "CVE-2026-16728",
+                "GHSA-8xcm-r25x-g524"
+              ],
+              "max_severity": "4.8"
+            },
+            {
+              "ids": [
+                "GHSA-jr45-8vmc-qm54"
+              ],
+              "aliases": [
+                "CVE-2026-14643",
+                "GHSA-jr45-8vmc-qm54"
+              ],
+              "max_severity": "5.9"
+            },
+            {
+              "ids": [
+                "GHSA-m8rv-5g2x-5cg5"
+              ],
+              "aliases": [
+                "CVE-2026-15157",
+                "GHSA-m8rv-5g2x-5cg5"
+              ],
+              "max_severity": "4.2"
+            },
+            {
+              "ids": [
+                "GHSA-v3r7-h72x-cjcm"
+              ],
+              "aliases": [
+                "CVE-2026-16729",
+                "GHSA-v3r7-h72x-cjcm"
+              ],
+              "max_severity": "4.8"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-4cwx-7wf7-3272/GHSA-4cwx-7wf7-3272.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "7.0.0"
+                        },
+                        {
+                          "fixed": "7.29.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-4cwx-7wf7-3272/GHSA-4cwx-7wf7-3272.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "8.0.0"
+                        },
+                        {
+                          "fixed": "8.9.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-13697"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-200",
+                  "CWE-248",
+                  "CWE-525"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:19:47Z",
+                "nvd_published_at": "2026-07-29T17:16:50Z",
+                "severity": "HIGH"
+              },
+              "details": "### Summary\n\nTwo issues in undici's cache interceptor, both fixed by the same patch on `lib/util/cache.js`:\n\n1. **Shared-cache disclosure:** Responses with malformed qualified `Cache-Control: private` directives such as `private=\"\"` or `private=\",\"` can be incorrectly stored in the default shared cache, then served to a later caller with the same cache key.\n2. **Parse-time crash:** Mixed unqualified-and-qualified `private` directives in the same header (such as `public, max-age=60, private, private=\"hdr\"`) cause an uncaught `TypeError` in the cache-control parser, terminating the request.\n\n### Impact\n\n#### Shared-cache disclosure\n\nApplications using `interceptors.cache()` in shared mode may cache a user-specific response and serve it to a later caller with the same cache key. This can disclose private response bodies and headers, including `Set-Cookie`.\n\nRequired conditions:\n\n- the cache interceptor is enabled in shared mode, including the default configuration;\n- an upstream returns a malformed directive such as `Cache-Control: public, max-age=300, private=\"\"`;\n- another request later matches the same cache key, without a separating `Vary` header.\n\n#### Parse-time crash\n\nApplications using `interceptors.cache()` against an upstream that returns a `Cache-Control` header combining unqualified `private` with qualified `private=\"...\"` see an uncaught `TypeError: output.private.concat is not a function` during response handling. The request rejects; depending on the consumer's error handling, the process may exit.\n\n### Details\n\n`private=\"\"` is parsed as `{ private: [''] }`. The shared-cache guard only rejects `private === true`, so the response can be stored. When served from cache, the previous user's body and headers may be returned to a different user.\n\nFor the crash variant, an unqualified `private` directive sets `output.private = true`, then a subsequent qualified `private=\"hdr\"` directive attempts `output.private.concat(['hdr'])`, which throws because boolean has no `concat` method.\n\nThe patch routes the qualified-directive path through a shared helper that normalizes empty-after-trim arrays to `true` and preserves existing `true` values, closing both vectors.\n\n### Patches\n\nUpgrade to `undici` 7.29.0 or 8.9.0. Both releases fix the qualified `private` directive handling that caused the shared-cache storage and the parser crash.\n\n### Workarounds\n\nUntil patched, avoid shared `interceptors.cache()` for user-specific responses, use `type: 'private'`, or disable caching for affected origins.\n\n### Credit\n\nDisclosure variant reported by @h0rk1p via HackerOne report [#3817497](https://hackerone.com/reports/3817497).",
+              "id": "GHSA-4cwx-7wf7-3272",
+              "modified": "2026-08-04T21:26:59.185592001Z",
+              "published": "2026-08-03T19:19:47Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/security/advisories/GHSA-4cwx-7wf7-3272"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-13697"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/4fe5bc5fefe5ac81a200fc8e1cf84b8bf8464451"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://cna.openjsf.org/security-advisories.html"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/nodejs/undici"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v7.29.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v8.9.0"
+                }
+              ],
+              "related": [
+                "CGA-8m4w-gqg6-g2w7"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "undici vulnerable to cross-user information disclosure and parse-time crash via degenerate private cache directives"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-8xcm-r25x-g524/GHSA-8xcm-r25x-g524.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "6.28.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-8xcm-r25x-g524/GHSA-8xcm-r25x-g524.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "7.0.0"
+                        },
+                        {
+                          "fixed": "7.29.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-8xcm-r25x-g524/GHSA-8xcm-r25x-g524.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "8.0.0"
+                        },
+                        {
+                          "fixed": "8.9.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-16728"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-444"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:24:33Z",
+                "nvd_published_at": "2026-07-29T21:17:46Z",
+                "severity": "MODERATE"
+              },
+              "details": "### Impact\n\nUndici's `interceptors.retry()` can deliver a response whose body length does not match the `Content-Length` header exposed to the application after a retry or resume of a partial response. Applications that use `interceptors.retry()` and forward upstream response headers and bodies downstream, for example proxy or gateway applications, may emit an invalid HTTP response with a stale `Content-Length` header. This can lead to downstream response desynchronization, connection hangs, or response corruption in clients or intermediaries that rely on the forwarded framing metadata.\n\nA malicious or faulty upstream can respond to a range request with a `206 Partial Content` response such as:\n\n```http\nContent-Range: bytes 0-99/300\nContent-Length: 300\n```\n\nand then send only 99 bytes before closing the socket. `interceptors.retry()` can then retry with `Range: bytes=99-99`, receive the final byte, and deliver a 100-byte body to the application while the response headers still contain `Content-Length: 300` from the first response.\n\nThe bug requires `interceptors.retry()` to be enabled, an upstream that returns a partial response with a mismatched framing header, and a downstream forwarder that does not remove or recalculate `Content-Length`.\n\n### Patches\n\nPatched in undici v6.28.0, v7.29.0, and v8.9.0. Users should upgrade to one of these versions or later.\n\n### Workarounds\n\n- Disable `interceptors.retry()` for untrusted upstreams.\n- Remove or recalculate `Content-Length` before forwarding a response body assembled or transformed by Undici.",
+              "id": "GHSA-8xcm-r25x-g524",
+              "modified": "2026-08-04T21:26:58.366960979Z",
+              "published": "2026-08-03T19:24:33Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/security/advisories/GHSA-8xcm-r25x-g524"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-16728"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/1b5a5312c3a7d7a30c31bf0d000b39a8a2531e1c"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/2b3f749336d356bbbc50192f87f6cf7bc714721a"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/4a9dafb16ff43880cf590e6d9c2aeee25fbff6d7"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/4fd5a0c61e627f928b7003adc4ffe1e55ec63420"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/cba3a52ac2e7abcc4e656d82af8579ea82c2bb9e"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/e11a68ed4ff345c79402476f7a00d473443e318d"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://hackerone.com/reports/3828685"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://cna.openjsf.org/security-advisories.html"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/nodejs/undici"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v6.28.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v7.29.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v8.9.0"
+                }
+              ],
+              "related": [
+                "CGA-fgmh-44p5-9m5q"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "undici vulnerable to downstream response desynchronization via retry interceptor"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-jr45-8vmc-qm54/GHSA-jr45-8vmc-qm54.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "7.0.0"
+                        },
+                        {
+                          "fixed": "7.29.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-jr45-8vmc-qm54/GHSA-jr45-8vmc-qm54.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "8.0.0"
+                        },
+                        {
+                          "fixed": "8.9.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-14643"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-436",
+                  "CWE-524"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:32:12Z",
+                "nvd_published_at": "2026-07-29T22:16:52Z",
+                "severity": "MODERATE"
+              },
+              "details": "## Impact\n\nUndici's cache interceptor mishandles optional whitespace (OWS) placed around the `=` of a qualified `no-cache` or `private` Cache-Control directive, such as `no-cache =\"authorization\"` (OWS before `=`) or `no-cache= \"authorization\"` (OWS after `=`). The parser either drops the directive entirely or stores a field name with literal quote characters, so the downstream cache decisions do not recognize the qualification and the response is stored.\n\nIn shared-cache mode, this allows a response containing one user's authenticated data to be served from cache to a subsequent caller, including an unauthenticated caller, when both requests resolve to the same cache key. The impact class is identical to CVE-2026-9678 (GHSA-pr7r-676h-xcf6); this advisory covers the whitespace-around-`=` bypass that the earlier fix did not normalize.\n\nAffected applications are those that explicitly enable the cache interceptor (`interceptors.cache()`) in shared mode, forward `Authorization` headers upstream, and receive cacheable responses with qualified `private` or `no-cache` directives whose field-name list is padded with OWS around the `=`.\n\n## Patches\n\nUpgrade to undici v7.29.0 or v8.9.0.\n\n## Workarounds\n\nIf upgrade is not immediately possible, disable shared-cache mode for traffic that includes `Authorization` headers, avoid caching responses to authenticated requests, or add `Vary: Authorization` upstream.",
+              "id": "GHSA-jr45-8vmc-qm54",
+              "modified": "2026-08-04T21:26:57.490221001Z",
+              "published": "2026-08-03T19:32:12Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/security/advisories/GHSA-jr45-8vmc-qm54"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-14643"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/85a240551c9feb8b8a0ecc56c84b2b3015add8a9"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/cb105d7c79069150982fa11acada0dd94a60dbbc"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://cna.openjsf.org/security-advisories.html"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/nodejs/undici"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v7.29.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v8.9.0"
+                }
+              ],
+              "related": [
+                "CGA-v8r2-g74j-hqgg"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "undici vulnerable to cross-user information disclosure via whitespace around equals in Cache-Control directives"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-m8rv-5g2x-5cg5/GHSA-m8rv-5g2x-5cg5.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "6.28.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-m8rv-5g2x-5cg5/GHSA-m8rv-5g2x-5cg5.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "7.0.0"
+                        },
+                        {
+                          "fixed": "7.29.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-m8rv-5g2x-5cg5/GHSA-m8rv-5g2x-5cg5.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "8.0.0"
+                        },
+                        {
+                          "fixed": "8.9.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-15157"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-93"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:33:53Z",
+                "nvd_published_at": "2026-07-29T22:16:52Z",
+                "severity": "MODERATE"
+              },
+              "details": "### Impact\n\nWhen an application passes a duck-typed blob-like body to undici's HTTP/1.1 dispatcher (via `request()`, `stream()`, `pipeline()`, or `dispatch()`) with a `.type` derived from untrusted input, an attacker can inject CRLF sequences (`\\r\\n`) to append arbitrary HTTP headers and potentially smuggle a second request past the upstream.\n\nThe vulnerable branch in `lib/dispatcher/client-h1.js` pushes `body.type` directly into the outgoing headers with no validation, while every other header path in undici goes through `isValidHeaderValue()`:\n\n```javascript\n} else if (util.isBlobLike(body) \u0026\u0026 request.contentType == null \u0026\u0026 body.type) {\n  headers.push('content-type', body.type)  // bypasses isValidHeaderValue()\n}\n```\n\nThe bug requires a hand-rolled duck-typed blob object or a Blob subclass with a controlled `.type`. Native `Blob` is safe because its constructor strips CRLF from `.type`. `fetch()` is unaffected because it validates via the `Headers` class. Ecosystem consumers that build duck-typed blob shapes from user input include `form-data-encoder`, `formdata-polyfill`, and `formdata-node`.\n\nSame defect class as `CVE-2022-35948` (explicit `content-type` sink, fixed in undici 5.8.2) and `CVE-2026-1527` (`upgrade` option sink, fixed in 6.24.0 / 7.24.0), both closed by adding `isValidHeaderValue()` on their respective sinks. This branch was missed.\n\n### Patches\n\nPatched in undici v6.28.0, v7.29.0, and v8.9.0. Users should upgrade to one of these versions or later.\n\n### Workarounds\n\n- Set an explicit, validated `content-type` header on the request options (skips the vulnerable branch).\n- Use a native `Blob` (or `fetch-blob`) instead of a hand-rolled duck-typed object.\n- Reject control characters in the MIME type before assigning it to `.type`.\n- Use `fetch()` instead of the non-`fetch` APIs.",
+              "id": "GHSA-m8rv-5g2x-5cg5",
+              "modified": "2026-08-04T21:26:57.967095860Z",
+              "published": "2026-08-03T19:33:53Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/security/advisories/GHSA-m8rv-5g2x-5cg5"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-15157"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/33928bc24f742ea8422ed90d17f2e0cc83e4d09d"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/740a0b7c173cb4a83a5b693e96e8f3a116cfc400"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/7d3cf924c262c486bc77f951348f4e5c847b7b42"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://cna.openjsf.org/security-advisories.html"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/nodejs/undici"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v6.28.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v7.29.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v8.9.0"
+                }
+              ],
+              "related": [
+                "CGA-vpq3-h495-g2vc"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "undici vulnerable to CRLF Injection via blob-like body 'type' property"
+            },
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-v3r7-h72x-cjcm/GHSA-v3r7-h72x-cjcm.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "6.28.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-v3r7-h72x-cjcm/GHSA-v3r7-h72x-cjcm.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "7.0.0"
+                        },
+                        {
+                          "fixed": "7.29.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/08/GHSA-v3r7-h72x-cjcm/GHSA-v3r7-h72x-cjcm.json"
+                  },
+                  "package": {
+                    "ecosystem": "npm",
+                    "name": "undici",
+                    "purl": "pkg:npm/undici"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "8.0.0"
+                        },
+                        {
+                          "fixed": "8.9.0"
+                        }
+                      ],
+                      "type": "SEMVER"
+                    }
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-16729"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-74"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-03T19:30:52Z",
+                "nvd_published_at": "2026-07-29T17:16:51Z",
+                "severity": "MODERATE"
+              },
+              "details": "## Impact\n\nThe `setCookie` function has two attribute injection paths. `validateCookieDomain` does not reject semicolons (`validateCookiePath` already does at 0x3B), so a `domain` value like `example.com; SameSite=None` lands verbatim as `Domain=example.com; SameSite=None`. The `unparsed` array's loop only checks each entry contains `=` and does not sanitize values, so an entry like `X-Custom=val; HttpOnly` lands unchanged, injecting `HttpOnly` without the caller setting `cookie.httpOnly = true`.\n\nApplications that pass user-controlled input to these fields, typically multi-tenant or reverse-proxy servers that scope session cookies to a tenant-supplied domain, can have SameSite CSRF protections bypassed, `Secure` or `HttpOnly` forced or stripped, or the intended SameSite tier overridden.\n\n## Patches\n\nPatched in undici v6.28.0, v7.29.0, and v8.9.0.\n\n## Workarounds\n\n- Sanitize `domain` values against the RFC 1034 letter-digit-hyphen set before passing to `setCookie`.\n- Do not pass user-controlled data to the `unparsed` field.",
+              "id": "GHSA-v3r7-h72x-cjcm",
+              "modified": "2026-08-04T21:26:58.725599541Z",
+              "published": "2026-08-03T19:30:52Z",
+              "references": [
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/security/advisories/GHSA-v3r7-h72x-cjcm"
+                },
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-16729"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/10d93fc332f2c8c161982dec3833201de29891b5"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/3bf91ddb493e853957f3a58e155326a668ab8aef"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/commit/af7484043ee075a6f216da0ad77e1dac55199235"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://cna.openjsf.org/security-advisories.html"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/nodejs/undici"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v6.28.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v7.29.0"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/nodejs/undici/releases/tag/v8.9.0"
+                }
+              ],
+              "related": [
+                "CGA-9jf5-qmm3-5c74"
+              ],
+              "schema_version": "1.7.5",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "experimental_config": {
+    "licenses": {
+      "summary": false,
+      "allowlist": null
+    }
+  }
+}

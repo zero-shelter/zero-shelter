@@ -1,0 +1,108 @@
+# Label each row: real (worth fixing here), noise (not actionable in this repo), dup (same issue as another row — name its fingerprint in notes)
+fingerprint	source	package	advisory	severity	title	label	notes
+001cacac42248bcd	osv-scanner	mathjs	CVE-2017-1001002	critical	Arbitrary Code Execution in mathjs		
+04500dc39bf8e425	npm-audit	mysql2	GHSA-MQR2-W7WJ-JJGR	moderate	mysql2 cache poisoning vulnerability		
+07a209731d142d3b	npm-audit	dicer	GHSA-WM7H-9275-46V2	high	Crash in HeaderParser in dicer		
+0a785f5484b77292	npm-audit	typed-function	GHSA-3QH4-R86R-GRVM	high	Arbitrary JavaScript Execution in typed-function		
+0b69fa52ef07a6aa	npm-audit	libxmljs	GHSA-6433-X5P4-8JC7	critical	libxmljs vulnerable to type confusion when parsing specially crafted XML		
+0c77d7f193eb34d3	osv-scanner	qs	CVE-2025-15284	moderate	qs's arrayLimit bypass in its bracket notation allows DoS via memory exhaustion		
+0c79ce6168ec5452	npm-audit	libxmljs	GHSA-JV72-59WQ-8RXM	high	libxmljs has segmentation fault, potentially leading to a denial-of-service (DoS)		
+0ca203dc505bb25b	osv-scanner	ejs	CVE-2022-29078	critical	ejs template injection vulnerability		
+0cd51671c9ee91f5	npm-audit	mysql2	GHSA-FPW7-J2HG-69V5	critical	mysql2 Remote Code Execution (RCE) via the readCodeFor function		
+0cd8c4a0f107b008	npm-audit	libxmljs	GHSA-MG49-JQGW-GCJ6	critical	libxmljs vulnerable to type confusion when parsing specially crafted XML 		
+0e0d78d4df2e1eb5	npm-audit	express-fileupload	GHSA-Q3W9-G74Q-VP5F	low	Denial of Service in express-fileupload		
+0e0d78d4df2e1eb5	npm-audit	express-fileupload	GHSA-Q3W9-G74Q-VP5F	low	Denial of Service in express-fileupload		
+0e0d78d4df2e1eb5	npm-audit	express-fileupload	GHSA-Q3W9-G74Q-VP5F	low	Denial of Service in express-fileupload		
+0e0d78d4df2e1eb5	npm-audit	express-fileupload	GHSA-Q3W9-G74Q-VP5F	low	Denial of Service in express-fileupload		
+0e0d78d4df2e1eb5	npm-audit	express-fileupload	GHSA-Q3W9-G74Q-VP5F	low	Denial of Service in express-fileupload		
+0e0d78d4df2e1eb5	osv-scanner	express-fileupload	GHSA-Q3W9-G74Q-VP5F	low	Denial of Service in express-fileupload		
+0e2c453e0d5a9427	osv-scanner	tar	CVE-2026-23950	high	Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS		
+108ba2f258a96a23	osv-scanner	sequelize	CVE-2023-22580	moderate	Sequelize information disclosure vulnerability		
+1556232da3129f08	npm-audit	tar	GHSA-23HP-3JRH-7FPW	critical	node-tar: Decompression/parse DoS via unlimited input		
+16b7760835606031	npm-audit	tar	GHSA-R292-9MHP-454M	moderate	node-tar: Uncontrolled recursion in mapHas/filesFilter allows uncatchable stack-overflow DoS via crafted long-path tar with member selection		
+16b7760835606031	osv-scanner	tar	GHSA-R292-9MHP-454M	moderate	node-tar: Uncontrolled recursion in mapHas/filesFilter allows uncatchable stack-overflow DoS via crafted long-path tar with member selection		
+1db0056004ccb6e6	osv-scanner	tar	CVE-2026-26960	high	Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction		
+1f18c68513e3aec5	npm-audit	request	GHSA-P8P7-X288-28G6	moderate	Server-Side Request Forgery in Request		
+1ff1b8dddeb1a162	npm-audit	tar	GHSA-QFFP-2RHF-9H96	high	tar has Hardlink Path Traversal via Drive-Relative Linkpath		
+207ae20f1fb56179	osv-scanner	tar	CVE-2026-59871	moderate	node-tar: Process crash via PAX numeric path type confusion		
+218a3e2a0540e893	npm-audit	mysql2	GHSA-PMH2-WPJM-FJ45	high	mysql2 vulnerable to Prototype Pollution		
+25585a2ee27e1d4b	osv-scanner	tar	CVE-2026-29786	high	tar has Hardlink Path Traversal via Drive-Relative Linkpath		
+27ceed0043b0aa75	osv-scanner	mathjs	CVE-2020-7743	high	Prototype Pollution in mathjs		
+2c8bfe2273740bf8	osv-scanner	tar	CVE-2026-53655	moderate	node-tar applies PAX size override to intermediary GNU long-name/long-link headers, causing tar parser interpretation differential (file smuggling)		
+2e141b8fa958fe6b	npm-audit	sequelize	GHSA-VQFX-GJ96-3W95	critical	Unsafe fall-through in getWhereConditions		
+2fc255e1f09e5242	osv-scanner	tough-cookie	CVE-2023-26136	moderate	tough-cookie Prototype Pollution vulnerability		
+30845ec0fe9d401e	npm-audit	tar	GHSA-F5X3-32G6-XQ36	moderate	Denial of service while parsing a tar file due to lack of folders count validation		
+30b19792c9d80bba	osv-scanner	typed-function	CVE-2017-1001004	high	Arbitrary JavaScript Execution in typed-function		
+33b655463b358f82	osv-scanner	tar	CVE-2026-31802	high	node-tar Symlink Path Traversal via Drive-Relative Linkpath		
+38d6600800d8f661	npm-audit	mathjs	GHSA-PV8X-P9HQ-J328	critical	Arbitrary Code Execution in mathjs		
+3a874afa8a6e0d69	npm-audit	sequelize	GHSA-8C25-F3MJ-V6H8	moderate	Sequelize information disclosure vulnerability		
+3a91310e9839f435	npm-audit	tar	GHSA-8QQ5-RM4J-MR97	high	node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization		
+3cf6e56a58506c11	npm-audit	tar	GHSA-9PPJ-QMQM-Q256	high	node-tar Symlink Path Traversal via Drive-Relative Linkpath		
+3e3afc8c2d7ed6f0	npm-audit	tar	GHSA-83G3-92JG-28CX	high	Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction		
+44d033d61a516c2f	osv-scanner	validator	CVE-2021-3765	moderate	Inefficient Regular Expression Complexity in validator.js		
+459288b3fe5f6359	npm-audit	validator	GHSA-QGMG-GPPG-76G5	moderate	Inefficient Regular Expression Complexity in validator.js		
+4cfc1a85dbf26532	npm-audit	passport	GHSA-V923-W3X8-WH69	moderate	Passport vulnerable to session regeneration when a users logs in or out		
+4d920d55f369fa60	npm-audit	bcrypt	GHSA-5WG4-74H6-Q47V	moderate	Integer Overflow or Wraparound and Use of a Broken or Risky Cryptographic Algorithm in bcrypt		
+50068829f139df9a	osv-scanner	express-fileupload	CVE-2020-7699	critical	Prototype Pollution in express-fileupload		
+5a5babfb702f566a	osv-scanner	tar	CVE-2026-59875	moderate	node-tar: Uncaught Exception DoS via NUL byte in PAX path/linkpath records		
+5b75876cb89462da	osv-scanner	passport	CVE-2022-25896	moderate	Passport vulnerable to session regeneration when a users logs in or out		
+5f45efea75d7eab3	npm-audit	tar	GHSA-8X88-C5MF-7J5W	high	node-tar: Negative tar entry size causes infinite loop in archive replace		
+61097fa13d8ae234	npm-audit	express-fileupload	GHSA-9WCG-JRWF-8GG7	critical	Prototype Pollution in express-fileupload		
+6194d94ecd0821c6	osv-scanner	mathjs	CVE-2017-1001003	critical	Arbitrary Code Execution in mathjs		
+622f2356617ac44c	osv-scanner	sequelize	CVE-2023-22579	critical	Unsafe fall-through in getWhereConditions		
+63b407b27b0b7015	npm-audit	tar	GHSA-W8WR-V893-VJVP	moderate	node-tar: Process crash via PAX numeric path type confusion		
+67f4deca6379238a	npm-audit	sequelize	GHSA-WRH9-CJV3-2HPW	critical	Sequelize vulnerable to SQL Injection via replacements		
+685169973215b662	npm-audit	form-data	GHSA-HMW2-7CC7-3QXX	high	form-data: CRLF injection in form-data via unescaped multipart field names and filenames		
+6d8e233e3b0d09fc	npm-audit	qs	GHSA-6RW7-VPXM-498P	moderate	qs's arrayLimit bypass in its bracket notation allows DoS via memory exhaustion		
+7341a5ffccdc8185	npm-audit	mathjs	GHSA-X2FC-MXCX-W4MF	high	Prototype Pollution in mathjs		
+7a329d15b97d3a0c	npm-audit	mysql2	GHSA-4RCH-2FH8-94VW	critical	MySQL2 for Node Arbitrary Code Injection		
+7e337cbe30312962	osv-scanner	form-data	CVE-2025-7783	critical	form-data uses unsafe random function in form-data for choosing boundary		
+7e66e64b5a01bf3e	npm-audit	tough-cookie	GHSA-72XF-G2V4-QVF3	moderate	tough-cookie Prototype Pollution vulnerability		
+7f77d8a190887087	osv-scanner	tar	CVE-2026-59873	critical	node-tar: Decompression/parse DoS via unlimited input		
+81a7319121396787	osv-scanner	express-fileupload	CVE-2022-27261	high	Express-FileUpload Arbitrary File Overwrite		
+81fb01aa8fcb6972	osv-scanner	sequelize	CVE-2023-25813	critical	Sequelize vulnerable to SQL Injection via replacements		
+8aec0ac5f22081f0	osv-scanner	mysql2	CVE-2024-21507	moderate	mysql2 cache poisoning vulnerability		
+8d2d085d2c873cbd	npm-audit	validator	GHSA-9965-VMPH-33XX	moderate	validator.js has a URL validation bypass vulnerability in its isURL function		
+8d44946c3ad120d0	osv-scanner	uuid	CVE-2026-41907	moderate	uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided		
+8fb379a700f6af92	npm-audit	ejs	GHSA-PHWQ-J96M-2C2Q	critical	ejs template injection vulnerability		
+938b714466ff4889	osv-scanner	mysql2	CVE-2024-21508	critical	mysql2 Remote Code Execution (RCE) via the readCodeFor function		
+93f57b236a8c03df	npm-audit	tar	GHSA-3JFQ-G458-7QM9	high	Arbitrary File Creation/Overwrite due to insufficient absolute path sanitization		
+9553408d1eb9025f	osv-scanner	cookie	CVE-2024-47764	low	cookie accepts cookie name, path, and domain with out of bounds characters		
+9715b8f6869bddec	osv-scanner	sequelize	CVE-2023-22578	critical	Sequelize - Default support for “raw attributes” when using parentheses		
+9b2e62b145b4e3f5	npm-audit	sequelize	GHSA-F598-MFPV-GMFX	critical	Sequelize - Default support for “raw attributes” when using parentheses		
+9cba8a6a9a26e012	npm-audit	cookie	GHSA-PXG6-PF52-XH8X	low	cookie accepts cookie name, path, and domain with out of bounds characters		
+a1d611b9f2b5e3c4	npm-audit	mysql2	GHSA-49J4-86M8-Q2JW	moderate	mysql2 vulnerable to Prototype Poisoning		
+a7a981dad25b7541	npm-audit	ejs	GHSA-GHR5-CH3P-VCR6	moderate	ejs lacks certain pollution protection		
+a7be60cd187e677e	osv-scanner	tar	CVE-2024-28863	moderate	Denial of service while parsing a tar file due to lack of folders count validation		
+aac5d44191830900	osv-scanner	mysql2	CVE-2024-21512	high	mysql2 vulnerable to Prototype Pollution		
+ac5a481100c338ec	osv-scanner	tar	CVE-2026-59874	high	node-tar: Negative tar entry size causes infinite loop in archive replace		
+af90dbe7be37029a	osv-scanner	tar	CVE-2026-24842	high	node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal		
+b24dc4ec87e08544	npm-audit	tar	GHSA-GVWX-54WH-QM9J	moderate	node-tar: Uncaught Exception DoS via NUL byte in PAX path/linkpath records		
+b3f8f610c833b3e3	osv-scanner	validator	CVE-2025-56200	moderate	validator.js has a URL validation bypass vulnerability in its isURL function		
+b8d48c1ba338a9ef	osv-scanner	mysql2	CVE-2024-21509	moderate	mysql2 vulnerable to Prototype Poisoning		
+b9262e397a26ad39	osv-scanner	validator	CVE-2025-12758	high	Validator is Vulnerable to Incomplete Filtering of One or More Instances of Special Elements		
+bb9c2e5905cc1f51	npm-audit	mathjs	GHSA-VX5C-87QX-CV6C	critical	Arbitrary Code Execution in mathjs		
+bbff71a5eda13373	osv-scanner	form-data	CVE-2026-12143	high	form-data: CRLF injection in form-data via unescaped multipart field names and filenames		
+bf55841b26f78f3a	osv-scanner	ejs	CVE-2024-33883	moderate	ejs lacks certain pollution protection		
+c42d60d334eeea8f	osv-scanner	tar	CVE-2026-23745	high	node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization		
+c4b8a83962df2d97	npm-audit	tar	GHSA-34X7-HFP2-RC4V	high	node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal		
+c79c158d38f08027	osv-scanner	dicer	CVE-2022-24434	high	Crash in HeaderParser in dicer		
+c9e7cb1f4002d5ab	npm-audit	form-data	GHSA-FJXV-7RQG-78G4	critical	form-data uses unsafe random function in form-data for choosing boundary		
+cbb4861139880352	npm-audit	tar	GHSA-VMF3-W455-68VH	moderate	node-tar applies PAX size override to intermediary GNU long-name/long-link headers, causing tar parser interpretation differential (file smuggling)		
+cce1874f920318c6	osv-scanner	libxmljs	CVE-2025-25341	high	libxmljs has segmentation fault, potentially leading to a denial-of-service (DoS)		
+ce83334f60b03a58	npm-audit	sequelize	GHSA-V8FG-2RW7-Q452	critical	Sequelize: SQL Injection (Oracle DB)		
+d578196471f00ac9	osv-scanner	tar	CVE-2021-37713	high	Arbitrary File Creation/Overwrite on Windows via insufficient relative path sanitization		
+ded210f37073cbda	osv-scanner	libxmljs	CVE-2024-34392	critical	libxmljs vulnerable to type confusion when parsing specially crafted XML 		
+e2d05ef9a74806ae	npm-audit	node-serialize	GHSA-Q4V7-4RHW-9HQM	critical	Code Execution through IIFE in node-serialize		
+e579c997665e3b9c	npm-audit	express-fileupload	GHSA-W4M6-X6C2-J5C9	high	Express-FileUpload Arbitrary File Overwrite		
+ea93c0cc7528fd46	osv-scanner	libxmljs	CVE-2024-34391	critical	libxmljs vulnerable to type confusion when parsing specially crafted XML		
+eb9ef658268daf08	npm-audit	validator	GHSA-VGHF-HV5Q-VC2G	high	Validator is Vulnerable to Incomplete Filtering of One or More Instances of Special Elements		
+ebb15c36a1ba422a	osv-scanner	mysql2	CVE-2024-21511	critical	MySQL2 for Node Arbitrary Code Injection		
+ecf8ad7618fa6b1b	npm-audit	tar	GHSA-5955-9WPR-37JH	high	Arbitrary File Creation/Overwrite on Windows via insufficient relative path sanitization		
+edb30410b6a892d2	osv-scanner	sequelize	CVE-2026-69240	critical	Sequelize: SQL Injection (Oracle DB)		
+eebaf72e24461847	npm-audit	tar	GHSA-R6Q2-HW4H-H46W	high	Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS		
+f0157acc8ad7e112	osv-scanner	request	CVE-2023-28155	moderate	Server-Side Request Forgery in Request		
+f1a0e7069a0c0ce4	osv-scanner	node-serialize	CVE-2017-5941	critical	Code Execution through IIFE in node-serialize		
+f922e572b03eb772	osv-scanner	tar	CVE-2021-32804	high	Arbitrary File Creation/Overwrite due to insufficient absolute path sanitization		
+fabf621d135cff97	osv-scanner	bcrypt	CVE-2020-7689	moderate	Integer Overflow or Wraparound and Use of a Broken or Risky Cryptographic Algorithm in bcrypt		
+fecc437bddf2e9a8	npm-audit	uuid	GHSA-W5HQ-G745-H8PQ	moderate	uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided		

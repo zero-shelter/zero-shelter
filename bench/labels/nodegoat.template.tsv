@@ -1,0 +1,362 @@
+# Label each row: real (worth fixing here), noise (not actionable in this repo), dup (same issue as another row — name its fingerprint in notes)
+fingerprint	source	package	advisory	severity	title	label	notes
+024d089e257677e1	npm-audit	npm	GHSA-M6CX-G6QM-P2CX	high	Arbitrary File Write in npm		
+026a64b831dad2f9	npm-audit	sshpk	GHSA-2M39-62FM-Q8R3	high	Regular Expression Denial of Service in sshpk		
+02970bec0953222b	npm-audit	handlebars	GHSA-2CF5-4W76-R9QV	high	Arbitrary Code Execution in handlebars		
+02970bec0953222b	osv-scanner	handlebars	GHSA-2CF5-4W76-R9QV	high	Arbitrary Code Execution in handlebars		
+02cded5973869a65	osv-scanner	npm	CVE-2018-7408	high	Incorrect Permission Assignment for Critical Resource in NPM		
+049b4f154b9fa0bb	osv-scanner	adm-zip	CVE-2026-39244	high	adm-zip: Crafted ZIP file triggers 4GB memory allocation		
+05636c1f31173724	npm-audit	lodash	GHSA-X5RQ-J2XG-H7QM	moderate	Regular Expression Denial of Service (ReDoS) in lodash		
+0627c65011e1ae7a	npm-audit	brace-expansion	GHSA-832H-XG76-4GV6	high	ReDoS in brace-expansion		
+06671cbcddba8df4	npm-audit	marked	GHSA-7PX7-7XJX-HXM8	moderate	Marked vulnerable to XSS from data URIs		
+07caee3401671167	npm-audit	handlebars	GHSA-3MFM-83XF-C92R	high	Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block		
+09a61383f3c7aa25	npm-audit	handlebars	GHSA-Q42P-PG8M-CQH6	high	Prototype Pollution in handlebars		
+09a61383f3c7aa25	osv-scanner	handlebars	GHSA-Q42P-PG8M-CQH6	high	Prototype Pollution in handlebars		
+09cc1589a7b57999	npm-audit	brace-expansion	GHSA-MH99-V99M-4GVG	high	brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash		
+09f3b6e59f4a5114	npm-audit	y18n	GHSA-C4W7-XM78-47VH	high	Prototype Pollution in y18n		
+0ab91b1178dfc8a6	osv-scanner	npm	CVE-2019-16777	high	npm Vulnerable to Global node_modules Binary Overwrite		
+0b15264267dde1bf	npm-audit	semver	GHSA-C2QF-RXJJ-QQGW	high	semver vulnerable to Regular Expression Denial of Service		
+0bfa1331f24ef208	npm-audit	brace-expansion	GHSA-F886-M6HF-6M8V	moderate	brace-expansion: Zero-step sequence causes process hang and memory exhaustion		
+0c71ca710f58c984	npm-audit	lodash	GHSA-F23M-R3PF-42RH	moderate	lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`		
+0c77d7f193eb34d3	osv-scanner	qs	CVE-2025-15284	moderate	qs's arrayLimit bypass in its bracket notation allows DoS via memory exhaustion		
+0c8148251e9b1ad7	npm-audit	handlebars	GHSA-W457-6Q6X-CGP9	critical	Prototype Pollution in handlebars		
+0e2c453e0d5a9427	osv-scanner	tar	CVE-2026-23950	high	Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS		
+0e859f5ca3dd1e90	npm-audit	marked	GHSA-5V2H-R2CX-5XGJ	high	Inefficient Regular Expression Complexity in marked		
+0fb46f296a3038f9	osv-scanner	handlebars	CVE-2026-33937	critical	Handlebars.js has JavaScript Injection via AST Type Confusion		
+115e7d5149440f58	osv-scanner	hosted-git-info	CVE-2021-23362	moderate	Regular Expression Denial of Service in hosted-git-info		
+11c446df9bcd6a07	npm-audit	mixin-deep	GHSA-FHJF-83WG-R2J9	critical	Prototype Pollution in mixin-deep		
+136512be6dc5ccfe	osv-scanner	brace-expansion	CVE-2017-18077	high	ReDoS in brace-expansion		
+137a4f825bbcdb9c	npm-audit	js-yaml	GHSA-8J8C-7JFH-H6HX	high	Code Injection in js-yaml		
+137a4f825bbcdb9c	osv-scanner	js-yaml	GHSA-8J8C-7JFH-H6HX	high	Code Injection in js-yaml		
+1403a5e02cda7718	osv-scanner	set-value	CVE-2021-23440	high	Prototype Pollution in set-value		
+140bea0b0f8f8bbd	osv-scanner	fstream	CVE-2019-13173	high	Arbitrary File Overwrite in fstream		
+14f58e5656b276e2	npm-audit	path-parse	GHSA-HJ48-42VR-X3V9	moderate	Regular Expression Denial of Service in path-parse		
+1556232da3129f08	npm-audit	tar	GHSA-23HP-3JRH-7FPW	critical	node-tar: Decompression/parse DoS via unlimited input		
+16b6b9646fac8f44	npm-audit	hoek	GHSA-JP4X-W63M-7WGM	high	Prototype Pollution in hoek		
+16b7760835606031	npm-audit	tar	GHSA-R292-9MHP-454M	moderate	node-tar: Uncontrolled recursion in mapHas/filesFilter allows uncatchable stack-overflow DoS via crafted long-path tar with member selection		
+16b7760835606031	osv-scanner	tar	GHSA-R292-9MHP-454M	moderate	node-tar: Uncontrolled recursion in mapHas/filesFilter allows uncatchable stack-overflow DoS via crafted long-path tar with member selection		
+1708aa5e9fe51eb3	osv-scanner	undefsafe	CVE-2019-10795	moderate	Prototype Pollution in undefsafe		
+18d76fcf512d7f10	osv-scanner	chownr	CVE-2017-18869	low	Time-of-check Time-of-use (TOCTOU) Race Condition in chownr		
+1916af8e5282c185	osv-scanner	sshpk	CVE-2018-3737	high	Regular Expression Denial of Service in sshpk		
+19e430f4c00681c0	osv-scanner	hoek	CVE-2018-3728	high	Prototype Pollution in hoek		
+1ac2ad1a6fbeb9fc	osv-scanner	moment	CVE-2022-24785	high	Path Traversal: 'dir/../../filename' in moment.locale		
+1db0056004ccb6e6	osv-scanner	tar	CVE-2026-26960	high	Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction		
+1dd41973af1ce0a9	npm-audit	underscore	GHSA-CF4H-3JHX-XVHQ	critical	Arbitrary Code Execution in underscore		
+1e7a493c562a37af	npm-audit	brace-expansion	GHSA-RGW5-RVV9-X895	high	brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation		
+1f18c68513e3aec5	npm-audit	request	GHSA-P8P7-X288-28G6	moderate	Server-Side Request Forgery in Request		
+1ff1b8dddeb1a162	npm-audit	tar	GHSA-QFFP-2RHF-9H96	high	tar has Hardlink Path Traversal via Drive-Relative Linkpath		
+206762d7e9deab92	npm-audit	ms	GHSA-W9MR-4MFR-499F	moderate	Vercel ms Inefficient Regular Expression Complexity vulnerability		
+207ae20f1fb56179	osv-scanner	tar	CVE-2026-59871	moderate	node-tar: Process crash via PAX numeric path type confusion		
+2195598c4ce2db9f	npm-audit	jsonpointer	GHSA-282F-QQGM-C34Q	moderate	Prototype Pollution in node-jsonpointer		
+2311cf0eba3cb15c	npm-audit	decode-uri-component	GHSA-W573-4HG7-7WGQ	high	decode-uri-component vulnerable to Denial of Service (DoS)		
+24260ae0af148650	npm-audit	minimatch	GHSA-3PPC-4F35-3M26	high	minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern		
+25189c85f838e8b7	npm-audit	marked	GHSA-RRRM-QJM4-V8HF	high	Inefficient Regular Expression Complexity in marked		
+25578d72c9fdc2bc	npm-audit	send	GHSA-M6FV-JMCG-4JFG	low	send vulnerable to template injection that can lead to XSS		
+25585a2ee27e1d4b	osv-scanner	tar	CVE-2026-29786	high	tar has Hardlink Path Traversal via Drive-Relative Linkpath		
+25c62caf126903e5	npm-audit	qs	GHSA-JJV7-QPX3-H62Q	high	Denial-of-Service Memory Exhaustion in qs		
+26860da0ca2f36a2	npm-audit	path-to-regexp	GHSA-37CH-88JC-XWX2	high	path-to-regexp vulnerable to Regular Expression Denial of Service via multiple route parameters		
+2787cf477cee68fb	npm-audit	handlebars	GHSA-G9R4-XPMJ-MJ65	high	Prototype Pollution in handlebars		
+2787cf477cee68fb	osv-scanner	handlebars	GHSA-G9R4-XPMJ-MJ65	high	Prototype Pollution in handlebars		
+27b129fa3688ac17	npm-audit	underscore	GHSA-QPX9-HPMF-5GMW	high	Underscore has unlimited recursion in _.flatten and _.isEqual, potential for DoS attack		
+28476eac5d5971d3	npm-audit	handlebars	GHSA-9CX6-37PM-9JFF	high	Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation		
+2bf47d1a7781e074	npm-audit	growl	GHSA-QH2H-CHJ9-JFFQ	critical	Growl before 1.10.0 vulnerable to Command Injection		
+2c8bfe2273740bf8	osv-scanner	tar	CVE-2026-53655	moderate	node-tar applies PAX size override to intermediary GNU long-name/long-link headers, causing tar parser interpretation differential (file smuggling)		
+2d0bbfe475a0af4a	npm-audit	ws	GHSA-96HV-2XVQ-FX4P	high	ws: Memory exhaustion DoS from tiny fragments and data chunks		
+2dfdd9728aaefdb6	osv-scanner	growl	CVE-2017-16042	critical	Growl before 1.10.0 vulnerable to Command Injection		
+2eab1999dc111262	osv-scanner	jsonpointer	CVE-2021-23807	moderate	Prototype Pollution in node-jsonpointer		
+2ef9f3d1befcc4e1	npm-audit	npm	GHSA-4328-8HGF-7WJR	high	npm Vulnerable to Global node_modules Binary Overwrite		
+2fc255e1f09e5242	osv-scanner	tough-cookie	CVE-2023-26136	moderate	tough-cookie Prototype Pollution vulnerability		
+2fed90fd94666cef	osv-scanner	bson	CVE-2019-2391	moderate	Deserialization of Untrusted Data in bson		
+30845ec0fe9d401e	npm-audit	tar	GHSA-F5X3-32G6-XQ36	moderate	Denial of service while parsing a tar file due to lack of folders count validation		
+30b6dd555bc8cb39	osv-scanner	trim-newlines	CVE-2021-33623	high	Uncontrolled Resource Consumption in trim-newlines		
+30d8125ca1640397	osv-scanner	handlebars	CVE-2021-23383	critical	Prototype Pollution in handlebars		
+31e1633ab8563ee1	npm-audit	js-yaml	GHSA-MH29-5H37-FV8M	moderate	js-yaml has prototype pollution in merge (<<)		
+33b655463b358f82	osv-scanner	tar	CVE-2026-31802	high	node-tar Symlink Path Traversal via Drive-Relative Linkpath		
+35863ae0c5e8d05b	npm-audit	tmp	GHSA-52F5-9888-HMC6	low	tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter		
+35f4b0a0713268b4	osv-scanner	handlebars	CVE-2026-33940	high	Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial		
+3612fadf69302ef6	npm-audit	js-yaml	GHSA-H67P-54HQ-RP68	moderate	JS-YAML: Quadratic-complexity DoS in merge key handling via repeated aliases		
+3614288883114c93	npm-audit	handlebars	GHSA-Q2C6-C6PM-G3GH	high	Arbitrary Code Execution in handlebars		
+3614288883114c93	osv-scanner	handlebars	GHSA-Q2C6-C6PM-G3GH	high	Arbitrary Code Execution in handlebars		
+366167c9512790bb	osv-scanner	marked	CVE-2022-21680	high	Inefficient Regular Expression Complexity in marked		
+36dcbacae41ff938	npm-audit	handlebars	GHSA-62GR-4QP9-H98F	high	Regular Expression Denial of Service in Handlebars		
+38111e82da35b608	npm-audit	minimist	GHSA-XVCH-5GV4-984H	critical	Prototype Pollution in minimist		
+38111e82da35b608	npm-audit	minimist	GHSA-XVCH-5GV4-984H	critical	Prototype Pollution in minimist		
+38419faff211212c	osv-scanner	lodash	CVE-2025-13465	moderate	lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`		
+3a91310e9839f435	npm-audit	tar	GHSA-8QQ5-RM4J-MR97	high	node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization		
+3ab6b39555075fbe	npm-audit	tmp	GHSA-PH9P-34F9-6G65	high	tmp has Path Traversal via unsanitized prefix/postfix that enables directory escape		
+3b18c0ff3752992f	osv-scanner	randomatic	CVE-2017-16028	moderate	Cryptographically Weak PRNG in randomatic		
+3b785f7643b59d38	osv-scanner	handlebars	CVE-2026-33938	high	Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block		
+3b8f66e7900814eb	npm-audit	undefsafe	GHSA-332Q-7FF2-57H2	moderate	Prototype Pollution in undefsafe		
+3b92cbde3d52c24b	npm-audit	micromatch	GHSA-952P-6RRQ-RCJV	moderate	Regular Expression Denial of Service (ReDoS) in micromatch		
+3c7a93bf53cbbcbb	npm-audit	marked	GHSA-VFVF-MQQ8-RWQC	moderate	Sanitization bypass using HTML Entities in marked		
+3cf6e56a58506c11	npm-audit	tar	GHSA-9PPJ-QMQM-Q256	high	node-tar Symlink Path Traversal via Drive-Relative Linkpath		
+3d382c18a34429d6	npm-audit	marked	GHSA-X5PG-88WF-QQ4P	high	Regular Expression Denial of Service in marked		
+3da3cf9127b51cb4	npm-audit	brace-expansion	GHSA-3JXR-9VMJ-R5CP	high	brace-expansion: DoS via exponential-time expansion of consecutive non-expanding {} groups		
+3ded1e04e3212037	npm-audit	helmet-csp	GHSA-C3M8-X3CG-QM2C	moderate	Configuration Override in helmet-csp		
+3ded1e04e3212037	osv-scanner	helmet-csp	GHSA-C3M8-X3CG-QM2C	moderate	Configuration Override in helmet-csp		
+3e3afc8c2d7ed6f0	npm-audit	tar	GHSA-83G3-92JG-28CX	high	Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction		
+3f04e6b54bdc3012	npm-audit	trim-newlines	GHSA-7P7H-4MM5-852V	high	Uncontrolled Resource Consumption in trim-newlines		
+3f3ec78858b63b46	osv-scanner	es5-ext	CVE-2024-27088	low	es5-ext vulnerable to Regular Expression Denial of Service in `function#copy` and `function#toStringTokens`		
+40093acdae4bcd55	osv-scanner	mixin-deep	CVE-2019-10746	critical	Prototype Pollution in mixin-deep		
+40a5ed8ada22057e	osv-scanner	tmp	CVE-2026-44705	high	tmp has Path Traversal via unsanitized prefix/postfix that enables directory escape		
+40b745c737dbb40b	npm-audit	babel-traverse	GHSA-67HX-6X53-JW92	critical	Babel vulnerable to arbitrary code execution when compiling specifically crafted malicious code		
+414549ad6ef0296e	npm-audit	websocket-extensions	GHSA-G78M-2CHM-R7QV	high	Regular Expression Denial of Service in websocket-extensions (NPM package)		
+4217b8b3e0ddda12	osv-scanner	minimist	CVE-2020-7598	moderate	Prototype Pollution in minimist		
+434e662d832e86ad	osv-scanner	debug	CVE-2017-16137	low	Regular Expression Denial of Service in debug		
+43ddb3227dcabe40	osv-scanner	minimatch	CVE-2022-3517	high	minimatch ReDoS vulnerability		
+448d72c10831fc9a	npm-audit	lodash	GHSA-XXJR-MMJV-4GPG	moderate	Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions		
+44f397ed8962ef62	npm-audit	qs	GHSA-F9CM-P3W6-XVR3	high	Denial-of-Service Extended Event Loop Blocking in qs		
+460676ab37a82431	npm-audit	hawk	GHSA-JCPV-G9RR-QXRC	high	Regular Expression Denial of Service in hawk		
+461ac51f4df8f2de	npm-audit	braces	GHSA-GRV7-FG5C-XMJG	high	Uncontrolled resource consumption in braces		
+469ff9a8989fd21e	osv-scanner	minimist	CVE-2021-44906	critical	Prototype Pollution in minimist		
+4730876e4ec86e84	npm-audit	tough-cookie	GHSA-QHV9-728R-6JQG	moderate	ReDoS via long string of semicolons in tough-cookie		
+49ea30e3fc8de394	osv-scanner	semver	CVE-2022-25883	high	semver vulnerable to Regular Expression Denial of Service		
+4a4dc36dc4014da6	npm-audit	lodash	GHSA-4XC9-XHRJ-V574	high	Prototype Pollution in lodash		
+4bbdc2ccf3e2c2f5	osv-scanner	lodash	CVE-2018-16487	high	Prototype Pollution in lodash		
+4bde979d144c5fd7	osv-scanner	npm	CVE-2019-16775	high	Arbitrary File Write in npm		
+4c0d022e21c3d9a9	osv-scanner	lodash	CVE-2018-3721	moderate	Prototype Pollution in lodash		
+4c89c2d2cf6a44fb	npm-audit	ajv	GHSA-V88G-CGMW-V5XW	moderate	Prototype Pollution in Ajv		
+4c8ffa2ee0d3e2e4	osv-scanner	diff	CVE-2026-24001	low	jsdiff has a Denial of Service vulnerability in parsePatch and applyPatch		
+4cc069279dfbcfe6	npm-audit	path-to-regexp	GHSA-RHX6-C78J-4Q9W	high	path-to-regexp contains a ReDoS		
+4d829b9d62077948	npm-audit	json-schema	GHSA-896R-F27R-55MW	critical	json-schema is vulnerable to Prototype Pollution		
+4e208588f29b942f	osv-scanner	stringstream	CVE-2018-21270	moderate	Out-of-bounds Read in stringstream		
+4fcd3d5303390899	osv-scanner	async	CVE-2021-43138	high	Prototype Pollution in async		
+51099fe141f15666	osv-scanner	adm-zip	CVE-2018-1002204	moderate	Arbitrary File Write in adm-zip		
+5250f02a8b8a81c3	osv-scanner	marked	CVE-2016-10531	moderate	Sanitization bypass using HTML Entities in marked		
+5363cdf6bc0a5b53	npm-audit	js-yaml	GHSA-2PR6-76VF-7546	moderate	Denial of Service in js-yaml		
+5363cdf6bc0a5b53	osv-scanner	js-yaml	GHSA-2PR6-76VF-7546	moderate	Denial of Service in js-yaml		
+53866bc9ab597c93	osv-scanner	minimatch	CVE-2016-10540	high	Regular Expression Denial of Service in minimatch		
+57c4cc74db1240ec	osv-scanner	body-parser	CVE-2024-45590	high	body-parser vulnerable to denial of service when url encoding is enabled		
+58aeb11f97880bca	osv-scanner	cross-spawn	CVE-2024-21538	high	Regular Expression Denial of Service (ReDoS) in cross-spawn		
+598902ac9ae8f4f4	npm-audit	cross-spawn	GHSA-3XGQ-45JJ-V275	high	Regular Expression Denial of Service (ReDoS) in cross-spawn		
+598902ac9ae8f4f4	npm-audit	cross-spawn	GHSA-3XGQ-45JJ-V275	high	Regular Expression Denial of Service (ReDoS) in cross-spawn		
+59c674d75f521580	npm-audit	handlebars	GHSA-442J-39WM-28R2	low	Handlebars.js has a Property Access Validation Bypass in container.lookup		
+59c674d75f521580	osv-scanner	handlebars	GHSA-442J-39WM-28R2	low	Handlebars.js has a Property Access Validation Bypass in container.lookup		
+59d52743e8c7f783	npm-audit	adm-zip	GHSA-3V6H-HQM4-2RG6	moderate	Arbitrary File Write in adm-zip		
+5a5babfb702f566a	osv-scanner	tar	CVE-2026-59875	moderate	node-tar: Uncaught Exception DoS via NUL byte in PAX path/linkpath records		
+5a630db102bdd6e3	osv-scanner	underscore	CVE-2021-23358	critical	Arbitrary Code Execution in underscore		
+5ad4675d41dea251	npm-audit	handlebars	GHSA-XHPV-HC6G-R9C6	high	Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial		
+5af5e764f599b865	npm-audit	stringstream	GHSA-MF6X-7MM4-X2G7	moderate	Out-of-bounds Read in stringstream		
+5b62293a788035b0	npm-audit	express	GHSA-RV95-896H-C2VC	moderate	Express.js Open Redirect in malformed URLs		
+5bd20f57035b4203	osv-scanner	npm-user-validate	CVE-2020-7754	high	Regular expression denial of service in npm-user-validate		
+5c57a16367fd925c	osv-scanner	qs	CVE-2017-1000048	high	Prototype Pollution Protection Bypass in qs		
+5cd01c3b6b87aa83	npm-audit	js-yaml	GHSA-52CP-R559-CP3M	high	js-yaml: YAML merge-key chains can force quadratic CPU consumption		
+5d57cffeb6f13f36	npm-audit	bson	GHSA-V8W9-2789-6HHR	critical	Deserialization of Untrusted Data in bson		
+5ecd5e96e2905f3e	osv-scanner	path-to-regexp	CVE-2024-52798	high	path-to-regexp contains a ReDoS		
+5ee842c117658820	npm-audit	qs	GHSA-HRPP-H998-J3PP	high	qs vulnerable to Prototype Pollution		
+5ee842c117658820	npm-audit	qs	GHSA-HRPP-H998-J3PP	high	qs vulnerable to Prototype Pollution		
+5ee842c117658820	npm-audit	qs	GHSA-HRPP-H998-J3PP	high	qs vulnerable to Prototype Pollution		
+5f45efea75d7eab3	npm-audit	tar	GHSA-8X88-C5MF-7J5W	high	node-tar: Negative tar entry size causes infinite loop in archive replace		
+5fbac3192cada5cf	osv-scanner	uglify-js	CVE-2015-8858	high	Regular Expression Denial of Service in uglify-js		
+5fcfca9114a2de43	osv-scanner	on-headers	CVE-2025-7339	low	on-headers is vulnerable to http response header manipulation		
+60f79c76d299c618	npm-audit	uglify-js	GHSA-C9F4-XJ24-8JQX	high	Regular Expression Denial of Service in uglify-js		
+620312d8347b5b52	npm-audit	mime	GHSA-WRVR-8MPX-R7PP	high	mime Regular Expression Denial of Service when MIME lookup performed on untrusted user input		
+6241f0011303aea8	osv-scanner	braces	CVE-2024-4068	high	Uncontrolled resource consumption in braces		
+625c53eaadef76c8	osv-scanner	express	CVE-2024-29041	moderate	Express.js Open Redirect in malformed URLs		
+62ae2ebf0f1e5edb	osv-scanner	lodash	CVE-2020-28500	moderate	Regular Expression Denial of Service (ReDoS) in lodash		
+63a67d3ed0f06c0b	osv-scanner	marked	CVE-2017-1000427	moderate	Marked vulnerable to XSS from data URIs		
+63b407b27b0b7015	npm-audit	tar	GHSA-W8WR-V893-VJVP	moderate	node-tar: Process crash via PAX numeric path type confusion		
+64b47d4a47cbb02b	npm-audit	body-parser	GHSA-QWCR-R2FM-QRC7	high	body-parser vulnerable to denial of service when url encoding is enabled		
+654c42dcfbcb7b87	osv-scanner	request	CVE-2017-16026	moderate	Remote Memory Exposure in request		
+6560db480e8d8b14	osv-scanner	qs	CVE-2014-7191	high	Denial-of-Service Memory Exhaustion in qs		
+65badc5aabfe2a47	npm-audit	bson	GHSA-4JWP-VFVF-657P	moderate	Deserialization of Untrusted Data in bson		
+665a5b7899e8d507	osv-scanner	minimatch	CVE-2026-27903	high	minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments		
+66f3c9b34ed4c9a2	osv-scanner	marked	CVE-2022-21681	high	Inefficient Regular Expression Complexity in marked		
+685169973215b662	npm-audit	form-data	GHSA-HMW2-7CC7-3QXX	high	form-data: CRLF injection in form-data via unescaped multipart field names and filenames		
+68e3d6b509cf974a	npm-audit	grunt	GHSA-J383-35PM-C5H4	moderate	Path Traversal in Grunt		
+699ee35041e09dce	osv-scanner	send	CVE-2024-43799	low	send vulnerable to template injection that can lead to XSS		
+6c93a4b6f291b57c	osv-scanner	dot-prop	CVE-2020-8116	high	dot-prop Prototype Pollution vulnerability		
+6d44bc01f0be1a56	osv-scanner	ms	CVE-2017-20162	moderate	Vercel ms Inefficient Regular Expression Complexity vulnerability		
+6d8e233e3b0d09fc	npm-audit	qs	GHSA-6RW7-VPXM-498P	moderate	qs's arrayLimit bypass in its bracket notation allows DoS via memory exhaustion		
+6d923292cbb0e334	npm-audit	tough-cookie	GHSA-G7Q5-PJJR-GQVP	high	Regular Expression Denial of Service in tough-cookie		
+709bf8940d70d854	npm-audit	npm	GHSA-93F3-23RQ-PJFP	moderate	npm CLI exposing sensitive information through logs		
+72573e8f1c0fa5e8	osv-scanner	kind-of	CVE-2019-20149	high	Validation Bypass in kind-of		
+72631aa267f9676a	npm-audit	on-headers	GHSA-76C9-3JPH-RJ3Q	low	on-headers is vulnerable to http response header manipulation		
+7799487d901df002	osv-scanner	npm	CVE-2019-16776	high	npm symlink reference outside of node_modules		
+7a22d49a0c107b8d	osv-scanner	hawk	CVE-2016-2515	high	Regular Expression Denial of Service in hawk		
+7b900a361a6eea8f	npm-audit	tar	GHSA-J44M-QM6P-HP7M	high	Arbitrary File Overwrite in tar		
+7ce09bf6f275bc27	npm-audit	moment	GHSA-8HFJ-J24R-96C4	high	Path Traversal: 'dir/../../filename' in moment.locale		
+7dd299785a002b8a	npm-audit	request	GHSA-7XFP-9C55-5VQJ	moderate	Remote Memory Exposure in request		
+7dd299785a002b8a	npm-audit	request	GHSA-7XFP-9C55-5VQJ	moderate	Remote Memory Exposure in request		
+7dd390455d9c1a62	osv-scanner	extend	CVE-2018-16492	moderate	Prototype Pollution in extend		
+7e337cbe30312962	osv-scanner	form-data	CVE-2025-7783	critical	form-data uses unsafe random function in form-data for choosing boundary		
+7e66e64b5a01bf3e	npm-audit	tough-cookie	GHSA-72XF-G2V4-QVF3	moderate	tough-cookie Prototype Pollution vulnerability		
+7eb383ebda7300ac	npm-audit	handlebars	GHSA-765H-QJXV-5F44	critical	Prototype Pollution in handlebars		
+7f77d8a190887087	osv-scanner	tar	CVE-2026-59873	critical	node-tar: Decompression/parse DoS via unlimited input		
+7f997389dcf3af05	osv-scanner	websocket-extensions	CVE-2020-7662	high	Regular Expression Denial of Service in websocket-extensions (NPM package)		
+7fcee3bcdc298b4b	osv-scanner	marked	CVE-2018-25110	moderate	Marked allows Regular Expression Denial of Service (ReDoS) attacks		
+7fcfdba64314d3af	osv-scanner	hoek	CVE-2020-36604	high	hoek subject to prototype pollution via the clone function.		
+81ee42dc2c041f8d	npm-audit	set-value	GHSA-4G88-FPPR-53PP	critical	Prototype Pollution in set-value		
+8216034cc116e7a3	osv-scanner	brace-expansion	CVE-2026-69152	high	brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation		
+825a7af11fbc836e	osv-scanner	minimatch	CVE-2026-27904	high	minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions		
+825ad6e2a21233ed	npm-audit	nconf	GHSA-6XWR-Q98W-RVG7	high	Prototype Pollution in nconf		
+827edfac75605d9e	osv-scanner	js-yaml	CVE-2025-64718	moderate	js-yaml has prototype pollution in merge (<<)		
+828f6a843373c06d	npm-audit	moment	GHSA-WC69-RHJR-HC9G	high	Moment.js vulnerable to Inefficient Regular Expression Complexity		
+83dd997038fee905	npm-audit	lodash	GHSA-35JH-R3H4-6JHM	high	Command Injection in lodash		
+8423edd60e5f9b0c	osv-scanner	nconf	CVE-2022-21803	high	Prototype Pollution in nconf		
+86e0fb01b3034316	osv-scanner	js-yaml	CVE-2026-53550	moderate	JS-YAML: Quadratic-complexity DoS in merge key handling via repeated aliases		
+87851c6a658ad330	osv-scanner	got	CVE-2022-33987	moderate	Got allows a redirect to a UNIX socket		
+87b5ca28cd121dfc	osv-scanner	handlebars	CVE-2019-20922	high	Regular Expression Denial of Service in Handlebars		
+88d5a20edd565beb	osv-scanner	underscore	CVE-2026-27601	high	Underscore has unlimited recursion in _.flatten and _.isEqual, potential for DoS attack		
+8980652fdfa0fc05	npm-audit	mongodb	GHSA-MH5C-679W-HH4R	high	Denial of Service in mongodb		
+8980652fdfa0fc05	osv-scanner	mongodb	GHSA-MH5C-679W-HH4R	high	Denial of Service in mongodb		
+8a61a43249f065c7	osv-scanner	ajv	CVE-2025-69873	moderate	ajv has ReDoS when using `$data` option		
+8ae53a9f65ce18ad	osv-scanner	y18n	CVE-2020-7774	high	Prototype Pollution in y18n		
+8cbbb26e82b75915	osv-scanner	lodash	CVE-2021-23337	high	Command Injection in lodash		
+8ce256d6335cade4	osv-scanner	js-yaml	CVE-2026-59869	high	js-yaml: YAML merge-key chains can force quadratic CPU consumption		
+8d44946c3ad120d0	osv-scanner	uuid	CVE-2026-41907	moderate	uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided		
+8e4559ee9edb0dde	osv-scanner	tough-cookie	CVE-2017-15010	high	Regular Expression Denial of Service in tough-cookie		
+8ea6d474b1ee4ab2	npm-audit	debug	GHSA-GXPJ-CX7G-858C	low	Regular Expression Denial of Service in debug		
+8ea6d474b1ee4ab2	npm-audit	debug	GHSA-GXPJ-CX7G-858C	low	Regular Expression Denial of Service in debug		
+8ea6d474b1ee4ab2	npm-audit	debug	GHSA-GXPJ-CX7G-858C	low	Regular Expression Denial of Service in debug		
+8ee86d41750099b3	osv-scanner	babel-traverse	CVE-2023-45133	critical	Babel vulnerable to arbitrary code execution when compiling specifically crafted malicious code		
+8ef0923d5212e11a	npm-audit	handlebars	GHSA-2QVQ-RJWJ-GVW9	moderate	Handlebars.js has Prototype Pollution Leading to XSS through Partial Template Injection		
+8f782def50aaf8c8	npm-audit	got	GHSA-PFRX-2Q88-QQ97	moderate	Got allows a redirect to a UNIX socket		
+913bcd92bbf5340c	npm-audit	minimatch	GHSA-7R86-CG39-JMMJ	high	minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments		
+91a6a7926a8d2262	osv-scanner	brace-expansion	CVE-2026-33750	moderate	brace-expansion: Zero-step sequence causes process hang and memory exhaustion		
+93144a386f07a513	osv-scanner	debug	CVE-2017-20165	high	debug Inefficient Regular Expression Complexity vulnerability		
+93f57b236a8c03df	npm-audit	tar	GHSA-3JFQ-G458-7QM9	high	Arbitrary File Creation/Overwrite due to insufficient absolute path sanitization		
+93f57b236a8c03df	npm-audit	tar	GHSA-3JFQ-G458-7QM9	high	Arbitrary File Creation/Overwrite due to insufficient absolute path sanitization		
+94297d94fcb2c226	npm-audit	lodash	GHSA-FVQR-27WR-82FM	moderate	Prototype Pollution in lodash		
+94f5f3a29c6070e6	npm-audit	getobject	GHSA-957J-59C2-J692	critical	Prototype pollution in getobject		
+9553408d1eb9025f	osv-scanner	cookie	CVE-2024-47764	low	cookie accepts cookie name, path, and domain with out of bounds characters		
+959b71b0d6aadcdb	npm-audit	npm-user-validate	GHSA-PW54-MH39-W3HC	high	Regular expression denial of service in npm-user-validate		
+978a330fa028aa0a	npm-audit	npm	GHSA-X8QC-RRCW-4R46	high	npm symlink reference outside of node_modules		
+97cf2335dabef958	npm-audit	i	GHSA-X55W-VJJP-222R	high	inflect vulnerable to Inefficient Regular Expression Complexity		
+97df593af0ffefa7	npm-audit	websocket-driver	GHSA-XV26-6W52-CPH6	critical	websocket-driver: Message corruption via abuse of protocol length headers		
+9866f037a941a10e	osv-scanner	tmp	CVE-2025-54798	low	tmp allows arbitrary temporary file / directory write via symbolic link `dir` parameter		
+989dd402d11b0b6d	osv-scanner	yargs-parser	CVE-2020-7608	moderate	yargs-parser Vulnerable to Prototype Pollution		
+9a8447e53c3d0fa3	npm-audit	minimist	GHSA-VH95-RMGR-6W4M	moderate	Prototype Pollution in minimist		
+9a8447e53c3d0fa3	npm-audit	minimist	GHSA-VH95-RMGR-6W4M	moderate	Prototype Pollution in minimist		
+9cba8a6a9a26e012	npm-audit	cookie	GHSA-PXG6-PF52-XH8X	low	cookie accepts cookie name, path, and domain with out of bounds characters		
+9d9b6ee1de48e6bf	osv-scanner	i	CVE-2021-3820	high	inflect vulnerable to Inefficient Regular Expression Complexity		
+a1f0e4f0a13fd14d	npm-audit	ini	GHSA-QQGX-2P2H-9C37	high	ini before 1.3.6 vulnerable to Prototype Pollution via ini.parse		
+a3f9b3f733d61657	npm-audit	fstream	GHSA-XF7W-R453-M56C	high	Arbitrary File Overwrite in fstream		
+a464ff97b35a3ba5	npm-audit	tar	GHSA-9R2W-394V-53QC	high	Arbitrary File Creation/Overwrite via insufficient symlink protection due to directory cache poisoning using symbolic links		
+a48701782a107741	npm-audit	set-value	GHSA-4JQC-8M5R-9RPR	high	Prototype Pollution in set-value		
+a4d3002ddc0dd661	osv-scanner	tar	CVE-2018-20834	high	Arbitrary File Overwrite in tar		
+a4d8be883f08635c	npm-audit	es5-ext	GHSA-4GMJ-3P3H-GM8H	low	es5-ext vulnerable to Regular Expression Denial of Service in `function#copy` and `function#toStringTokens`		
+a4f07c39de0e89f1	npm-audit	body-parser	GHSA-V422-HMWV-36X6	low	body-parser vulnerable to denial of service when invalid limit value silently disables size enforcement		
+a52e13e5c5b4ba0d	npm-audit	kind-of	GHSA-6C8F-QPHG-QJGP	high	Validation Bypass in kind-of		
+a7be60cd187e677e	osv-scanner	tar	CVE-2024-28863	moderate	Denial of service while parsing a tar file due to lack of folders count validation		
+a959f1a04e03d721	npm-audit	bl	GHSA-PP7H-53GX-MX7R	moderate	Remote Memory Exposure in bl		
+a96c1c65312fe954	npm-audit	hawk	GHSA-44PW-H2CW-W3VQ	high	Uncontrolled Resource Consumption in Hawk		
+ab0df10ab3e09977	osv-scanner	handlebars	CVE-2026-33939	high	Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation		
+ab19d094e4ad0b01	osv-scanner	getobject	CVE-2020-28282	critical	Prototype pollution in getobject		
+ab7b40b889eef0e0	npm-audit	serve-static	GHSA-CM22-4G7W-348P	low	serve-static vulnerable to template injection that can lead to XSS		
+ac33a79bdb60ef17	npm-audit	websocket-driver	GHSA-MP7J-QC5W-4988	moderate	websocket-driver: Resource limit bypass via message compression		
+ac5a481100c338ec	osv-scanner	tar	CVE-2026-59874	high	node-tar: Negative tar entry size causes infinite loop in archive replace		
+ac6fa4045b92a4b8	npm-audit	debug	GHSA-9VVW-CC9W-F27H	high	debug Inefficient Regular Expression Complexity vulnerability		
+ad296933bcec29b8	npm-audit	shelljs	GHSA-4RQ4-32RV-6WP6	high	Improper Privilege Management in shelljs		
+adacfe879aed0eec	osv-scanner	xml2js	CVE-2023-0842	moderate	xml2js is vulnerable to prototype pollution		
+adb0ef493952cdb7	osv-scanner	grunt	CVE-2020-7729	high	Arbitrary Code Execution in grunt		
+af4e1834fe7c741f	npm-audit	diff	GHSA-H6CH-V84P-W6P9	high	Regular Expression Denial of Service (ReDoS)		
+af4e1834fe7c741f	osv-scanner	diff	GHSA-H6CH-V84P-W6P9	high	Regular Expression Denial of Service (ReDoS)		
+af50634aedf44e7b	osv-scanner	qs	CVE-2014-10064	high	Denial-of-Service Extended Event Loop Blocking in qs		
+af90dbe7be37029a	osv-scanner	tar	CVE-2026-24842	high	node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal		
+b0559ae0aa3312a1	osv-scanner	express	CVE-2024-43796	low	express vulnerable to XSS via response.redirect()		
+b0b3b254cd931b16	osv-scanner	body-parser	CVE-2026-12590	low	body-parser vulnerable to denial of service when invalid limit value silently disables size enforcement		
+b131b64674be5fc9	npm-audit	brace-expansion	GHSA-V6H2-P8H4-QCJW	low	brace-expansion Regular Expression Denial of Service vulnerability		
+b16b2679ec34f386	npm-audit	npm-user-validate	GHSA-XGH6-85XH-479P	low	Regular Expression Denial of Service in npm-user-validate		
+b24dc4ec87e08544	npm-audit	tar	GHSA-GVWX-54WH-QM9J	moderate	node-tar: Uncaught Exception DoS via NUL byte in PAX path/linkpath records		
+b2a95636ef90a957	osv-scanner	brace-expansion	CVE-2025-5889	low	brace-expansion Regular Expression Denial of Service vulnerability		
+b31d3bd7282d47cc	npm-audit	minimatch	GHSA-F8Q6-P94X-37V3	high	minimatch ReDoS vulnerability		
+b3910fa373ebb88a	osv-scanner	brace-expansion	CVE-2026-13149	high	brace-expansion: DoS via exponential-time expansion of consecutive non-expanding {} groups		
+b39820fee4ab9bdf	npm-audit	js-yaml	GHSA-5P4M-2WFM-XMQJ	high	JS-YAML: Quadratic CPU consumption in !!omap resolution (3.x and 4.x) — CVE-2026-59870 fix not backported		
+b39820fee4ab9bdf	osv-scanner	js-yaml	GHSA-5P4M-2WFM-XMQJ	high	JS-YAML: Quadratic CPU consumption in !!omap resolution (3.x and 4.x) — CVE-2026-59870 fix not backported		
+b40215049a9251c3	npm-audit	handlebars	GHSA-2W6W-674Q-4C4Q	critical	Handlebars.js has JavaScript Injection via AST Type Confusion		
+b5a1856a5c0604f4	osv-scanner	shelljs	CVE-2022-0144	high	Improper Privilege Management in shelljs		
+b6bb8994ea4f20c3	osv-scanner	ini	CVE-2020-7788	high	ini before 1.3.6 vulnerable to Prototype Pollution via ini.parse		
+b74fe159bc787242	npm-audit	randomatic	GHSA-6G33-F262-XJP4	moderate	Cryptographically Weak PRNG in randomatic		
+b81ea7a96c948d03	osv-scanner	ws	CVE-2026-48779	high	ws: Memory exhaustion DoS from tiny fragments and data chunks		
+ba1258437e117109	npm-audit	async	GHSA-FWR7-V2MV-HH25	high	Prototype Pollution in async		
+baa97c20a4d494f1	npm-audit	ajv	GHSA-2G4F-4PWH-QVX6	moderate	ajv has ReDoS when using `$data` option		
+bb1137754f3ba3a8	npm-audit	qs	GHSA-GQGV-6JQ5-JJJ9	high	Prototype Pollution Protection Bypass in qs		
+bb1137754f3ba3a8	npm-audit	qs	GHSA-GQGV-6JQ5-JJJ9	high	Prototype Pollution Protection Bypass in qs		
+bb5243ba770c15a1	osv-scanner	handlebars	CVE-2026-33916	moderate	Handlebars.js has Prototype Pollution Leading to XSS through Partial Template Injection		
+bbb61507ed0a1214	osv-scanner	handlebars	CVE-2026-33941	high	Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options		
+bbff71a5eda13373	osv-scanner	form-data	CVE-2026-12143	high	form-data: CRLF injection in form-data via unescaped multipart field names and filenames		
+bc29d7b1640fc062	osv-scanner	path-parse	CVE-2021-23343	moderate	Regular Expression Denial of Service in path-parse		
+bc8464b1b00a2e9d	npm-audit	handlebars	GHSA-XJPJ-3MR7-GCPF	high	Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options		
+bd4178a53e9786e3	npm-audit	dot-prop	GHSA-FF7X-QRG7-QGGM	high	dot-prop Prototype Pollution vulnerability		
+bdfd3d449692c211	npm-audit	diff	GHSA-73RR-HH4G-FPGX	low	jsdiff has a Denial of Service vulnerability in parsePatch and applyPatch		
+beac8401dba0b579	npm-audit	lodash	GHSA-P6MC-M468-83GW	high	Prototype Pollution in lodash		
+bf0d212826ec1073	npm-audit	extend	GHSA-QRMC-FJ45-QFC2	moderate	Prototype Pollution in extend		
+bf13172bc6c29516	osv-scanner	handlebars	CVE-2021-23369	critical	Remote code execution in handlebars when compiling templates		
+bf17b3371fd1bab8	npm-audit	handlebars	GHSA-F2JV-R9RF-7988	critical	Remote code execution in handlebars when compiling templates		
+bf84129d6e28537a	osv-scanner	lodash	CVE-2020-8203	high	Prototype Pollution in lodash		
+c083baef6101f949	npm-audit	chownr	GHSA-C6RQ-RJC2-86V2	low	Time-of-check Time-of-use (TOCTOU) Race Condition in chownr		
+c3914f8028f3159c	npm-audit	tar	GHSA-R628-MHMH-QJHW	high	Arbitrary File Creation/Overwrite via insufficient symlink protection due to directory cache poisoning		
+c42d60d334eeea8f	osv-scanner	tar	CVE-2026-23745	high	node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization		
+c4b8a83962df2d97	npm-audit	tar	GHSA-34X7-HFP2-RC4V	high	node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal		
+c4e4370858a92858	npm-audit	handlebars	GHSA-F52G-6JHX-586P	moderate	Denial of Service in handlebars		
+c4e4370858a92858	osv-scanner	handlebars	GHSA-F52G-6JHX-586P	moderate	Denial of Service in handlebars		
+c74e8f16126260c2	osv-scanner	qs	CVE-2022-24999	high	qs vulnerable to Prototype Pollution		
+c8a106f52aed5518	osv-scanner	path-to-regexp	CVE-2024-45296	high	path-to-regexp vulnerable to Regular Expression Denial of Service via multiple route parameters		
+c9bee8c964629040	npm-audit	fsevents	GHSA-8R6J-V8PM-FQW3	critical	Code injection in fsevents		
+c9e7cb1f4002d5ab	npm-audit	form-data	GHSA-FJXV-7RQG-78G4	critical	form-data uses unsafe random function in form-data for choosing boundary		
+ca976e9578affb00	npm-audit	lodash	GHSA-R5FR-RJXR-66JC	high	lodash vulnerable to Code Injection via `_.template` imports key names		
+cb428d316c7c6f5a	npm-audit	adm-zip	GHSA-XCPC-8H2W-3J85	high	adm-zip: Crafted ZIP file triggers 4GB memory allocation		
+cbb4861139880352	npm-audit	tar	GHSA-VMF3-W455-68VH	moderate	node-tar applies PAX size override to intermediary GNU long-name/long-link headers, causing tar parser interpretation differential (file smuggling)		
+cc73340ff293201e	npm-audit	handlebars	GHSA-3CQR-58RM-57F8	high	Arbitrary Code Execution in Handlebars		
+cf2acc6072532550	osv-scanner	swig	CVE-2023-25345	high	Arbitrary local file read vulnerability during template rendering 		
+cf63c75614d15f3d	npm-audit	ansi-regex	GHSA-93Q8-GQ69-WQMW	high	Inefficient Regular Expression Complexity in chalk/ansi-regex		
+d0e2118062e5ad48	npm-audit	minimatch	GHSA-23C5-XMQV-RM74	high	minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions		
+d1b96f0ddcb7f069	npm-audit	minimatch	GHSA-HXM2-R34F-QMC5	high	Regular Expression Denial of Service in minimatch		
+d2a56d152e76b646	osv-scanner	tough-cookie	CVE-2016-1000232	moderate	ReDoS via long string of semicolons in tough-cookie		
+d3d4429482c75c24	osv-scanner	moment	CVE-2022-31129	high	Moment.js vulnerable to Inefficient Regular Expression Complexity		
+d4daab2a17bc0610	osv-scanner	is-my-json-valid	CVE-2018-1107	moderate	Regular expression deinal of service (ReDoS) in is-my-json-valid		
+d578196471f00ac9	osv-scanner	tar	CVE-2021-37713	high	Arbitrary File Creation/Overwrite on Windows via insufficient relative path sanitization		
+d59bf77048683aff	osv-scanner	lodash	CVE-2019-1010266	moderate	Regular Expression Denial of Service (ReDoS) in lodash		
+d70d3f04ecd27d06	osv-scanner	set-value	CVE-2019-10747	critical	Prototype Pollution in set-value		
+d70dfd4546a8fc25	osv-scanner	marked	CVE-2017-16114	high	Regular Expression Denial of Service in marked		
+d796d766355889e5	osv-scanner	handlebars	CVE-2019-19919	critical	Prototype Pollution in handlebars		
+d8a7bdb1457dc221	npm-audit	tunnel-agent	GHSA-XC7V-WXCW-J472	moderate	Memory Exposure in tunnel-agent		
+d8a7bdb1457dc221	osv-scanner	tunnel-agent	GHSA-XC7V-WXCW-J472	moderate	Memory Exposure in tunnel-agent		
+d9b011d28c76f99b	npm-audit	grunt	GHSA-M5PJ-VJJF-4M3H	high	Arbitrary Code Execution in grunt		
+d9c12ab58984d37a	npm-audit	path-to-regexp	GHSA-9WV6-86V2-598J	high	path-to-regexp outputs backtracking regular expressions		
+da1a7a4a1a9958df	osv-scanner	micromatch	CVE-2024-4067	moderate	Regular Expression Denial of Service (ReDoS) in micromatch		
+dc22e382910d1c83	npm-audit	hoek	GHSA-C429-5P7V-VGJP	high	hoek subject to prototype pollution via the clone function.		
+dd1f66af7a6e7ead	npm-audit	shelljs	GHSA-64G7-MVW6-V9QJ	moderate	Improper Privilege Management in shelljs		
+dd1f66af7a6e7ead	osv-scanner	shelljs	GHSA-64G7-MVW6-V9QJ	moderate	Improper Privilege Management in shelljs		
+de24f7c1b8eeac06	osv-scanner	lodash	CVE-2019-10744	critical	Prototype Pollution in lodash		
+deeba609c324341c	osv-scanner	grunt	CVE-2022-1537	high	Race Condition in Grunt		
+e0260e56f4147084	npm-audit	npm	GHSA-PH34-PC88-72GC	high	Incorrect Permission Assignment for Critical Resource in NPM		
+e1b4927db1a0aa24	osv-scanner	ansi-regex	CVE-2021-3807	high	Inefficient Regular Expression Complexity in chalk/ansi-regex		
+e257f3ee3a14adcc	osv-scanner	tar	CVE-2021-32803	high	Arbitrary File Creation/Overwrite via insufficient symlink protection due to directory cache poisoning		
+e38346b7076bfe9c	npm-audit	tar	GHSA-QQ89-HQ3F-393P	high	Arbitrary File Creation/Overwrite via insufficient symlink protection due to directory cache poisoning using symbolic links		
+e468437776ad8f02	osv-scanner	handlebars	CVE-2019-20920	high	Arbitrary Code Execution in Handlebars		
+e71df1f4797a4ed7	npm-audit	lodash	GHSA-29MW-WPGM-HMR9	moderate	Regular Expression Denial of Service (ReDoS) in lodash		
+ea46223e454a13b5	osv-scanner	bson	CVE-2020-7610	critical	Deserialization of Untrusted Data in bson		
+eaae5f5ab290e898	osv-scanner	websocket-driver	CVE-2026-54466	critical	websocket-driver: Message corruption via abuse of protocol length headers		
+ec0229264ce37449	osv-scanner	json-schema	CVE-2021-3918	critical	json-schema is vulnerable to Prototype Pollution		
+ecf8ad7618fa6b1b	npm-audit	tar	GHSA-5955-9WPR-37JH	high	Arbitrary File Creation/Overwrite on Windows via insufficient relative path sanitization		
+eebaf72e24461847	npm-audit	tar	GHSA-R6Q2-HW4H-H46W	high	Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS		
+eed9c417453284e4	osv-scanner	brace-expansion	CVE-2026-14257	high	brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash		
+ef6b6c7bd66d7684	osv-scanner	mime	CVE-2017-16138	high	mime Regular Expression Denial of Service when MIME lookup performed on untrusted user input		
+efbaf98dc0bdd53a	npm-audit	yargs-parser	GHSA-P9PC-299P-VXGP	moderate	yargs-parser Vulnerable to Prototype Pollution		
+f0006391416ff212	npm-audit	grunt	GHSA-RM36-94G8-835R	high	Race Condition in Grunt		
+f0157acc8ad7e112	osv-scanner	request	CVE-2023-28155	moderate	Server-Side Request Forgery in Request		
+f0f1d1b053d76dde	osv-scanner	decode-uri-component	CVE-2022-38900	high	decode-uri-component vulnerable to Denial of Service (DoS)		
+f0fc7607f3655060	osv-scanner	fsevents	CVE-2023-45311	critical	Code injection in fsevents		
+f1387df76a155179	osv-scanner	tar	CVE-2021-37701	high	Arbitrary File Creation/Overwrite via insufficient symlink protection due to directory cache poisoning using symbolic links		
+f1477f2b4665f73f	osv-scanner	bl	CVE-2020-8244	moderate	Remote Memory Exposure in bl		
+f7a6ae7dd05af8a8	npm-audit	express	GHSA-QW6H-VGH9-J6WX	low	express vulnerable to XSS via response.redirect()		
+f7c1aef8cb73aff2	osv-scanner	hawk	CVE-2022-29167	high	Uncontrolled Resource Consumption in Hawk		
+f7eafc891215d221	osv-scanner	serve-static	CVE-2024-43800	low	serve-static vulnerable to template injection that can lead to XSS		
+f8b8fda292a63fc3	osv-scanner	npm	CVE-2020-15095	moderate	npm CLI exposing sensitive information through logs		
+f922e572b03eb772	osv-scanner	tar	CVE-2021-32804	high	Arbitrary File Creation/Overwrite due to insufficient absolute path sanitization		
+f938afebcd6f2066	npm-audit	xml2js	GHSA-776F-QX25-Q3CC	moderate	xml2js is vulnerable to prototype pollution		
+f9ab01211fdfbc21	osv-scanner	ajv	CVE-2020-15366	moderate	Prototype Pollution in Ajv		
+f9e73723d4f70eb3	osv-scanner	tar	CVE-2021-37712	high	Arbitrary File Creation/Overwrite via insufficient symlink protection due to directory cache poisoning using symbolic links		
+fb2880032711d6cf	npm-audit	swig	GHSA-2RQ5-699J-X7P6	high	Arbitrary local file read vulnerability during template rendering 		
+fc19d820e0e253af	osv-scanner	grunt	CVE-2022-0436	moderate	Path Traversal in Grunt		
+fc52662cf43edda0	npm-audit	hosted-git-info	GHSA-43F8-2H32-F4CJ	moderate	Regular Expression Denial of Service in hosted-git-info		
+fd1691622165789a	osv-scanner	websocket-driver	CVE-2026-54490	moderate	websocket-driver: Resource limit bypass via message compression		
+fdedcc3643fb8c6c	npm-audit	marked	GHSA-P9WX-2529-FP83	moderate	Marked allows Regular Expression Denial of Service (ReDoS) attacks		
+fe9be9ae68434cb5	npm-audit	fsevents	GHSA-XV2F-5JW4-V95M	critical	Malware in fsevents		
+fe9be9ae68434cb5	osv-scanner	fsevents	GHSA-XV2F-5JW4-V95M	info	Malicious code in fsevents (npm)		
+fecc190c29d0cdef	osv-scanner	minimatch	CVE-2026-26996	high	minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern		
+fecc437bddf2e9a8	npm-audit	uuid	GHSA-W5HQ-G745-H8PQ	moderate	uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided		
+ff1e20f174f73e21	npm-audit	is-my-json-valid	GHSA-4HPF-3WQ7-5RPR	moderate	Regular expression deinal of service (ReDoS) in is-my-json-valid		
+fff5bce689ef200b	npm-audit	lodash	GHSA-JF85-CPCP-J695	critical	Prototype Pollution in lodash		
