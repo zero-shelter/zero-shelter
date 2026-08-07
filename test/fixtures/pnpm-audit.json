@@ -1,0 +1,30 @@
+{
+  "actions": [],
+  "advisories": {
+    "1179": {
+      "id": 1179,
+      "module_name": "minimist",
+      "title": "Prototype Pollution",
+      "severity": "critical",
+      "vulnerable_versions": "<0.2.1",
+      "patched_versions": ">=0.2.1",
+      "url": "https://npmjs.com/advisories/1179",
+      "cves": ["CVE-2020-7598"],
+      "github_advisory_id": "GHSA-vh95-rmgr-6w4m",
+      "findings": [{ "version": "0.0.8", "paths": ["mkdirp>minimist"] }]
+    },
+    "1523": {
+      "id": 1523,
+      "module_name": "lodash",
+      "title": "Command Injection in lodash",
+      "severity": "high",
+      "vulnerable_versions": "<4.17.21",
+      "patched_versions": "<0.0.0",
+      "url": "https://npmjs.com/advisories/1523",
+      "cves": [],
+      "github_advisory_id": "GHSA-35jh-r3h4-6jhm",
+      "findings": [{ "version": "4.17.11", "paths": ["lodash"] }]
+    }
+  },
+  "metadata": { "vulnerabilities": { "critical": 1, "high": 1 } }
+}

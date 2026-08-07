@@ -14,6 +14,7 @@ import { parseNpmAudit } from "./ingest/npm-audit.js";
 import { parseOsv } from "./ingest/osv.js";
 import { collect } from "./scan.js";
 import { colorEnabled, renderExplain, renderHuman, renderJson } from "./report.js";
+import { renderSarif } from "./sarif.js";
 import type { ScaFinding } from "./finding.js";
 
 const USAGE = `zero-shelter judge — decide which dependency findings to fix now
@@ -22,7 +23,9 @@ const USAGE = `zero-shelter judge — decide which dependency findings to fix no
 
   --input <file>        read scanner output instead of running scanners.
                         Repeatable. Format is detected from the contents.
-  --json                machine-readable output
+  --format <fmt>        text (default) | json | sarif
+  --json                shorthand for --format json
+  --output <file>       write to a file instead of stdout
   --explain             show how each score was reached
   --top <n>             report at most n findings
   --update-baseline     record the current findings as accepted and exit 0
@@ -42,6 +45,8 @@ export async function main(argv: readonly string[]): Promise<number> {
       allowPositionals: true,
       options: {
         input: { type: "string", multiple: true },
+        format: { type: "string" },
+        output: { type: "string" },
         json: { type: "boolean" },
         explain: { type: "boolean" },
         top: { type: "string" },
@@ -72,6 +77,12 @@ export async function main(argv: readonly string[]): Promise<number> {
   const top = parseTop(values.top);
   if (top instanceof Error) {
     process.stderr.write(`${top.message}\n`);
+    return 2;
+  }
+
+  const format = values.format ?? (values.json === true ? "json" : "text");
+  if (format !== "text" && format !== "json" && format !== "sarif") {
+    process.stderr.write(`--format expects text, json or sarif, got ${format}\n`);
     return 2;
   }
 
@@ -128,15 +139,28 @@ export async function main(argv: readonly string[]): Promise<number> {
     return 0;
   }
 
-  if (values.json === true) {
-    process.stdout.write(renderJson(result));
+  let rendered: string;
+  if (format === "json") {
+    rendered = renderJson(result);
+  } else if (format === "sarif") {
+    rendered = renderSarif(result);
   } else {
-    process.stdout.write(
-      `${renderHuman(result, colorEnabled(process.env, process.stdout.isTTY === true))}\n`,
-    );
-    if (values.explain === true) {
-      process.stdout.write(`\n${renderExplain(result)}\n`);
-    }
+    // Colour is decided by where this is going. Writing to a file always means
+    // no escape codes, whatever the terminal says.
+    const color =
+      values.output === undefined &&
+      colorEnabled(process.env, process.stdout.isTTY === true);
+    rendered =
+      `${renderHuman(result, color)}\n` +
+      (values.explain === true ? `\n${renderExplain(result)}\n` : "");
+  }
+
+  if (values.output === undefined) {
+    process.stdout.write(rendered);
+  } else {
+    const target = resolve(cwd, values.output);
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, rendered, "utf8");
   }
 
   return result.fixNow.length > 0 ? 1 : 0;

@@ -1,0 +1,53 @@
+# Dependency findings in the Security tab, failing only on what a change added.
+#
+# Copy to .github/workflows/ and commit .zero-shelter/baseline.json alongside it.
+# Without the baseline every run reports the whole backlog and the job is noise
+# from day one — which is how security checks get switched off.
+
+name: dependencies
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write   # required to upload SARIF
+
+jobs:
+  judge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      # Optional. Without it only npm audit runs, and the two sources cannot be
+      # reconciled — which is where most of the deduplication comes from.
+      - name: Install osv-scanner
+        run: |
+          curl -sSfL -o /usr/local/bin/osv-scanner \
+            https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
+          chmod +x /usr/local/bin/osv-scanner
+
+      # continue-on-error so the SARIF still uploads when findings are present.
+      # The job result comes from the check below, after the upload.
+      - name: Judge
+        id: judge
+        continue-on-error: true
+        run: npx zero-shelter judge --format sarif --output zero-shelter.sarif
+
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: zero-shelter.sarif
+
+      - name: Fail if this change introduced something new
+        if: steps.judge.outcome == 'failure'
+        run: |
+          echo "New dependency findings. Run 'npx zero-shelter judge --explain' locally."
+          exit 1

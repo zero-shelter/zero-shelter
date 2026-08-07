@@ -21,9 +21,25 @@ export interface Collected {
   readonly skipped: string[];
 }
 
+/**
+ * Runs a command and resolves to its stdout, or `undefined` when the command
+ * does not exist.
+ *
+ * Injectable so the failure modes — absent tool, non-zero exit, empty output —
+ * can be driven in tests without installing scanners or depending on what a CI
+ * image happens to have. These paths are the ones most likely to differ between
+ * platforms and least likely to be exercised by accident.
+ */
+export type Capture = (
+  command: string,
+  args: readonly string[],
+  options: ScanOptions,
+) => Promise<string | undefined>;
+
 export interface ScanOptions {
   readonly cwd: string;
   readonly timeoutMs?: number;
+  readonly capture?: Capture;
 }
 
 const DEFAULT_TIMEOUT_MS = 120_000;
@@ -36,12 +52,29 @@ export async function collect(options: ScanOptions): Promise<Collected> {
   const skipped: string[] = [];
 
   const audit = await runNpmAudit(options);
-  if (audit.ok) findings.push(...parseNpmAudit(audit.stdout));
-  else skipped.push(`npm audit skipped: ${audit.reason}`);
+  if (audit.ok) {
+    // A scanner that produced output we cannot read is worth saying out loud.
+    // Swallowing it would silently drop a whole source and still look like a
+    // clean run.
+    try {
+      findings.push(...parseNpmAudit(audit.stdout));
+    } catch (error) {
+      skipped.push(`npm audit output unreadable: ${(error as Error).message}`);
+    }
+  } else {
+    skipped.push(`npm audit skipped: ${audit.reason}`);
+  }
 
   const osv = await runOsvScanner(options);
-  if (osv.ok) findings.push(...parseOsv(osv.stdout, osv.version));
-  else skipped.push(`osv-scanner skipped: ${osv.reason}`);
+  if (osv.ok) {
+    try {
+      findings.push(...parseOsv(osv.stdout, osv.version));
+    } catch (error) {
+      skipped.push(`osv-scanner output unreadable: ${(error as Error).message}`);
+    }
+  } else {
+    skipped.push(`osv-scanner skipped: ${osv.reason}`);
+  }
 
   return { findings, skipped };
 }
@@ -55,14 +88,16 @@ type Attempt =
  * case. Only a missing or unreadable report is a failure.
  */
 async function runNpmAudit(options: ScanOptions): Promise<Attempt> {
-  const stdout = await capture("npm", ["audit", "--json"], options);
+  const run = options.capture ?? capture;
+  const stdout = await run("npm", ["audit", "--json"], options);
   if (stdout === undefined) return { ok: false, reason: "npm is not available" };
   if (stdout.trim() === "") return { ok: false, reason: "npm produced no report" };
   return { ok: true, stdout };
 }
 
 async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
-  const stdout = await capture(
+  const run = options.capture ?? capture;
+  const stdout = await run(
     "osv-scanner",
     ["--format", "json", "--recursive", options.cwd],
     options,
@@ -76,7 +111,7 @@ async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
   }
   if (stdout.trim() === "") return { ok: false, reason: "produced no report" };
 
-  const version = await capture("osv-scanner", ["--version"], options);
+  const version = await run("osv-scanner", ["--version"], options);
   const parsed = version?.match(/\d+\.\d+\.\d+/)?.[0];
 
   return parsed === undefined
@@ -91,7 +126,7 @@ async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
  * Only ENOENT — and on Windows a shell that cannot resolve the name — means the
  * tool is not installed.
  */
-async function capture(
+export async function capture(
   command: string,
   args: readonly string[],
   options: ScanOptions,

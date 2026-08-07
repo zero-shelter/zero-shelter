@@ -1,36 +1,148 @@
 # zero-shelter
 
-> **⚠️ 한 줄 소개는 아직 확정 전입니다.** 팀 논의 후 채웁니다.
-> 후보와 근거는 [Discussion #1](https://github.com/zero-shelter/zero-shelter/discussions) 참고.
+Turns dependency scanner output into a short, deterministic list of what to fix
+now — and stops telling you about the rest.
 
-Local-first, deterministic security tooling for AI-assisted development.
-No LLM at runtime, no network egress, no telemetry.
+Local-first. No LLM at runtime, no network calls of its own, no telemetry.
 
-2026 오픈소스 개발자대회 출품작 · Apache-2.0
+> **Status: early.** The pipeline runs end to end and is covered by 92 tests on
+> Linux, macOS and Windows. Nothing is published to npm yet.
 
----
+## The problem
 
-## Status
+Run the scanners on a real project and you get hundreds of warnings. Maybe five
+are worth doing something about today. Finding those five costs more attention
+than fixing them, so after a while nobody opens the report.
 
-이 저장소는 이제 막 시작했습니다. 지금 있는 것은 결정론 게이트(`src/normalize.ts`)와
-지문 계산(`src/fingerprint.ts`)뿐입니다.
+There is no shortage of tools that find things. What is missing is the part that
+decides which of them matter right now.
 
-진행 상황은 [Issues](https://github.com/zero-shelter/zero-shelter/issues)를 보세요.
+## What it does
+
+```console
+$ npx zero-shelter judge
+  osv-scanner skipped: not on PATH (optional — install it for cross-source deduplication)
+
+fix these 5 now
+
+  critical  minimist   GHSA-XVCH-5GV4-984H  → —  125
+  critical  lodash     GHSA-JF85-CPCP-J695  → —  125
+  high      minimatch  GHSA-3PPC-4F35-3M26  → —  100
+  high      minimatch  GHSA-7R86-CG39-JMMJ  → —  100
+  high      lodash     GHSA-35JH-R3H4-6JHM  → —   95
+
+  13 reported → 13 after merge → 5 to fix  (62% less noise)
+  first run — record these as accepted with --update-baseline, then only new findings are reported
+```
+
+Record what is already there, and from then on you only hear about what is new:
+
+```console
+$ npx zero-shelter judge --update-baseline
+recorded 13 finding(s) as accepted in .zero-shelter/baseline.json
+
+$ npx zero-shelter judge
+✓ nothing new to fix
+  13 reported → 13 after merge → 0 to fix (100% less noise), 13 already accepted
+```
+
+Exit code is `1` when anything is new, so CI fails on the regression this change
+introduced rather than on the backlog it inherited.
+
+## Install
+
+Nothing to install. `npx zero-shelter judge` runs it.
+
+`npm audit` always runs, because a project with a lockfile already has npm.
+`osv-scanner` is used when it is on `PATH` and skipped quietly when it is not —
+you are never told to go install something before you can see output. Installing
+it is worth doing though: it is what lets two sources be reconciled, which is
+where most of the deduplication comes from.
+
+pnpm, yarn v1 and npm 6 report formats are read too.
+
+## In CI
+
+```yaml
+- run: npx zero-shelter judge --format sarif --output zero-shelter.sarif
+  continue-on-error: true
+
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: zero-shelter.sarif
+```
+
+Findings land in the Security tab and annotate the pull request. Fingerprints
+are stable across machines and runs, so GitHub recognises an alert it has
+already seen instead of reopening it every build.
+
+There is an irony here worth naming: this project exists because SARIF from
+different tools cannot be reconciled by the tools that consume it. Emitting
+SARIF is not a contradiction — downstream receives one already-judged run
+instead of four raw ones it will fail to merge.
+
+## Options
+
+```
+--input <file>        read scanner output instead of running scanners (repeatable)
+--format <fmt>        text (default) | json | sarif
+--output <file>       write to a file instead of stdout
+--explain             show how each score was reached
+--top <n>             report at most n findings
+--update-baseline     record current findings as accepted
+--baseline <file>     baseline location (default .zero-shelter/baseline.json)
+--cwd <dir>           project directory
+```
+
+`--explain` prints every point awarded and the weights table it came from, so
+the ranking can be argued with rather than trusted.
 
 ## Design invariants
 
-바뀌면 안 되는 것들입니다. 새 코드가 이 중 하나를 어기면 리뷰에서 막습니다.
+These do not change. A patch that breaks one is rejected on that basis alone.
 
-| | 왜 |
+| Invariant | Why |
 |---|---|
-| 런타임에 LLM을 쓰지 않는다 | 같은 입력이면 항상 같은 결과여야 합니다. 그리고 코드를 밖으로 보내지 않습니다 |
-| 네트워크로 나가지 않는다 | 로컬에서 완결되어야 오프라인·폐쇄망에서 검증할 수 있습니다 |
-| 부동소수점 점수를 쓰지 않는다 | 정수만 씁니다. 반올림이 플랫폼마다 다르면 순위가 흔들립니다 |
-| 시크릿 원본을 보관하지 않는다 | 파서 안에서 즉시 sha256하고 버립니다 |
-| 지문에 들어가는 문자열은 `normalize.ts`를 거친다 | 정규화 경로가 둘이면 지문도 둘이 됩니다 |
+| No LLM at runtime | The same input must produce the same output, on every machine. And your code stays on your machine. |
+| No network calls of our own | Results must be reproducible offline. Scanners we shell out to are their own business, and we say that plainly rather than claiming more than we do. |
+| Integer arithmetic only in scoring | Floating point rounds differently across platforms. A ranking that shifts by host makes every number we publish true only on the machine that produced it. |
+| Secrets hashed at parse time, originals discarded | A security tool that leaks what it finds has no reason to exist. |
+| Everything fingerprinted goes through `src/normalize.ts` | Two normalization paths means two identities for one finding. |
 
-CI는 ubuntu·macOS·Windows × Node 20·22에서 같은 지문이 나오는지 검사합니다.
-한 곳이라도 다르면 우리가 발표할 모든 숫자가 그 기계에서만 참인 숫자가 됩니다.
+CI runs the suite on Ubuntu, macOS and Windows and asserts fixed hash values, so
+a host-dependent fingerprint fails the build rather than quietly making our
+numbers machine-specific.
+
+## Where merging stops
+
+Two scanners agree on a vulnerability only when they share an identifier.
+`npm audit` links one advisory to GitHub and another to NVD, so their alias sets
+can be disjoint even for the same vulnerability.
+
+We join what shares an identifier and **flag the rest rather than guessing**.
+Between showing a duplicate and hiding a vulnerability, the duplicate is the
+cheaper mistake.
+
+This is v1's answer, not a permanent one — the tradeoffs are open in
+[Discussion #25](https://github.com/zero-shelter/zero-shelter/discussions/25),
+and we would like better ideas.
+
+## Honesty about what we measure
+
+We benchmark against externally labelled data and publish the result whether or
+not it flatters us. If the ranking turns out to be about as accurate as sorting
+by severity, that is what this section will say.
+
+The claim is not better precision. It is far less noise at comparable precision.
+
+Labelling is done by two people independently with inter-rater agreement
+reported. It is not done by a model: proving a tool works using ground truth its
+own authors generated is circular, and we would not believe it from anyone else.
+
+## Documentation
+
+- [Architecture](./docs/architecture.md) — layers, sequence diagram, where to add things
+- [v1 scope](./docs/v1-scope.md) — what is in, what is deferred, and why
 
 ## Development
 
@@ -38,22 +150,25 @@ CI는 ubuntu·macOS·Windows × Node 20·22에서 같은 지문이 나오는지 
 npm ci
 npm test
 npm run typecheck
-npm run third-party   # THIRD_PARTY.md 재생성
+npm run third-party   # regenerate THIRD_PARTY.md
 ```
 
-Node 20 이상이 필요합니다.
+Node 20 or later.
 
 ## Contributing
 
-리뷰 통과 조건이 일반적인 프로젝트와 다릅니다.
+Contributions are welcome, including disagreement with the design.
 
-> **이 코드를 깨뜨리는 입력을 하나 제시하지 못하면 승인하지 않습니다.**
+One review rule is unusual enough to state up front:
 
-코멘트 개수로는 통과시키지 않습니다. 에이전트가 400줄을 3분에 쓰면 사람도 3분에
-승인하게 되는데, 그러면 코드와 테스트가 같은 오해를 공유한 채로 머지됩니다.
-반례를 만들어보는 것이 실제로 읽었다는 유일한 증거입니다.
+> **A reviewer who cannot describe an input that breaks the change does not
+> approve it.**
 
-자세한 내용은 [CONTRIBUTING](https://github.com/zero-shelter/.github/blob/main/CONTRIBUTING.md)에 있습니다.
+Not comment count. An agent can write four hundred lines in three minutes, and a
+human will approve four hundred lines in three minutes to match — at which point
+the code and its tests share the same misunderstanding and nobody notices.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 

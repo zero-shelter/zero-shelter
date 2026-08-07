@@ -28,6 +28,17 @@ const SEVERITIES = new Set<Severity>([
 
 export function parseNpmAudit(raw: string): ScaFinding[] {
   const report: unknown = JSON.parse(raw);
+  if (!isRecord(report)) {
+    throw new Error("npm audit output is not a JSON object");
+  }
+
+  // pnpm audit, yarn v1 and npm 6 all emit the older `advisories` shape.
+  // Rejecting it would turn "we support npm" into "we support npm 7+", which
+  // is a much smaller promise than it needs to be.
+  if (isRecord(report["advisories"])) {
+    return parseAdvisories(report["advisories"]);
+  }
+
   const vulnerabilities = readVulnerabilities(report);
 
   const findings: ScaFinding[] = [];
@@ -43,6 +54,66 @@ export function parseNpmAudit(raw: string): ScaFinding[] {
 
   // Sorting by fingerprint makes the output independent of key order in the
   // input, which is what lets us snapshot it.
+  return findings.sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1));
+}
+
+/**
+ * The `advisories` shape used by pnpm audit, yarn v1 and npm 6.
+ *
+ * Each entry is one advisory against one package, so there is no propagation to
+ * unpick — and it carries `cves` and `github_advisory_id` explicitly, which
+ * makes its aliases richer than what npm 7+ leaves us to scrape out of a URL.
+ */
+function parseAdvisories(advisories: Record<string, unknown>): ScaFinding[] {
+  const findings: ScaFinding[] = [];
+
+  for (const key of Object.keys(advisories).sort()) {
+    const advisory = advisories[key];
+    if (!isRecord(advisory)) continue;
+
+    const packageName = asString(advisory["module_name"]);
+    if (packageName === undefined) continue;
+
+    const aliases = normalizeAliases([
+      ...(Array.isArray(advisory["cves"])
+        ? advisory["cves"].filter((v): v is string => typeof v === "string")
+        : []),
+      ...(asString(advisory["github_advisory_id"]) === undefined
+        ? []
+        : [asString(advisory["github_advisory_id"])!]),
+      ...(typeof advisory["id"] === "number" ? [`NPM-${advisory["id"]}`] : []),
+    ]);
+
+    if (aliases.length === 0) continue;
+
+    const advisoryId = pickAdvisoryId(aliases);
+    const patched = asString(advisory["patched_versions"]);
+
+    const finding: ScaFinding = {
+      kind: "SCA",
+      fingerprint: fingerprint([ECOSYSTEM, packageName, advisoryId]),
+      severity: severityOf(advisory, {}),
+      title: normalizeText(
+        asString(advisory["title"]) ?? `Vulnerability in ${packageName}`,
+      ),
+      ecosystem: ECOSYSTEM,
+      packageName: normalizeText(packageName),
+      vulnerableRange: normalizeText(
+        asString(advisory["vulnerable_versions"]) ?? "*",
+      ),
+      advisoryId,
+      aliases,
+      // This shape says nothing about direct versus transitive. Guessing would
+      // hand the ranking a fact nobody established.
+      transitive: true,
+      // "<0.0.0" is how this format spells "no patch exists".
+      fixAvailable: patched !== undefined && patched !== "<0.0.0",
+      sources: [{ tool: TOOL, ruleId: advisoryId }],
+    };
+
+    findings.push(finding);
+  }
+
   return findings.sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1));
 }
 
@@ -169,21 +240,12 @@ function fixedVersionOf(
   return version === undefined ? undefined : normalizeText(version);
 }
 
-function readVulnerabilities(report: unknown): Record<string, unknown> {
-  if (!isRecord(report)) {
-    throw new Error("npm audit output is not a JSON object");
-  }
-
+function readVulnerabilities(report: Record<string, unknown>): Record<string, unknown> {
   const vulnerabilities = report["vulnerabilities"];
   if (vulnerabilities === undefined) {
-    // npm 6 produced `advisories` instead. Saying so beats a confused failure
-    // three steps later.
-    if (report["advisories"] !== undefined) {
-      throw new Error(
-        "npm audit report is from npm 6; zero-shelter needs npm 7 or later (auditReportVersion 2)",
-      );
-    }
-    throw new Error("npm audit output has no `vulnerabilities` field");
+    throw new Error(
+      "npm audit output has neither `vulnerabilities` (npm 7+) nor `advisories` (pnpm, yarn v1, npm 6)",
+    );
   }
 
   if (!isRecord(vulnerabilities)) {

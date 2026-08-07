@@ -99,11 +99,13 @@ describe("severity and directness", () => {
 });
 
 describe("unsupported input", () => {
-  it("names npm 6 explicitly instead of failing later", () => {
-    expect(() => parseNpmAudit('{"advisories":{}}')).toThrow(/npm 6/);
+  // Previously this shape was rejected as "npm 6, unsupported". It is now read,
+  // so a clean project reports nothing rather than failing.
+  it("accepts an empty advisories report as a clean project", () => {
+    expect(parseNpmAudit('{"advisories":{}}')).toEqual([]);
   });
 
-  it("rejects output with no vulnerabilities field", () => {
+  it("rejects output that is neither known shape", () => {
     expect(() => parseNpmAudit("{}")).toThrow(/vulnerabilities/);
   });
 
@@ -154,5 +156,49 @@ describe("normalizeAliases", () => {
 
   it("drops blank entries rather than carrying an alias that joins everything", () => {
     expect(normalizeAliases(["", "  ", "CVE-2021-1"])).toEqual(["CVE-2021-1"]);
+  });
+});
+
+describe("the advisories shape (pnpm, yarn v1, npm 6)", () => {
+  const pnpm = parseNpmAudit(
+    readFileSync(
+      fileURLToPath(new URL("./fixtures/pnpm-audit.json", import.meta.url)),
+      "utf8",
+    ),
+  );
+
+  /**
+   * Rejecting this shape narrowed "we support npm" to "we support npm 7+",
+   * which quietly excluded every pnpm user.
+   */
+  it("is read rather than rejected", () => {
+    expect(pnpm).toHaveLength(2);
+  });
+
+  /**
+   * This format states its CVE and GHSA outright instead of hiding one in a
+   * URL, so its findings join more readily than npm 7+ output does.
+   */
+  it("keeps both identifiers, which makes merging easier not harder", () => {
+    const minimist = pnpm.find((f) => f.packageName === "minimist");
+    expect(minimist?.aliases).toEqual([
+      "CVE-2020-7598",
+      "GHSA-VH95-RMGR-6W4M",
+      "NPM-1179",
+    ]);
+    expect(minimist?.advisoryId).toBe("CVE-2020-7598");
+  });
+
+  it("reads '<0.0.0' as the way this format spells 'no fix yet'", () => {
+    expect(pnpm.find((f) => f.packageName === "lodash")?.fixAvailable).toBe(false);
+    expect(pnpm.find((f) => f.packageName === "minimist")?.fixAvailable).toBe(true);
+  });
+
+  it("does not claim to know whether a dependency is direct", () => {
+    expect(pnpm.every((f) => f.transitive)).toBe(true);
+  });
+
+  it("still refuses output that is neither shape", () => {
+    expect(() => parseNpmAudit('{"something":1}')).toThrow(/neither/);
   });
 });
