@@ -1,0 +1,48 @@
+name: Security control proposal
+description: Propose a privacy, security, secret-handling, or policy control
+title: "[Security]: "
+labels:
+  - security
+  - type: security-control
+  - status: proposed
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include undisclosed vulnerabilities, real secrets, personal data, or internal URLs.
+        For a vulnerability report, follow SECURITY.md instead.
+  - type: textarea
+    id: threat
+    attributes:
+      label: Threat or privacy problem
+      description: What can go wrong and who is affected?
+    validations:
+      required: true
+  - type: textarea
+    id: data-flow
+    attributes:
+      label: Protected data and data flow
+      description: Where is data created, transformed, stored, logged, or transmitted?
+    validations:
+      required: true
+  - type: textarea
+    id: user-control
+    attributes:
+      label: User control and default
+      description: Is it opt-in or opt-out? What does failure do?
+    validations:
+      required: true
+  - type: textarea
+    id: abuse-cases
+    attributes:
+      label: Abuse cases and QA
+      description: Which malicious inputs and failure modes will be tested?
+    validations:
+      required: true
+  - type: input
+    id: spec
+    attributes:
+      label: Specification path
+      placeholder: docs/specs/123-security-control.md
+    validations:
+      required: true

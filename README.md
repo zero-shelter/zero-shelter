@@ -260,6 +260,9 @@ know about, including that the ranking predates the labels.
 - [v1 scope](./docs/v1-scope.md) — what is in, what is deferred, and why
 - [Agent hook](./docs/AGENT-HOOK.md) — setup, and what it deliberately will not do
 - [Benchmark](./bench/README.md) — pinned targets, frozen captures, labelling protocol
+- [Contributing](./CONTRIBUTING.md) — contributor workflow, specs, QA, and PR rules
+- [Governance](./GOVERNANCE.md) — Owner/Maintainer decisions and release boundaries
+- [Security and privacy](./SECURITY.md) — reporting and security-control requirements
 
 Korean: [README.ko.md](./README.ko.md), [THIRD_PARTY.ko.md](./THIRD_PARTY.ko.md).
 English is the canonical version; a translation that lags is a bug worth
@@ -301,6 +304,10 @@ human will approve four hundred lines in three minutes to match — at which poi
 the code and its tests share the same misunderstanding and nobody notices.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+Feature specifications and QA evidence use the [spec template](./docs/feature-spec-template.md)
+and [QA checklist](./docs/qa-checklist.md). The repository also provides GitHub issue and
+pull request templates for feature, bug, and security-control contributions.
 
 ## License
 

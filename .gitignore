@@ -2,3 +2,4 @@ node_modules/
 dist/
 .zero-shelter/
 bench/captures/*/workdir/
+.worktree/

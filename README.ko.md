@@ -251,6 +251,9 @@ CI가 Ubuntu·macOS·Windows에서 테스트를 돌리며 고정된 해시값을
 - [에이전트 훅](./docs/AGENT-HOOK.md) — 설정과, 의도적으로 하지 않는 것
 - [벤치마크](./bench/README.md) — 고정 대상, 동결 캡처, 라벨링 프로토콜
 - [서드파티 구성요소](./THIRD_PARTY.ko.md)
+- [기여 가이드](./CONTRIBUTING.ko.md) — 기여 흐름·명세·QA·PR 규칙
+- [Governance](./GOVERNANCE.ko.md) — Owner/Maintainer 결정과 release 경계
+- [보안·개인정보](./SECURITY.ko.md) — 신고와 보안 제어 기여 기준
 
 영어가 정본입니다. 번역이 뒤처져 있다면 그건 신고할 만한 버그입니다.
 
@@ -289,6 +292,10 @@ Node 20 이상.
 아무도 알아채지 못합니다.
 
 [CONTRIBUTING.md](./CONTRIBUTING.md)를 보세요.
+
+기능 명세와 QA 근거는 [명세 템플릿](./docs/feature-spec-template.ko.md)과
+[QA 체크리스트](./docs/qa-checklist.ko.md)를 사용합니다. 저장소에는 기능·버그·보안 제어
+기여를 위한 GitHub Issue와 PR 템플릿도 있습니다.
 
 ## 라이선스
 

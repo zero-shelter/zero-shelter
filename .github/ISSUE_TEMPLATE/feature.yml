@@ -1,0 +1,55 @@
+name: Feature proposal
+description: Propose a focused feature or integration
+title: "[Feature]: "
+labels:
+  - enhancement
+  - type: feature
+  - status: proposed
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Features should start with a small, reviewable scope and a linked specification.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and user impact
+      description: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and non-goals
+      description: What is included and explicitly excluded?
+    validations:
+      required: true
+  - type: input
+    id: spec
+    attributes:
+      label: Specification path
+      description: Where will the feature spec live?
+      placeholder: docs/specs/123-feature-name.md
+    validations:
+      required: true
+  - type: textarea
+    id: interface
+    attributes:
+      label: Interface and affected layer
+      description: Inputs, outputs, files, contracts, and possible conflicts
+    validations:
+      required: true
+  - type: textarea
+    id: qa
+    attributes:
+      label: QA acceptance criteria
+      description: Normal, invalid, empty, boundary, and regression cases
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and privacy impact
+      description: Data flow, network, LLM, secrets, retention, and failure mode
+    validations:
+      required: true
