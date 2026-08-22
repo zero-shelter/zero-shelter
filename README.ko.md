@@ -114,8 +114,12 @@ pnpm과 npm 6 리포트 형식도 읽습니다.
 --update-baseline     현재 항목들을 수용으로 기록
 --baseline <file>     baseline 위치 (기본 .zero-shelter/baseline.json)
 --cwd <dir>           프로젝트 디렉터리
+--no-color             text output의 ANSI 색상을 끔
 --version             설치된 package version 출력
 ```
+
+`--no-color`는 사람이 읽는 text output에만 적용되고 `FORCE_COLOR`보다 우선합니다.
+기존 `NO_COLOR` 환경변수도 계속 지원합니다.
 
 `zero-shelter version`도 같은 version을 출력하는 명령입니다.
 

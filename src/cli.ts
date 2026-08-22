@@ -33,6 +33,7 @@ const USAGE = `zero-shelter judge — decide which dependency findings to fix no
   --update-baseline     record the current findings as accepted and exit 0
   --baseline <file>     baseline location (default ${BASELINE_PATH})
   --cwd <dir>           project directory (default .)
+  --no-color             disable ANSI colors in text output
   --version             print the installed package version
   --help
 
@@ -62,6 +63,7 @@ export async function main(argv: readonly string[]): Promise<number> {
         "update-baseline": { type: "boolean" },
         baseline: { type: "string" },
         cwd: { type: "string" },
+        "no-color": { type: "boolean" },
         version: { type: "boolean" },
         help: { type: "boolean", short: "h" },
       },
@@ -164,6 +166,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     // Colour is decided by where this is going. Writing to a file always means
     // no escape codes, whatever the terminal says.
     const color =
+      values["no-color"] !== true &&
       values.output === undefined &&
       colorEnabled(process.env, process.stdout.isTTY === true);
     rendered =

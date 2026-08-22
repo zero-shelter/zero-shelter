@@ -115,8 +115,12 @@ worse than saying nothing. See [docs/AGENT-HOOK.md](./docs/AGENT-HOOK.md).
 --update-baseline     record current findings as accepted
 --baseline <file>     baseline location (default .zero-shelter/baseline.json)
 --cwd <dir>           project directory
+--no-color             disable ANSI colors in text output
 --version             print the installed package version
 ```
+
+`--no-color` affects human-readable text only and overrides `FORCE_COLOR`.
+The existing `NO_COLOR` environment variable remains supported.
 
 `zero-shelter version` is an equivalent command for scripts and users who prefer subcommands.
 
