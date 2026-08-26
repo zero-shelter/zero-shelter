@@ -172,11 +172,11 @@ environment. A missing optional scanner is a note, not an error.
 ## Where to add things
 
 ```
-새 스캐너를 붙이려면        → src/ingest/<tool>.ts + scan.ts에 한 줄
-판정 품질을 고치려면        → src/merge.ts, src/triage.ts
-출력을 바꾸려면             → src/report.ts, src/html.ts, src/sarif.ts
-실행 이력을 바꾸려면        → src/history.ts, src/cli.ts
-새 명령을 추가하려면        → src/cli.ts
+to add a scanner        → src/ingest/<tool>.ts + one line in scan.ts
+to change what we judge → src/merge.ts, src/triage.ts
+to change what we print → src/report.ts, src/html.ts, src/sarif.ts
+to change the history   → src/history.ts, src/cli.ts
+to add a command        → src/cli.ts
 ```
 
 A new scanner is the most self-contained kind of change: one new file, one line

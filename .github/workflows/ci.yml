@@ -10,7 +10,8 @@ permissions:
 
 # The org allows only actions/checkout and requires SHA pinning, so this
 # workflow uses the Node preinstalled on each runner instead of setup-node.
-# That costs us the Node 20/22 dimension — see issue "CI에 Node 버전 매트릭스 복구".
+# That costs us the Node 20/22 dimension — tracked in "restore the Node version
+# matrix in CI".
 
 jobs:
   test:
@@ -64,8 +65,9 @@ jobs:
 
       - run: npm ci
 
-      # THIRD_PARTY.md feeds the contest SBOM (붙임1). Regenerating it in CI
-      # keeps it from drifting away from package.json between releases.
+      # THIRD_PARTY.md is what anyone auditing this package reads to find out
+      # what it pulls in. Regenerating it in CI keeps it from drifting away
+      # from package.json between releases.
       - run: npm run third-party
 
       - name: Fail if either THIRD_PARTY file is stale
