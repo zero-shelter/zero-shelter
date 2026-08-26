@@ -70,15 +70,14 @@ describe("no writing unless asked", () => {
       join(project, "package.json"),
       JSON.stringify({ name: "w", version: "1.0.0", dependencies: { lodash: "4.17.11" } }),
     );
-    await run("npm", [
-      "install",
-      "--package-lock-only",
-      "--no-audit",
-      "--no-fund",
-      "--ignore-scripts",
-      "--prefix",
-      project,
-    ]);
+    // npm is a .cmd shim on Windows and execFile cannot invoke it without a
+    // shell — the same reason scan.ts and the QA script pass this flag. The
+    // project goes through `cwd` rather than `--prefix` so no temp path has to
+    // survive a Windows command line.
+    await run("npm", ["install", "--package-lock-only", "--no-audit", "--no-fund", "--ignore-scripts"], {
+      cwd: project,
+      shell: process.platform === "win32",
+    });
 
     const before = (await readdir(project)).sort();
 
