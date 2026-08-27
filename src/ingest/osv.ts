@@ -71,6 +71,8 @@ function findingsForPackage(
     const advisoryId = pickAdvisoryId(aliases);
 
     const fixed = fixedVersionOf(vuln, packageName);
+    const published = asString(vuln["published"]);
+    const cvssVector = cvssOf(vuln);
 
     const finding: ScaFinding = {
       kind: "SCA",
@@ -92,6 +94,8 @@ function findingsForPackage(
       sources: toolVersion === undefined
         ? [{ tool: TOOL, ruleId: id }]
         : [{ tool: TOOL, toolVersion, ruleId: id }],
+      ...(published === undefined ? {} : { published }),
+      ...(cvssVector === undefined ? {} : { cvssVector }),
     };
 
     findings.push(fixed === undefined ? finding : { ...finding, fixedIn: fixed });
@@ -248,4 +252,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * The CVSS vector, when the advisory carries one.
+ *
+ * `severity` is a list because an advisory can be scored under more than one
+ * revision of CVSS. We take the first rather than trying to rank the revisions
+ * against each other, and we take the string exactly as written.
+ */
+function cvssOf(vuln: Record<string, unknown>): string | undefined {
+  const severity = vuln["severity"];
+  if (!Array.isArray(severity)) return undefined;
+  for (const entry of severity) {
+    if (!isRecord(entry)) continue;
+    const score = asString(entry["score"]);
+    if (score !== undefined && score.startsWith("CVSS:")) return score;
+  }
+  return undefined;
 }

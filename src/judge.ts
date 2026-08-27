@@ -60,5 +60,6 @@ export function judge(
     ...(options.installed === undefined ? {} : { installed: options.installed }),
     ...(options.sources === undefined ? {} : { sources: options.sources }),
     ...(options.packageManager === undefined ? {} : { packageManager: options.packageManager }),
+    ...(options.today === undefined ? {} : { today: options.today }),
   };
 }

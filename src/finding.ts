@@ -74,6 +74,25 @@ export interface ScaFinding {
   /** True when nothing in the project depends on this package directly. */
   readonly transitive: boolean;
 
+  /**
+   * When the advisory was published, verbatim from the source.
+   *
+   * Severity is assigned when an advisory is written and never moves again, so
+   * it is the only urgency signal we carry and it says nothing about whether
+   * anyone has had a year to act. This is a fact from the source rather than a
+   * number of ours, which is the only form that survives the standard
+   * PRODUCT.md sets for anything that ranks.
+   */
+  readonly published?: string;
+  /**
+   * The CVSS vector as the source wrote it. Carried, never computed.
+   *
+   * Turning a vector into a score is float arithmetic, and scoring here is
+   * integer-only so the same input ranks the same on every machine. So this is
+   * shown beside the finding and stays out of the score.
+   */
+  readonly cvssVector?: string;
+
   readonly sources: readonly Source[];
 }
 

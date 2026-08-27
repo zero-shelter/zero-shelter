@@ -42,6 +42,8 @@ export interface JudgeResult {
    * an npm-shaped snippet does nothing at all rather than failing loudly.
    */
   readonly packageManager?: PackageManager;
+  /** The date the caller judged on, for saying how old an advisory is. */
+  readonly today?: string;
 }
 
 const COLOR = {
@@ -109,6 +111,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
     advisory: entry.finding.advisoryId,
     fix: entry.finding.fixedIn ?? "—",
     score: String(entry.score),
+    age: ageOf(entry.finding.published, result.today),
   }));
 
   const width = (key: keyof (typeof rows)[number]): number =>
@@ -129,6 +132,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
         paint(row.advisory.padEnd(width("advisory")), COLOR.dim),
         `→ ${row.fix.padEnd(width("fix"))}`,
         paint(row.score.padStart(width("score")), COLOR.dim),
+        paint(row.age.padEnd(width("age")), COLOR.dim),
       ].join("  "),
     );
   }
@@ -232,6 +236,26 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   return lines.join("\n");
+}
+
+/**
+ * How long this has been public, in whole days.
+ *
+ * The one urgency signal severity cannot carry: it is assigned when the
+ * advisory is written and never moves again, so it says a finding is critical
+ * and says nothing about whether anyone has had a year to act. Integer days,
+ * floored, because the ranking around it is integer-only and a figure that
+ * rounds differently per platform is a figure that is only true on one machine.
+ *
+ * Empty when the source did not say, or when the caller supplied no date to
+ * measure against. Silence beats a guess.
+ */
+function ageOf(published?: string, today?: string): string {
+  if (published === undefined || today === undefined) return "";
+  const from = Date.parse(published);
+  const to = Date.parse(today);
+  if (Number.isNaN(from) || Number.isNaN(to) || to < from) return "";
+  return `${Math.floor((to - from) / 86_400_000)}d`;
 }
 
 /**
@@ -434,6 +458,23 @@ export function renderExplain(result: JudgeResult): string {
     }
 
     lines.push(`  ${"".padStart(5)}  range ${finding.vulnerableRange}`);
+
+    // Carried from the source, not folded into the score above. The score is
+    // integer arithmetic over rules printed in the table below; a CVSS number
+    // is float arithmetic over a vector we did not compute. Showing both and
+    // mixing neither is what lets a reader disagree with our order while still
+    // trusting the figure their security team asked for.
+    const published = finding.published;
+    if (published !== undefined) {
+      const age = ageOf(published, result.today);
+      lines.push(
+        `  ${"".padStart(5)}  published ${published.slice(0, 10)}` +
+          (age === "" ? "" : ` — open ${age}`),
+      );
+    }
+    if (finding.cvssVector !== undefined) {
+      lines.push(`  ${"".padStart(5)}  ${finding.cvssVector} (from the advisory, not our score)`);
+    }
 
     if (finding.fixVersionsClaimed !== undefined) {
       lines.push(
