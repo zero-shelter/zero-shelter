@@ -27,7 +27,29 @@ export interface InstalledVersions {
   readonly versions: ReadonlyMap<string, ReadonlySet<string>>;
   /** Package name to the ranges other packages require, never the project's own. */
   readonly required: ReadonlyMap<string, readonly Requirement[]>;
+  /**
+   * Whether a package reaches production, from the lockfile's own `dev` flag.
+   *
+   * A high in a test runner and a high in something serving requests are not
+   * the same news, and until this existed they scored identically and sat next
+   * to each other. This is a label, not a weight — see `scopeOf`.
+   */
+  readonly scopes: ReadonlyMap<string, Scope>;
+  /**
+   * Packages that run a script on install.
+   *
+   * Not an advisory and not a finding: no CVE exists for "this package runs
+   * code". It is the one part of a dependency tree where a compromise needs no
+   * vulnerability at all, and it is knowable from a field we already walk past.
+   */
+  readonly installScripts: ReadonlySet<string>;
 }
+
+/**
+ * `mixed` is real, not a fallback. A package can be a dev dependency of the
+ * root and a production dependency of something the root ships.
+ */
+export type Scope = "prod" | "dev" | "mixed";
 
 const MARKER = "node_modules/";
 const DEPENDENCY_FIELDS = [
@@ -39,6 +61,8 @@ const DEPENDENCY_FIELDS = [
 
 export interface LockEntry {
   readonly version?: string;
+  readonly dev?: boolean;
+  readonly hasInstallScript?: boolean;
   readonly dependencies?: Record<string, string>;
   readonly devDependencies?: Record<string, string>;
   readonly optionalDependencies?: Record<string, string>;
@@ -68,6 +92,8 @@ export function readInstalledVersions(cwd: string): InstalledVersions | undefine
 export function fromPackages(packages: Record<string, LockEntry>): InstalledVersions {
   const versions = new Map<string, Set<string>>();
   const required = new Map<string, Requirement[]>();
+  const scopes = new Map<string, Scope>();
+  const installScripts = new Set<string>();
 
   for (const [key, entry] of Object.entries(packages)) {
     const at = key.lastIndexOf(MARKER);
@@ -77,6 +103,14 @@ export function fromPackages(packages: Record<string, LockEntry>): InstalledVers
         const seen = versions.get(name);
         if (seen === undefined) versions.set(name, new Set([entry.version]));
         else seen.add(entry.version);
+
+        // The same name can sit at several paths with different answers, so
+        // this widens rather than overwrites.
+        const here: Scope = entry.dev === true ? "dev" : "prod";
+        const before = scopes.get(name);
+        scopes.set(name, before === undefined || before === here ? here : "mixed");
+
+        if (entry.hasInstallScript === true) installScripts.add(name);
       }
     }
 
@@ -95,7 +129,21 @@ export function fromPackages(packages: Record<string, LockEntry>): InstalledVers
     }
   }
 
-  return { versions, required };
+  return { versions, required, scopes, installScripts };
+}
+
+/**
+ * Where this package runs, or `unknown` when there is no lockfile to ask.
+ *
+ * `unknown` is deliberately not collapsed into `prod`. Guessing the more
+ * alarming answer is still guessing, and a reader who sees it should know we
+ * did not look rather than believe we did.
+ */
+export function scopeOf(
+  packageName: string,
+  installed?: InstalledVersions,
+): Scope | "unknown" {
+  return installed?.scopes.get(packageName) ?? "unknown";
 }
 
 /**

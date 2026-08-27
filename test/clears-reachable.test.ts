@@ -41,6 +41,8 @@ const lockfile = (
 ): InstalledVersions => ({
   versions: new Map([["tar", new Set(versions)]]),
   required: new Map([["tar", required.map(([by, range]) => ({ by, range }))]]),
+  scopes: new Map(),
+  installScripts: new Set(),
 });
 
 describe("an upgrade the tree will not accept", () => {

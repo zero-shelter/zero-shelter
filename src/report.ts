@@ -4,7 +4,7 @@
 
 import type { AppliedBaseline } from "./baseline.js";
 import { transitiveFixes, upgradeActions, type TransitiveFix } from "./actions.js";
-import { blockedBy, type InstalledVersions } from "./lockfile.js";
+import { blockedBy, scopeOf, type InstalledVersions } from "./lockfile.js";
 import type { RankedFinding } from "./triage.js";
 import { WEIGHTS } from "./triage.js";
 
@@ -88,7 +88,12 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 
   const rows = fixNow.map((entry) => ({
     severity: entry.finding.severity,
-    name: `${entry.finding.packageName}`,
+    // Only the exception is marked. Labelling every row is the same as
+    // labelling none — the eye stops seeing it.
+    name:
+      scopeOf(entry.finding.packageName, result.installed) === "dev"
+        ? `${entry.finding.packageName} (dev)`
+        : entry.finding.packageName,
     advisory: entry.finding.advisoryId,
     fix: entry.finding.fixedIn ?? "—",
     score: String(entry.score),
@@ -203,6 +208,33 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 }
 
 /**
+ * How much of the pile actually ships.
+ *
+ * The complaint this answers: a high in a test runner and a high in something
+ * serving requests arrive with the same score, side by side, and the reader has
+ * to sort that out by hand every time — which is the attention this tool claims
+ * to give back.
+ *
+ * It splits the denominator and leaves the score alone. A weight would be a
+ * claim about relative risk we cannot currently defend with a measurement, and
+ * an invented composite is the thing PRODUCT.md names as the anti-reference.
+ * Silent without a lockfile, because then we did not look.
+ */
+function scopeSplit(result: JudgeResult): string {
+  if (result.installed === undefined) return "";
+
+  let production = 0;
+  let devOnly = 0;
+  for (const entry of result.applied.fresh) {
+    if (scopeOf(entry.finding.packageName, result.installed) === "dev") devOnly += 1;
+    else production += 1;
+  }
+
+  if (devOnly === 0) return "";
+  return ` (${production} reach production, ${devOnly} dev only)`;
+}
+
+/**
  * What the baseline did that the reader did not ask for.
  *
  * A finding recognised under a fingerprint other than the recorded one has been
@@ -223,6 +255,24 @@ function ratchetLines(
       paint(
         `  ${rematched.length} accepted finding(s) came back under a different fingerprint ` +
           "and were matched by advisory id — usually a change in which scanners ran",
+        COLOR.dim,
+      ),
+    );
+  }
+
+  const installScripts = result.installed?.installScripts;
+  if (installScripts !== undefined && installScripts.size > 0) {
+    // Inventory, not an alarm. Native modules need install scripts, so a
+    // number here is normal and a red banner over `core-js` would only teach
+    // people to stop reading. What is worth knowing is that the set exists,
+    // how big it is, and who is in it.
+    const names = [...installScripts].sort();
+    const shown = names.slice(0, 3).join(", ");
+    const rest = names.length > 3 ? ` and ${names.length - 3} more` : "";
+    lines.push(
+      paint(
+        `  ${names.length} package(s) run a script on install — code that executes ` +
+          `before any test does: ${shown}${rest}`,
         COLOR.dim,
       ),
     );
@@ -326,6 +376,7 @@ function summary(
 
   return paint(
     `  ${raw} reported → ${merged} after merge → ${outstanding} to fix` +
+      scopeSplit(result) +
       (raw === 0
         ? ""
         : `  (${percent}% less noise${lonely ? " — one source, nothing to reconcile" : ""})`) +
