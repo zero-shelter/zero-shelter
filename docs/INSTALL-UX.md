@@ -43,7 +43,8 @@ passing build. Now:
 $ cd /tmp/empty-dir && npx zero-shelter judge     # after
 cannot judge /tmp/empty-dir: no scanner produced a report
   npm audit skipped: This command requires an existing lockfile. Try creating one first with: npm i --package-lock-only
-  osv-scanner skipped: not on PATH (optional — install it for cross-source deduplication)
+  osv-scanner skipped: not on PATH. Most of the deduplication comes from having a second
+  source: brew install osv-scanner, or https://github.com/google/osv-scanner/releases
 nothing was scanned, so this is not a pass       # exit 2
 ```
 

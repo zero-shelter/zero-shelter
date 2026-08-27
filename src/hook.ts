@@ -43,7 +43,7 @@ export function hookContext(result: JudgeResult): string | undefined {
   // way, and the invented way is usually `npm i package@latest` on something
   // transitive. The commands are already computed; withholding them here just
   // moves the guessing.
-  const everyCommand = upgradeActions(result.fixNow);
+  const everyCommand = upgradeActions(result.fixNow, result.installed);
   const commands = everyCommand.slice(0, LIMIT);
   const remedy =
     commands.length === 0

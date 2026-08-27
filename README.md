@@ -26,7 +26,6 @@ decides which of them matter right now.
 
 ```console
 $ npx zero-shelter judge
-  osv-scanner skipped: not on PATH (optional — install it for cross-source deduplication)
 
 fix these 5 now
 
@@ -73,21 +72,39 @@ and when they all ran again, it does not manufacture doubt.
 
 ## Install
 
-Nothing to install. `npx zero-shelter judge` runs it.
+Two things, and the second one is not optional.
 
-`npm audit` always runs, because a project with a lockfile already has npm.
-`osv-scanner` is used when it is on `PATH` and skipped quietly when it is not —
-you are never told to go install something before you can see output. Installing
-it is worth doing though: it is what lets two sources be reconciled, which is
-where most of the deduplication comes from.
+```console
+$ npm i -g zero-shelter          # or npx zero-shelter judge
+$ brew install osv-scanner       # or a release from google/osv-scanner
+```
+
+`npm audit` always runs, because a project with a lockfile already has npm. It
+is one source. **This tool reconciles sources, so with one of them there is
+nothing to reconcile** — you get ranking and a baseline, and the count comes out
+the same as it went in.
+
+The difference is not subtle. On uptime-kuma:
+
+```console
+npm audit alone      71 reported → 71 to fix   (0% less noise)
+plus osv-scanner    142 reported → 71 to fix  (50% less noise)
+```
+
+Both numbers are real. The second scanner does not find 71 new problems — it
+describes the same ones again, under identifiers the first one did not use, and
+reconciling that is the job.
+
+A run without `osv-scanner` still works and says so rather than failing. It is
+just the smaller half of the tool.
 
 pnpm projects work the same way: a `pnpm-lock.yaml` makes it run `pnpm audit`
 instead. npm 6's older report shape is read too.
 
-yarn works through `osv-scanner`, which reads `yarn.lock` directly. Without it
-there is nothing to read — yarn v1 writes NDJSON, which this tool does not
-parse — and the run says so, along with the two ways around it, instead of
-ending in a silent "nothing was scanned".
+yarn has no second source without `osv-scanner` and no first source either —
+`npm audit` cannot read `yarn.lock`, and yarn v1 writes NDJSON, which this tool
+does not parse. `osv-scanner` reads `yarn.lock` directly, so for yarn it is the
+only source there is.
 
 ## In CI
 

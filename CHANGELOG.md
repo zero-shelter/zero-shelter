@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.0.7
+
+**`clears 12` cleared nothing.** uptime-kuma has `tar@~6.2.1` in its
+package.json, so npm audit calls tar direct and we printed `npm i tar@7.5.22
+clears 12`. Running it changed 71 findings to 71. `cacache`, `node-gyp`,
+`@louislam/sqlite3` and `@mapbox/node-pre-gyp` each require `tar@^6`, no `^6`
+range accepts a 7, and npm gave them their own copy of the old version. The
+count of copies in the lockfile does not catch this, because the copies only
+split apart once the upgrade runs.
+
+The lockfile does say who requires what, so we read it. A command is only
+offered when every dependent's range accepts the fix; the rest move to the
+`overrides` path they always needed. On uptime-kuma that is ten commands down to
+three, and those three now clear exactly the eleven they promise — 71 to 60, in
+66 lockfile lines. `npm audit fix --force` moves 3,489 and leaves eight behind.
+
+**And it says why.** "Use overrides instead" was advice you had to take on
+faith. The report now names the packages holding the old version, so the reason
+is something you can check rather than trust.
+
 ## 0.0.6
 
 **Nothing is dropped quietly.** The report showed the last twelve recorded runs

@@ -6,17 +6,36 @@ product
 
 ## Users
 
-Developers who run dependency scanners on projects they maintain, and who have
-stopped opening the reports because the reports ask for more attention than the
-fixes do. They are mid-task when they look: the judgement was run a moment ago
-in a terminal, the browser tab is one of many, and they will be back in the
-editor within a minute.
+Developers who run **more than one** dependency scanner on projects they
+maintain. Coverage is why they added the second one; the cost is that the two
+describe the same vulnerability under different identifiers, and nothing
+downstream reconciles them. Adding a scanner made the reading longer without
+making the project safer, so they stopped opening the reports.
 
-The job: decide what to do next about dependency findings, and be able to check
-that decision rather than take it on faith.
+This is the shape the tool is built around, and it is worth being blunt about
+what follows from it. With one source there is nothing to reconcile: the
+reduction is zero and the value is ranking alone. Measured on uptime-kuma, npm
+audit by itself reports 71 and leaves 71; add osv-scanner and it is 142 in and
+71 out. **The second source is the premise, not an optional extra**, and the
+install instructions should stop calling it one.
+
+The job: decide what to do next about dependency findings that arrived from
+several tools at once, and be able to check that decision rather than take it
+on faith.
 
 Secondary reader: the same person a week later, asking whether things are
 getting better or worse.
+
+Not this reader: someone who does not scan yet. Teaching a first scan is a
+different product, and `npm install` already prints a vulnerability count at
+them — the gap there is not knowledge, it is that nothing makes the count
+actionable.
+
+> Written 2026-08-22 while designing the HTML report, and it showed: the
+> original text described the person looking at *that page* — mid-task, browser
+> tab among many — and was then read as the product's user for weeks. It sent
+> the demo video and the report intro after a reader the product was never
+> shaped for. Rewritten 2026-08-27 against what the code actually does.
 
 ## Product Purpose
 

@@ -22,7 +22,11 @@ export interface JudgeOptions {
   readonly baselineExists?: boolean;
   /** Cap on how many findings the report asks anyone to act on at once. */
   readonly top?: number;
+  /** Versions the lockfile holds, when there is one to read. */
+  readonly installed?: InstalledVersions;
 }
+
+import type { InstalledVersions } from "./lockfile.js";
 
 export function judge(
   findings: readonly ScaFinding[],
@@ -42,5 +46,6 @@ export function judge(
     skipped: [...(options.skipped ?? [])],
     baselineExists: options.baselineExists ?? true,
     workspaceRoot: options.workspaceRoot ?? false,
+    ...(options.installed === undefined ? {} : { installed: options.installed }),
   };
 }

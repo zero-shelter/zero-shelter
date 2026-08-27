@@ -3,7 +3,8 @@
  */
 
 import type { AppliedBaseline } from "./baseline.js";
-import { transitiveFixes, upgradeActions } from "./actions.js";
+import { transitiveFixes, upgradeActions, type TransitiveFix } from "./actions.js";
+import { blockedBy, type InstalledVersions } from "./lockfile.js";
 import type { RankedFinding } from "./triage.js";
 import { WEIGHTS } from "./triage.js";
 
@@ -17,6 +18,8 @@ export interface JudgeResult {
   readonly baselineExists: boolean;
   /** Set when the install commands would land in the wrong package.json. */
   readonly workspaceRoot?: boolean;
+  /** Versions the lockfile actually holds — decides whether `npm i` can reach them. */
+  readonly installed?: InstalledVersions;
 }
 
 const COLOR = {
@@ -106,7 +109,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   // many rows are printed; letting it decide these too turns a display limit
   // into a claim about the codebase.
   const outstanding = result.applied.fresh;
-  const actions = upgradeActions(outstanding);
+  const actions = upgradeActions(outstanding, result.installed);
   if (actions.length > 0) {
     lines.push("");
     for (const action of actions.slice(0, 3)) {
@@ -133,7 +136,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
     }
   }
 
-  const indirect = transitiveFixes(outstanding);
+  const indirect = transitiveFixes(outstanding, result.installed);
   if (indirect.length > 0) {
     const total = indirect.reduce((sum, entry) => sum + entry.clears, 0);
     if (actions.length === 0) lines.push("");
@@ -143,6 +146,12 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
           "arrive through another dependency",
         COLOR.dim,
       ),
+    );
+
+    const reason = whyNotDirect(indirect[0]!, result.installed);
+    if (reason !== undefined) lines.push(paint(`    ${reason}`, COLOR.dim));
+
+    lines.push(
       paint(
         `    package.json "overrides": { "${indirect[0]!.packageName}": "${indirect[0]!.upgradeTo}" }` +
           " forces one, at the risk of breaking whatever pinned it",
@@ -190,6 +199,31 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
  * time, and from here those look identical — so this says what it can defend
  * ("no longer reported") and names the doubt when there is one.
  */
+/**
+ * Why the obvious command is not on the list.
+ *
+ * "Use overrides instead" is advice the reader has to take on faith. The
+ * lockfile knows which packages pin the old version, and naming them is the
+ * difference between being told to trust the tool and being able to check it.
+ */
+function whyNotDirect(fix: TransitiveFix, installed?: InstalledVersions): string | undefined {
+  const blockers = blockedBy(fix.packageName, fix.upgradeTo, installed);
+  const first = blockers[0];
+  if (first === undefined) return undefined;
+
+  if (first.by === "the tree") {
+    return `the tree already holds ${fix.packageName} ${first.range} — one npm i moves only one of them`;
+  }
+
+  const names = [...new Set(blockers.map(({ by }) => by.split("node_modules/").pop() ?? by))];
+  const shown = names.slice(0, 3).join(", ");
+  const rest = names.length > 3 ? ` and ${names.length - 3} more` : "";
+  return (
+    `${shown}${rest} require an older ${fix.packageName} ` +
+    `— npm i ${fix.packageName}@${fix.upgradeTo} leaves their copies in place`
+  );
+}
+
 function resolvedLines(
   result: JudgeResult,
   paint: (text: string, code: string) => string,
@@ -358,8 +392,8 @@ export function renderJson(result: JudgeResult): string {
       // The commands, so a caller does not have to re-derive them from the
       // findings and get the version comparison subtly wrong.
       workspaceRoot: result.workspaceRoot === true,
-      upgrades: upgradeActions(result.applied.fresh),
-      transitiveFixes: transitiveFixes(result.applied.fresh),
+      upgrades: upgradeActions(result.applied.fresh, result.installed),
+      transitiveFixes: transitiveFixes(result.applied.fresh, result.installed),
       fixNow: result.fixNow.map((entry) => ({
         fingerprint: entry.finding.fingerprint,
         score: entry.score,

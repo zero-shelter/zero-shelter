@@ -58,8 +58,8 @@ const SEVERITY_RANK: Record<string, number> = {
 export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   const t = messagesFor(options.language);
   const outstanding = result.applied.fresh;
-  const actions = upgradeActions(outstanding);
-  const indirect = transitiveFixes(outstanding);
+  const actions = upgradeActions(outstanding, result.installed);
+  const indirect = transitiveFixes(outstanding, result.installed);
 
   const body = [
     header(result, options, t),

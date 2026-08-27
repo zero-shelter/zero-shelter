@@ -8,6 +8,7 @@
 
 import type { RankedFinding } from "./triage.js";
 import { isHigher } from "./version-order.js";
+import { reachesEveryCopy, type InstalledVersions } from "./lockfile.js";
 
 export interface TransitiveFix {
   readonly packageName: string;
@@ -31,12 +32,24 @@ export interface UpgradeAction {
  * top-level dependency the project did not ask for, and the vulnerable copy
  * stays where it was. Printing `npm i` for one would be advice that quietly
  * does not work.
+ *
+ * A package can be direct and unreachable at the same time. npm audit calls a
+ * package direct when the name is in `package.json`, which says nothing about
+ * the copy an advisory hangs off: depend on `tar@~6.2.1` while three other
+ * packages pin their own `tar@^6`, and `npm i tar@7` moves the top-level entry
+ * and leaves every vulnerable copy untouched. `clears` is a promise, so when
+ * the lockfile says the command cannot reach every copy we hand the finding to
+ * `overrides` rather than promise a number it will not deliver.
  */
-export function upgradeActions(findings: readonly RankedFinding[]): UpgradeAction[] {
+export function upgradeActions(
+  findings: readonly RankedFinding[],
+  installed?: InstalledVersions,
+): UpgradeAction[] {
   const byPackage = new Map<string, { version: string; clears: number }>();
 
   for (const { finding } of findings) {
     if (finding.transitive || finding.fixedIn === undefined) continue;
+    if (!reachesEveryCopy(finding.packageName, finding.fixedIn, installed)) continue;
 
     const seen = byPackage.get(finding.packageName);
     if (seen === undefined) {
@@ -68,11 +81,18 @@ export function upgradeActions(findings: readonly RankedFinding[]): UpgradeActio
  * version under a parent that pinned it is exactly the kind of thing that
  * breaks a build.
  */
-export function transitiveFixes(findings: readonly RankedFinding[]): TransitiveFix[] {
+export function transitiveFixes(
+  findings: readonly RankedFinding[],
+  installed?: InstalledVersions,
+): TransitiveFix[] {
   const byPackage = new Map<string, { version: string; clears: number }>();
 
   for (const { finding } of findings) {
-    if (!finding.transitive || finding.fixedIn === undefined) continue;
+    if (finding.fixedIn === undefined) continue;
+    // Direct but unreachable belongs here too — same remedy, same caveat.
+    if (!finding.transitive && reachesEveryCopy(finding.packageName, finding.fixedIn, installed)) {
+      continue;
+    }
 
     const seen = byPackage.get(finding.packageName);
     if (seen === undefined) {
