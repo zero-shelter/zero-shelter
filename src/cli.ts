@@ -499,8 +499,16 @@ async function hook(
     const { baseline, exists } = await loadBaseline(
       resolve(cwd, baselineFlag ?? BASELINE_PATH),
     );
+    // Without this the agent is handed the commands the report stopped
+    // printing, which is the worst place for them: it will run them.
+    const installed = readInstalledVersions(cwd);
     const context = hookContext(
-      judge(findings, { baseline, baselineExists: exists, skipped }),
+      judge(findings, {
+        baseline,
+        baselineExists: exists,
+        skipped,
+        ...(installed === undefined ? {} : { installed }),
+      }),
     );
     if (context !== undefined) process.stdout.write(hookOutput(context));
   } catch {

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseNpmAudit } from "../src/ingest/npm-audit.js";
 import { emptyBaseline, baselineFrom } from "../src/baseline.js";
 import { judge } from "../src/judge.js";
+import { fromPackages } from "../src/lockfile.js";
 import { renderSarif } from "../src/sarif.js";
 
 const raw = readFileSync(
@@ -130,6 +131,30 @@ describe("what to do about it", () => {
         expect(result.properties.reasons.join(" ")).toContain("direct dependency");
       }
     }
+  });
+
+  /**
+   * A Security tab alert is the last place to print a command that does
+   * nothing: the alert stays open, and the next person re-runs it.
+   */
+  it("sends a direct dependency the tree pins to overrides, not to npm i", () => {
+    const findings = parseNpmAudit(raw);
+    const direct = findings.find((f) => !f.transitive && f.fixedIn !== undefined);
+    if (direct === undefined) return;
+
+    const pinned = judge(findings, {
+      baseline: emptyBaseline(),
+      installed: fromPackages({
+        [`node_modules/${direct.packageName}`]: { version: "0.0.1" },
+        "node_modules/someone-else": { dependencies: { [direct.packageName]: "^0.0.1" } },
+      }),
+    });
+    const alert = JSON.parse(renderSarif(pinned)).runs[0].results.find(
+      (r: { ruleId: string }) => r.ruleId === direct.advisoryId,
+    );
+
+    expect(alert.properties.remedy).toContain("overrides");
+    expect(alert.properties.remedy).not.toContain("npm i ");
   });
 
   it("stays quiet when there is no published fix", () => {

@@ -15,6 +15,7 @@
 import type { JudgeResult } from "./report.js";
 import type { RankedFinding } from "./triage.js";
 import { upgradeActions } from "./actions.js";
+import { reachesEveryCopy, type InstalledVersions } from "./lockfile.js";
 
 const TOOL_URI = "https://github.com/zero-shelter/zero-shelter";
 
@@ -38,7 +39,7 @@ function levelOf(severity: string): "error" | "warning" | "note" {
 
 export function renderSarif(result: JudgeResult): string {
   const rules = result.fixNow.map(toRule);
-  const results = result.fixNow.map((entry, index) => toResult(entry, index));
+  const results = result.fixNow.map((entry, index) => toResult(entry, index, result.installed));
 
   return `${JSON.stringify(
     {
@@ -95,12 +96,12 @@ function toRule(entry: RankedFinding) {
   };
 }
 
-function toResult(entry: RankedFinding, index: number) {
+function toResult(entry: RankedFinding, index: number, installed?: InstalledVersions) {
   const { finding } = entry;
   // Carried into the alert text on purpose. Someone reading this in a Security
   // tab is one click from a page of prose about the advisory and nowhere near
   // the one line that resolves it.
-  const remedy = remedyFor(entry);
+  const remedy = remedyFor(entry, installed);
 
   return {
     ruleId: finding.advisoryId,
@@ -145,11 +146,15 @@ function toResult(entry: RankedFinding, index: number) {
  * written in a manifest we have not parsed. A wrong patch offered as a fix is
  * worse than a sentence that is right.
  */
-function remedyFor(entry: RankedFinding): string | undefined {
+function remedyFor(entry: RankedFinding, installed?: InstalledVersions): string | undefined {
   const { finding } = entry;
   if (finding.fixedIn === undefined) return undefined;
 
-  if (finding.transitive) {
+  // Direct and unreachable reads the same way here as transitive does: an
+  // `npm i` that other packages will not follow leaves the alert open, and a
+  // Security tab is the last place to send someone after a command that does
+  // nothing.
+  if (finding.transitive || !reachesEveryCopy(finding.packageName, finding.fixedIn, installed)) {
     return (
       `arrives through another dependency; ` +
       `package.json "overrides": { "${finding.packageName}": "${finding.fixedIn}" } ` +
@@ -157,7 +162,7 @@ function remedyFor(entry: RankedFinding): string | undefined {
     );
   }
 
-  return upgradeActions([entry])[0]?.command;
+  return upgradeActions([entry], installed)[0]?.command;
 }
 
 /**
