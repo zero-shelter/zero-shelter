@@ -20,6 +20,16 @@ export interface JudgeResult {
   readonly workspaceRoot?: boolean;
   /** Versions the lockfile actually holds — decides whether `npm i` can reach them. */
   readonly installed?: InstalledVersions;
+  /**
+   * Scanners that produced a readable report this run.
+   *
+   * The caller works this out on both the scan path and the `--input` path, and
+   * until now it reached `applyBaseline` and stopped there. Everything
+   * downstream that needs to say which tools were present — the history record,
+   * the summary line, SARIF — had to guess it back from the findings, which
+   * answers "none" on a run where every finding was already accepted.
+   */
+  readonly sources?: readonly string[];
 }
 
 const COLOR = {
@@ -191,15 +201,6 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 }
 
 /**
- * Credit for work that was actually done, and the caveat that comes with it.
- *
- * Someone who upgrades a package and re-runs this deserves to see that it
- * worked; without it the only feedback is a number quietly getting smaller.
- * But a finding also disappears when the scanner that found it did not run this
- * time, and from here those look identical — so this says what it can defend
- * ("no longer reported") and names the doubt when there is one.
- */
-/**
  * Why the obvious command is not on the list.
  *
  * "Use overrides instead" is advice the reader has to take on faith. The
@@ -224,6 +225,15 @@ function whyNotDirect(fix: TransitiveFix, installed?: InstalledVersions): string
   );
 }
 
+/**
+ * Credit for work that was actually done, and the caveat that comes with it.
+ *
+ * Someone who upgrades a package and re-runs this deserves to see that it
+ * worked; without it the only feedback is a number quietly getting smaller.
+ * But a finding also disappears when the scanner that found it did not run this
+ * time, and from here those look identical — so this says what it can defend
+ * ("no longer reported") and names the doubt when there is one.
+ */
 function resolvedLines(
   result: JudgeResult,
   paint: (text: string, code: string) => string,
@@ -267,9 +277,18 @@ function summary(
   // Integer percentage: a float here would print differently across locales.
   const percent = raw === 0 ? 0 : Math.round((removed * 100) / raw);
 
+  // With one source there is nothing to reconcile, so the reduction is zero and
+  // the screen looks like a tool that did nothing. Every yarn project lands
+  // here — npm audit cannot read yarn.lock, so osv-scanner runs alone. Saying
+  // why is not an apology: one scanner is a valid way to run this, and the
+  // ranking and the baseline still work.
+  const lonely = result.sources !== undefined && result.sources.length === 1;
+
   return paint(
     `  ${raw} reported → ${merged} after merge → ${outstanding} to fix` +
-      (raw === 0 ? "" : `  (${percent}% less noise)`) +
+      (raw === 0
+        ? ""
+        : `  (${percent}% less noise${lonely ? " — one source, nothing to reconcile" : ""})`) +
       (fixNow.length < outstanding ? `, showing ${fixNow.length}` : "") +
       (applied.suppressed.length > 0
         ? `, ${applied.suppressed.length} already accepted`

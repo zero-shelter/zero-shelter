@@ -47,5 +47,6 @@ export function judge(
     baselineExists: options.baselineExists ?? true,
     workspaceRoot: options.workspaceRoot ?? false,
     ...(options.installed === undefined ? {} : { installed: options.installed }),
+    ...(options.sources === undefined ? {} : { sources: options.sources }),
   };
 }

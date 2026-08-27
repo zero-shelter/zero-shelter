@@ -124,8 +124,11 @@ function toResult(entry: RankedFinding, index: number, installed?: InstalledVers
       },
     ],
     // GitHub uses these to decide whether an alert is the same one it saw
-    // before. Ours is already stable across machines and runs, which is the
-    // property that makes the ratchet work at all.
+    // before. Ours is stable across machines, and across runs that used the
+    // same set of scanners — it is derived after merge, and merge output
+    // depends on who contributed. Change the set and the alert history breaks:
+    // measured on one capture, 73 fingerprints with one source and 82 with two,
+    // sharing 3. See issue #86.
     partialFingerprints: { zeroShelter: finding.fingerprint },
     properties: {
       score: entry.score,

@@ -41,7 +41,13 @@ export function entryFrom(result: JudgeResult, at: string): HistoryEntry {
   return {
     v: SCHEMA_VERSION,
     at,
-    sources: [...new Set(result.applied.fresh.flatMap((entry) => entry.finding.tools))].sort(),
+    // Not derived from the findings. Deriving it answers "no scanners ran" on
+    // exactly the runs that went well, because a run with everything accepted
+    // has no fresh findings to read tools off.
+    sources:
+      result.sources === undefined
+        ? [...new Set(result.applied.fresh.flatMap((entry) => entry.finding.tools))].sort()
+        : [...result.sources].sort(),
     raw: result.raw,
     merged: result.merged,
     accepted: result.applied.suppressed.length,
