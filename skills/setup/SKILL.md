@@ -4,10 +4,10 @@ description: Run zero-shelter on this project for the first time and wire it in.
 
 # First run
 
-Nothing to install. From the project root:
+Two things, and the second one is not optional.
 
 ```bash
-npx --yes zero-shelter judge
+npx --yes zero-shelter judge          # no install needed for this one
 ```
 
 Read the exit code — it is the answer, not decoration:
@@ -21,10 +21,35 @@ Read the exit code — it is the answer, not decoration:
 Requires Node 20+. If it prints a Node version message, that is the whole
 problem; do not try to work around it.
 
-`osv-scanner` is optional. When it is absent the run still works and says so
-once, with the install line (`brew install osv-scanner`, or the releases page).
-A second source is where most of the deduplication comes from, so it is worth
-one mention — and only one.
+## The second scanner
+
+This tool reconciles what two scanners each called by a different name. With one
+source there is nothing to reconcile, so **install `osv-scanner` before judging
+the result of a first run.** Measured on uptime-kuma: npm audit alone reports 71
+and leaves 71; add osv-scanner and it is 142 in, 71 out.
+
+```bash
+brew install osv-scanner        # macOS / Linuxbrew
+go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+```
+
+Neither works everywhere. If both fail, the releases page has prebuilt binaries,
+and that is a better answer than proceeding with one source and explaining a 0%.
+
+**Then check it actually ran**, rather than assuming the install worked:
+
+```bash
+npx --yes zero-shelter judge --json | grep -c osv-scanner
+```
+
+The text output says it too. A run with one source ends its summary with `one
+source, nothing to reconcile` — if that phrase is on screen, the second scanner
+is not contributing, whatever `brew` printed.
+
+Do not describe a one-source run as a normal result. It is a valid way to run
+this and the ranking and baseline still work, but the deduplication this tool
+exists for is switched off, and a reader who is not told that will conclude the
+tool does nothing.
 
 ## Recording the backlog
 
@@ -114,5 +139,7 @@ prompt and never fails.
 - **Do not re-rank, re-judge, or filter the findings.** The ordering is
   computed by the CLI and is reproducible; anything you add on top is not, and
   the entire point of this tool is that its judgement can be checked.
+- **Do not report a 0% reduction as a result.** It means one source ran. Say
+  which one is missing and offer to install it.
 - Do not run `--update-baseline` without saying what it hides.
 - Do not describe a run that exited 2 as passing.

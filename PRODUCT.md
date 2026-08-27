@@ -26,10 +26,22 @@ on faith.
 Secondary reader: the same person a week later, asking whether things are
 getting better or worse.
 
-Not this reader: someone who does not scan yet. Teaching a first scan is a
-different product, and `npm install` already prints a vulnerability count at
-them — the gap there is not knowledge, it is that nothing makes the count
-actionable.
+Getting them to the second scanner is our job, not somebody else's. This was
+excluded once, on the grounds that teaching a first scan is a different product.
+That was written for a world where onboarding means a human reading docs, and it
+was already contradicted by our own package: `skills/setup` exists and its whole
+job is the first run. It also gave away the thing that creates our value — a
+reader with one source gets 0% from us, so declaring the step that produces our
+user to be out of scope was declaring ourselves out of scope.
+
+An agent doing the install changes the arithmetic. The setup skill installs the
+second scanner, verifies it produced a report rather than assuming, and shows
+the one-source and two-source numbers on the reader's own project — which is the
+argument, and it is theirs rather than ours.
+
+Still not this reader: someone who wants to be taught what a vulnerability is.
+`npm install` already prints a count at them, and the gap there is not
+knowledge, it is that nothing makes the count actionable.
 
 > Written 2026-08-22 while designing the HTML report, and it showed: the
 > original text described the person looking at *that page* — mid-task, browser
