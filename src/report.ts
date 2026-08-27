@@ -72,6 +72,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
     lines.push(paint("✓ nothing new to fix", COLOR.green));
     lines.push(summary(result, paint));
     lines.push(...resolvedLines(result, paint));
+    lines.push(...ratchetLines(result, paint));
     return lines.join("\n");
   }
 
@@ -173,6 +174,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   lines.push("", summary(result, paint));
 
   lines.push(...resolvedLines(result, paint));
+  lines.push(...ratchetLines(result, paint));
 
   // A first run on an existing project reports its whole backlog and reduces
   // nothing, which reads like the tool failing. Say what it is actually for.
@@ -198,6 +200,44 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   return lines.join("\n");
+}
+
+/**
+ * What the baseline did that the reader did not ask for.
+ *
+ * A finding recognised under a fingerprint other than the recorded one has been
+ * rescued by a rule nobody can see, and an unseen rescue is the same kind of
+ * problem as an unseen loss — it is how a tool ends up trusted for the wrong
+ * reason. So it is counted out loud, with the cause, which is almost always
+ * that the set of scanners changed.
+ */
+function ratchetLines(
+  result: JudgeResult,
+  paint: (text: string, code: string) => string,
+): string[] {
+  const lines: string[] = [];
+  const { rematched, expired } = result.applied;
+
+  if (rematched.length > 0) {
+    lines.push(
+      paint(
+        `  ${rematched.length} accepted finding(s) came back under a different fingerprint ` +
+          "and were matched by advisory id — usually a change in which scanners ran",
+        COLOR.dim,
+      ),
+    );
+  }
+
+  if (expired.length > 0) {
+    lines.push(
+      paint(
+        `  ${expired.length} acceptance(s) have expired and are reported again`,
+        COLOR.yellow,
+      ),
+    );
+  }
+
+  return lines;
 }
 
 /**

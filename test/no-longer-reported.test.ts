@@ -16,7 +16,18 @@ import type { RankedFinding } from "../src/triage.js";
 
 const ranked = (fingerprint: string, tool: string): RankedFinding =>
   ({
-    finding: { fingerprint, sources: [{ tool }] },
+    finding: {
+      fingerprint,
+      sources: [{ tool }],
+      // A real finding always carries these — merge guarantees it. The stub
+      // used to omit them, which quietly made the fixture a worse liar than
+      // the type allowed.
+      ecosystem: "npm",
+      packageName: `pkg-${fingerprint}`,
+      advisoryId: `CVE-${fingerprint}`,
+      aliases: [`CVE-${fingerprint}`],
+      severity: "high",
+    },
     score: 100,
     reasons: [],
   }) as unknown as RankedFinding;
@@ -74,7 +85,10 @@ describe("findings that stopped being reported", () => {
   });
 
   it("claims nothing when the fingerprint recipe changed under it", () => {
-    const stale = { schemaVersion: "0", accepted: ["aaa"], sources: [NPM] };
+    // Read from a v1 file, which is the only way a schema this old exists.
+    const stale = parseBaseline(
+      JSON.stringify({ schemaVersion: "0", accepted: ["aaa"], sources: [NPM] }),
+    );
 
     const after = applyBaseline([ranked("aaa", NPM)], stale, [NPM]);
 

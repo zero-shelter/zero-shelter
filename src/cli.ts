@@ -194,7 +194,12 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   const installed = readInstalledVersions(cwd);
+  // Injected rather than read inside the judgement, the same rule history
+  // follows: an acceptance that expires today must not make the same input
+  // produce a different answer depending on when it ran.
+  const today = new Date().toISOString().slice(0, 10);
   const result = judge(findings, {
+    today,
     baseline,
     baselineExists,
     skipped,
@@ -214,7 +219,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       await mkdir(dirname(baselinePath), { recursive: true });
       await writeFile(
         baselinePath,
-        serializeBaseline(baselineFrom(all.fixNow, sources)),
+        serializeBaseline(baselineFrom(all.fixNow, sources, today)),
         "utf8",
       );
     } catch (error) {

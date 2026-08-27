@@ -204,7 +204,7 @@ describe("baseline", () => {
    */
   it("reports everything as new and warns when the schema moved", () => {
     const ranked = rank(mergeFindings(both));
-    const applied = applyBaseline(ranked, { schemaVersion: "0", accepted: ["whatever"] });
+    const applied = applyBaseline(ranked, { schemaVersion: "0", accepted: [] });
 
     expect(applied.fresh).toHaveLength(ranked.length);
     expect(applied.warning).toMatch(/schema/);
@@ -217,7 +217,10 @@ describe("baseline", () => {
 
   it("rejects a malformed baseline rather than silently ignoring it", () => {
     expect(() => parseBaseline("{}")).toThrow(/schemaVersion/);
-    expect(() => parseBaseline('{"schemaVersion":"1","accepted":[1]}')).toThrow(/strings/);
+    expect(() => parseBaseline('{"schemaVersion":"1","accepted":[1]}')).toThrow(
+      /fingerprints or accepted findings/,
+    );
+    expect(() => parseBaseline('{"schemaVersion":"1","accepted":[{}]}')).toThrow(/fingerprint/);
     expect(() => parseBaseline("[]")).toThrow(/JSON object/);
   });
 });

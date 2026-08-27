@@ -22,6 +22,14 @@ export interface JudgeOptions {
   readonly baselineExists?: boolean;
   /** Cap on how many findings the report asks anyone to act on at once. */
   readonly top?: number;
+  /**
+   * Today, as an ISO date, for deciding whether an acceptance has expired.
+   *
+   * Supplied by the caller so that judging never reads a clock. Omit it and
+   * nothing expires, which is the safe direction: an acceptance that quietly
+   * stops expiring is worse than one that never did.
+   */
+  readonly today?: string;
   /** Versions the lockfile holds, when there is one to read. */
   readonly installed?: InstalledVersions;
 }
@@ -34,7 +42,7 @@ export function judge(
 ): JudgeResult {
   const merged = mergeFindings(findings);
   const ranked = rank(merged);
-  const applied = applyBaseline(ranked, options.baseline, options.sources);
+  const applied = applyBaseline(ranked, options.baseline, options.sources, options.today);
 
   const top = options.top ?? Number.POSITIVE_INFINITY;
 
