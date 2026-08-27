@@ -30,11 +30,14 @@ export interface JudgeOptions {
    * stops expiring is worse than one that never did.
    */
   readonly today?: string;
+  /** How this project spells a remedy. Read off whichever lockfile is present. */
+  readonly packageManager?: PackageManager;
   /** Versions the lockfile holds, when there is one to read. */
   readonly installed?: InstalledVersions;
 }
 
 import type { InstalledVersions } from "./lockfile.js";
+import type { PackageManager } from "./package-manager.js";
 
 export function judge(
   findings: readonly ScaFinding[],
@@ -56,5 +59,6 @@ export function judge(
     workspaceRoot: options.workspaceRoot ?? false,
     ...(options.installed === undefined ? {} : { installed: options.installed }),
     ...(options.sources === undefined ? {} : { sources: options.sources }),
+    ...(options.packageManager === undefined ? {} : { packageManager: options.packageManager }),
   };
 }

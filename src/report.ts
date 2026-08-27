@@ -5,6 +5,11 @@
 import type { AppliedBaseline } from "./baseline.js";
 import { transitiveFixes, upgradeActions, type TransitiveFix } from "./actions.js";
 import { blockedBy, scopeOf, type InstalledVersions } from "./lockfile.js";
+import {
+  canPromiseClears,
+  overrideSnippet,
+  type PackageManager,
+} from "./package-manager.js";
 import type { RankedFinding } from "./triage.js";
 import { WEIGHTS } from "./triage.js";
 
@@ -30,6 +35,13 @@ export interface JudgeResult {
    * answers "none" on a run where every finding was already accepted.
    */
   readonly sources?: readonly string[];
+  /**
+   * How this project spells a remedy.
+   *
+   * pnpm ignores a top-level `overrides` key and yarn wants `resolutions`, so
+   * an npm-shaped snippet does nothing at all rather than failing loudly.
+   */
+  readonly packageManager?: PackageManager;
 }
 
 const COLOR = {
@@ -125,16 +137,31 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   // many rows are printed; letting it decide these too turns a display limit
   // into a claim about the codebase.
   const outstanding = result.applied.fresh;
-  const actions = upgradeActions(outstanding, result.installed);
+  const manager = result.packageManager ?? "npm";
+  // `clears N` rests on reading dependents' ranges out of package-lock.json.
+  // There is no reader for pnpm-lock.yaml or yarn.lock, so on those projects
+  // the check answers yes by default. Printing the number anyway would trade
+  // one silent lie for another.
+  const promises = canPromiseClears(manager);
+  const actions = upgradeActions(outstanding, result.installed, manager);
   if (actions.length > 0) {
     lines.push("");
     for (const action of actions.slice(0, 3)) {
       lines.push(
         `  ${paint(action.command, COLOR.bold)}` +
           paint(
-            action.clears === 1 ? "" : `   clears ${action.clears}`,
+            action.clears === 1 || !promises ? "" : `   clears ${action.clears}`,
             COLOR.dim,
           ),
+      );
+    }
+    if (!promises) {
+      lines.push(
+        paint(
+          `    counts are not shown for ${manager}: verifying an upgrade reaches every copy ` +
+            "needs a lockfile reader this tool only has for npm",
+          COLOR.dim,
+        ),
       );
     }
     if (actions.length > 3) {
@@ -169,7 +196,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 
     lines.push(
       paint(
-        `    package.json "overrides": { "${indirect[0]!.packageName}": "${indirect[0]!.upgradeTo}" }` +
+        `    package.json ${overrideSnippet(manager, indirect[0]!.packageName, indirect[0]!.upgradeTo)}` +
           " forces one, at the risk of breaking whatever pinned it",
         COLOR.dim,
       ),

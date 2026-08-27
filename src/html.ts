@@ -18,6 +18,7 @@ import {
   transitiveFixes,
   upgradeActions,
 } from "./actions.js";
+import { overrideBlock, type PackageManager } from "./package-manager.js";
 import type { JudgeResult } from "./report.js";
 import { WEIGHTS } from "./triage.js";
 import { type Language, messagesFor } from "./messages.js";
@@ -58,7 +59,8 @@ const SEVERITY_RANK: Record<string, number> = {
 export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   const t = messagesFor(options.language);
   const outstanding = result.applied.fresh;
-  const actions = upgradeActions(outstanding, result.installed);
+  const manager = result.packageManager ?? "npm";
+  const actions = upgradeActions(outstanding, result.installed, manager);
   const indirect = transitiveFixes(outstanding, result.installed);
 
   const body = [
@@ -81,7 +83,7 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
             result.workspaceRoot === true,
             t,
           ),
-          indirect.length > 0 ? transitiveBlock(indirect, t) : "",
+          indirect.length > 0 ? transitiveBlock(indirect, t, manager) : "",
           ledger(result, t),
         ].join("\n"),
     closing(result, t),
@@ -287,17 +289,22 @@ function glossary(t: ReturnType<typeof messagesFor>): string {
 function transitiveBlock(
   indirect: readonly { packageName: string; upgradeTo: string; clears: number }[],
   t: ReturnType<typeof messagesFor>,
+  manager: PackageManager,
 ): string {
   const total = indirect.reduce((sum, entry) => sum + entry.clears, 0);
-  const overrides = indirect
-    .map((entry) => `    "${escape(entry.packageName)}": "${escape(entry.upgradeTo)}"`)
-    .join(",\n");
+  // Written in this project's own syntax. A pnpm user pasting a top-level
+  // "overrides" key gets no error and no effect, which reads as the tool
+  // having lied rather than as a mistake they can see.
+  const block = overrideBlock(
+    manager,
+    indirect.map((entry) => [entry.packageName, entry.upgradeTo] as const),
+  );
 
   return [
     '<section class="indirect">',
     `<p>${escape(t.transitive(total, indirect.length))}</p>`,
     `<p class="quiet">${escape(t.transitiveHow)}</p>`,
-    `<pre class="snippet"><code>"overrides": {\n${overrides}\n}</code></pre>`,
+    `<pre class="snippet"><code>${escape(block)}</code></pre>`,
     `<p class="caveat">${escape(t.transitiveRisk)}</p>`,
     "</section>",
   ].join("\n");

@@ -16,6 +16,7 @@ import { parseOsv } from "./ingest/osv.js";
 import { collect, isWorkspaceRoot } from "./scan.js";
 import { cwdFromPayload, hookContext, hookOutput, readStdin } from "./hook.js";
 import { readInstalledVersions } from "./lockfile.js";
+import { detectPackageManager } from "./package-manager.js";
 import { colorEnabled, renderExplain, renderHuman, renderJson } from "./report.js";
 import { renderHtml } from "./html.js";
 import { isLanguage } from "./messages.js";
@@ -200,6 +201,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
   const result = judge(findings, {
     today,
+    packageManager: detectPackageManager(cwd),
     baseline,
     baselineExists,
     skipped,

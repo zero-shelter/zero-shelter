@@ -9,6 +9,7 @@
 import type { RankedFinding } from "./triage.js";
 import { isHigher } from "./version-order.js";
 import { reachesEveryCopy, type InstalledVersions } from "./lockfile.js";
+import { installCommand, type PackageManager } from "./package-manager.js";
 
 export interface TransitiveFix {
   readonly packageName: string;
@@ -44,6 +45,7 @@ export interface UpgradeAction {
 export function upgradeActions(
   findings: readonly RankedFinding[],
   installed?: InstalledVersions,
+  manager: PackageManager = "npm",
 ): UpgradeAction[] {
   const byPackage = new Map<string, { version: string; clears: number }>();
 
@@ -66,7 +68,7 @@ export function upgradeActions(
       packageName,
       upgradeTo: version,
       clears,
-      command: `npm i ${packageName}@${version}`,
+      command: installCommand(manager, packageName, version),
     }))
     .sort((a, b) => b.clears - a.clears || (a.packageName < b.packageName ? -1 : 1));
 }
