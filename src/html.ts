@@ -18,7 +18,7 @@ import {
   transitiveFixes,
   upgradeActions,
 } from "./actions.js";
-import { overrideBlock, type PackageManager } from "./package-manager.js";
+import { overrideBlock, overridesField, type PackageManager } from "./package-manager.js";
 import type { JudgeResult } from "./report.js";
 import { WEIGHTS } from "./triage.js";
 import { type Language, messagesFor } from "./messages.js";
@@ -82,6 +82,7 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
             ],
             result.workspaceRoot === true,
             t,
+            manager,
           ),
           indirect.length > 0 ? transitiveBlock(indirect, t, manager) : "",
           ledger(result, t),
@@ -218,6 +219,7 @@ function promptBlock(
   unfixable: readonly string[],
   workspaceRoot: boolean,
   t: ReturnType<typeof messagesFor>,
+  manager: PackageManager,
 ): string {
   const prompts: string[] = [];
 
@@ -232,7 +234,10 @@ function promptBlock(
   }
   if (indirect.length > 0) {
     prompts.push(
-      t.promptOverrides(indirect.map((entry) => `${entry.packageName}@${entry.upgradeTo}`).join(", ")),
+      t.promptOverrides(
+        indirect.map((entry) => `${entry.packageName}@${entry.upgradeTo}`).join(", "),
+        overridesField(manager),
+      ),
     );
   }
   if (unfixable.length > 0) {

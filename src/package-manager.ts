@@ -69,15 +69,17 @@ export function installCommand(
 }
 
 /**
- * Where a forced version goes in package.json.
+ * The name of the key, for use inside a sentence.
  *
  * pnpm nests its key under `pnpm`, which is the detail that makes a pasted npm
- * block do nothing at all rather than fail loudly.
+ * block do nothing at all rather than fail loudly. Written in dotted form here
+ * because the literal nesting reads badly mid-prose — `overrideSnippet` is what
+ * produces something to paste.
  */
 export function overridesField(manager: PackageManager): string {
   switch (manager) {
     case "pnpm":
-      return `"pnpm": { "overrides": …`;
+      return `"pnpm.overrides"`;
     case "yarn":
     case "yarn-classic":
       return `"resolutions"`;

@@ -30,6 +30,7 @@
     "typecheck": "tsc --noEmit",
     "third-party": "node scripts/third-party.mjs",
     "qa": "node scripts/qa-install.mjs",
+    "qa:agent": "node scripts/qa-agent.mjs",
     "judge": "node dist/bin.js judge",
     "prepublishOnly": "npm run build && npm test"
   },

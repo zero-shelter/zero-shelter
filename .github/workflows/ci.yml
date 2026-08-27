@@ -58,6 +58,12 @@ jobs:
 
       - run: npm run qa
 
+      # The other four surfaces: the prompt hook, the five skills, the
+      # copy-paste prompts in the html report, and the plugin manifest. Nobody
+      # notices these breaking — an agent does not complain that advice was in
+      # the wrong dialect, it pastes it and reports success.
+      - run: npm run qa:agent
+
   third-party:
     runs-on: ubuntu-latest
     steps:
