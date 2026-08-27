@@ -37,7 +37,7 @@ const DEPENDENCY_FIELDS = [
   "peerDependencies",
 ] as const;
 
-interface LockEntry {
+export interface LockEntry {
   readonly version?: string;
   readonly dependencies?: Record<string, string>;
   readonly devDependencies?: Record<string, string>;
@@ -61,7 +61,11 @@ export function readInstalledVersions(cwd: string): InstalledVersions | undefine
 
   const packages = (parsed as { packages?: Record<string, LockEntry> }).packages;
   if (packages === undefined) return undefined;
+  return fromPackages(packages);
+}
 
+/** The `packages` map of a v2/v3 lockfile, without the reading. */
+export function fromPackages(packages: Record<string, LockEntry>): InstalledVersions {
   const versions = new Map<string, Set<string>>();
   const required = new Map<string, Requirement[]>();
 
@@ -76,8 +80,11 @@ export function readInstalledVersions(cwd: string): InstalledVersions | undefine
       }
     }
 
-    // The root's own ranges are the ones `npm i` rewrites, so they never block.
-    if (key === "") continue;
+    // Only installed dependencies can pin a version out of reach. The root is
+    // `""` and a workspace package is `packages/app` — both are package.json
+    // files in this project, editable by the person reading the report, and
+    // `npm i -w app` is exactly what the workspace caveat tells them to run.
+    if (!key.includes(MARKER)) continue;
     for (const field of DEPENDENCY_FIELDS) {
       for (const [name, range] of Object.entries(entry?.[field] ?? {})) {
         if (typeof range !== "string") continue;

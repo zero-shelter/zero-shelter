@@ -11,7 +11,7 @@
 import { describe, expect, it } from "vitest";
 
 import { transitiveFixes, upgradeActions } from "../src/actions.js";
-import { blockedBy, type InstalledVersions } from "../src/lockfile.js";
+import { blockedBy, fromPackages, type InstalledVersions } from "../src/lockfile.js";
 import { rank } from "../src/triage.js";
 import { mergeFindings } from "../src/merge.js";
 import type { ScaFinding } from "../src/finding.js";
@@ -104,5 +104,17 @@ describe("an upgrade the tree will not accept", () => {
   it("ignores dependents that already want something newer than the fix", () => {
     const ahead = lockfile(["6.2.1"], [["node_modules/modern", "^9.0.0"]]);
     expect(upgradeActions(ranked, ahead)[0]).toMatchObject({ clears: 2 });
+  });
+
+  it("does not count a workspace package as something pinning the version", () => {
+    // `packages/app` is a package.json in this project. The reader can edit it,
+    // and the report already tells them to add -w. Only node_modules/ paths
+    // hold a version out of reach.
+    const monorepo = fromPackages({
+      "": { dependencies: { tar: "~6.2.1" } },
+      "packages/app": { dependencies: { tar: "~6.2.1" } },
+      "node_modules/tar": { version: "6.2.1" },
+    });
+    expect(upgradeActions(ranked, monorepo)[0]).toMatchObject({ clears: 2 });
   });
 });
