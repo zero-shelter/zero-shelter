@@ -20,6 +20,13 @@ three, and those three now clear exactly the eleven they promise — 71 to 60, i
 faith. The report now names the packages holding the old version, so the reason
 is something you can check rather than trust.
 
+**The agent hook and SARIF were still handing them out.** The report had
+stopped, but the hook never read the lockfile and SARIF's remedy had nothing to
+check against, so both kept printing `npm i tar@7.5.22   # clears 12`. These are
+the two worst places for it: an agent runs what it is given, and a Security tab
+alert stays open after the command that was supposed to close it. Both go
+through the same check now.
+
 ## 0.0.6
 
 **Nothing is dropped quietly.** The report showed the last twelve recorded runs
