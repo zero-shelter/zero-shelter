@@ -179,6 +179,14 @@ to change what we judge → src/merge.ts, src/triage.ts
 to change what we print → src/report.ts, src/html.ts, src/sarif.ts
 to change the history   → src/history.ts, src/cli.ts
 to add a command        → src/cli.ts
+
+Two callers build a judgement: `judge` and `hook`, and they assemble the
+options separately. Every field added to `JudgeOptions` has to be wired into
+both, and the hook has been left behind three times — the lockfile it was not
+reading, the package manager dialect, and the withheld `clears` count. It is
+the worst place to be wrong, because a person would notice `npm i` in a pnpm
+repository and an agent just runs it. `npm run qa:agent` covers the hook per
+manager for that reason.
 ```
 
 A new scanner is fairly self-contained, but **there are two entry points and

@@ -95,10 +95,25 @@ function shellLines(markdown) {
 
 // ── the hook, which is the surface an agent actually reads ──────────────────
 
+const contextOf = (stdout) =>
+  JSON.parse(stdout).hookSpecificOutput.additionalContext;
+
+await check("hook answers a payload", "context returned", async () => {
+  const dir = await project("npm");
+  const { code, stdout } = await cli(
+    dir,
+    ["hook", ...INPUTS],
+    JSON.stringify({ cwd: dir }),
+  );
+  expect(code === 0, `hook must always exit 0, got ${code}`);
+  expect(stdout.trim() !== "", "hook produced nothing for a project with findings");
+  expect(typeof contextOf(stdout) === "string", "hook output is not the shape the editor reads");
+  return "exit 0, additionalContext present";
+});
+
 /**
- * `hook` takes no --input, so it can only be exercised against a tree with real
- * vulnerable dependencies. That is a testability gap worth naming: the surface
- * an agent reads on every prompt is the one we cannot check offline.
+ * Same check without --input, against real scanners. Kept because the flag
+ * exists for testability and this is the path that actually runs in an editor.
  */
 await check("hook answers a real payload", "context returned", async () => {
   const dir = process.env["ZS_AGENT_REAL_PROJECT"];
@@ -129,6 +144,38 @@ await check("hook survives junk on stdin", "exit 0", async () => {
   const { code } = await cli(dir, ["hook"], "not json at all");
   expect(code === 0, `exit ${code}`);
   return "exit 0";
+});
+
+/**
+ * The hook has been left behind by three separate changes now — the package
+ * manager dialect, the withheld clears count, and before that the lockfile it
+ * was not reading. It is the surface where being wrong costs most: a person
+ * would notice `npm i` in a pnpm repository, an agent runs it.
+ */
+await check("hook speaks the project's dialect", "one dialect per manager", async () => {
+  const expected = { npm: "npm i ", pnpm: "pnpm add ", yarn: "yarn add " };
+
+  for (const [manager, command] of Object.entries(expected)) {
+    const dir = await project(manager);
+    const { stdout } = await cli(dir, ["hook", ...INPUTS], JSON.stringify({ cwd: dir }));
+    const context = contextOf(stdout);
+    const lines = context.split("\n").filter((line) => line.startsWith("$ "));
+
+    expect(lines.length > 0, `${manager}: the hook offered no commands at all`);
+    for (const line of lines) {
+      expect(line.startsWith(`$ ${command}`), `${manager} agent was told to run: ${line}`);
+    }
+
+    const promises = manager === "npm";
+    const counted = lines.some((line) => line.includes("# clears"));
+    expect(
+      counted === promises,
+      promises
+        ? "npm stopped counting what it can verify"
+        : `${manager} promised an agent a clears count it cannot verify`,
+    );
+  }
+  return "npm i / pnpm add / yarn add, counts only on npm";
 });
 
 // ── what the setup skill tells an agent to check ────────────────────────────

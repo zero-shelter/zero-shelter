@@ -63,7 +63,7 @@ rather than on the backlog it inherited.
   What has happened to this project's findings, from the recorded runs. Says
   what appeared and what stopped being reported between them.
 
-  npx zero-shelter hook
+  npx zero-shelter hook [--input <file>]
 
   Prints the current findings as agent context, for editors that support a
   prompt hook. Never blocks a prompt and never fails: on any error it stays
@@ -113,7 +113,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   const command = positionals[0] ?? "judge";
-  if (command === "hook") return await hook(values.cwd, values.baseline);
+  if (command === "hook") return await hook(values.cwd, values.baseline, values.input);
   if (command === "history") {
     return await history(resolve(values.cwd ?? "."), values.json === true, values.last);
   }
@@ -495,12 +495,27 @@ async function history(cwd: string, asJson: boolean, last: string | undefined): 
 async function hook(
   cwdFlag: string | undefined,
   baselineFlag: string | undefined,
+  inputs: readonly string[] | undefined,
 ): Promise<number> {
   try {
     const cwd = resolve(
       cwdFlag ?? cwdFromPayload(await readStdin(process.stdin), process.cwd()),
     );
-    const { findings, skipped } = await collect({ cwd });
+
+    // Reading saved reports rather than running scanners. Without it this
+    // surface — the one an agent reads on every prompt — can only be exercised
+    // against a tree with real vulnerable dependencies, so it is the one thing
+    // CI could never check. Same flag, same meaning, as on judge.
+    let findings: ScaFinding[];
+    let skipped: string[] = [];
+    if (inputs !== undefined && inputs.length > 0) {
+      findings = [];
+      for (const file of inputs) findings.push(...(await readInput(resolve(cwd, file))));
+    } else {
+      const collected = await collect({ cwd });
+      findings = collected.findings;
+      skipped = collected.skipped;
+    }
     // A project that keeps its baseline somewhere else was being handed its
     // whole backlog as if none of it had been accepted, every prompt.
     const { baseline, exists } = await loadBaseline(
@@ -514,6 +529,7 @@ async function hook(
         baseline,
         baselineExists: exists,
         skipped,
+        packageManager: detectPackageManager(cwd),
         ...(installed === undefined ? {} : { installed }),
       }),
     );

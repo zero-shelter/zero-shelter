@@ -17,6 +17,7 @@
  */
 
 import { upgradeActions } from "./actions.js";
+import { canPromiseClears } from "./package-manager.js";
 import type { JudgeResult } from "./report.js";
 
 /** How many findings an agent can act on without the context becoming noise. */
@@ -43,7 +44,16 @@ export function hookContext(result: JudgeResult): string | undefined {
   // way, and the invented way is usually `npm i package@latest` on something
   // transitive. The commands are already computed; withholding them here just
   // moves the guessing.
-  const everyCommand = upgradeActions(result.fixNow, result.installed);
+  // The manager matters more here than anywhere else. Everything else that
+  // prints a command is read by a person who would notice `npm i` in a pnpm
+  // repository; an agent runs it, gets a lockfile it did not want, and reports
+  // success.
+  const manager = result.packageManager ?? "npm";
+  const everyCommand = upgradeActions(result.fixNow, result.installed, manager);
+  // Same rule the report follows: the count rests on reading dependents'
+  // ranges out of package-lock.json, and there is no reader for the others. An
+  // agent told "clears 7" will report seven closed.
+  const promises = canPromiseClears(manager);
   const commands = everyCommand.slice(0, LIMIT);
   const remedy =
     commands.length === 0
@@ -59,7 +69,7 @@ export function hookContext(result: JudgeResult): string | undefined {
           ...commands.map(
             (action) =>
               `$ ${action.command}` +
-              (action.clears === 1 ? "" : `   # clears ${action.clears}`),
+              (action.clears === 1 || !promises ? "" : `   # clears ${action.clears}`),
           ),
         ];
 
