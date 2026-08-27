@@ -172,16 +172,37 @@ environment. A missing optional scanner is a note, not an error.
 ## Where to add things
 
 ```
-to add a scanner        → src/ingest/<tool>.ts + one line in scan.ts
+to add a scanner        → src/ingest/<tool>.ts, then wire both entry points:
+                          one line in scan.ts (runs it) and one branch in
+                          readInput in cli.ts (reads its saved output)
 to change what we judge → src/merge.ts, src/triage.ts
 to change what we print → src/report.ts, src/html.ts, src/sarif.ts
 to change the history   → src/history.ts, src/cli.ts
 to add a command        → src/cli.ts
 ```
 
-A new scanner is the most self-contained kind of change: one new file, one line
-in `scan.ts`, one fixture, one snapshot. It touches nothing anyone else is
-editing.
+A new scanner is fairly self-contained, but **there are two entry points and
+missing the second one is the usual mistake.** `scan.ts` runs scanners as
+subprocesses. `--input` reads a report someone already produced, and it
+dispatches separately in `readInput` (`src/cli.ts`) by probing the shape of the
+JSON:
+
+```ts
+if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw);
+if ("results" in record) return parseOsv(raw);
+```
+
+A parser wired only into `scan.ts` is unreachable from `--input`, which is the
+path CI and offline users take. `readInput`'s error message also names the
+shapes it knows, so a third one means that message is wrong until it is updated.
+
+So: one new file, one line in `scan.ts`, one branch and one message in
+`cli.ts`, one fixture, one snapshot.
+
+The hand-maintained `if` chain is the thing that makes this doc easy to get
+wrong — each ingest module could export its own `detect`, and the dispatch could
+iterate. That would make this section true instead of merely accurate. It is
+open as a design question rather than done.
 
 ## npm CLI packaging
 

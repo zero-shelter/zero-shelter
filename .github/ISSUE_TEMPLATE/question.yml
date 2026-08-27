@@ -1,0 +1,17 @@
+name: Question
+description: Ask anything. No template to fill in.
+labels: ["question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What would you like to know?
+      description: |
+        Anything. Whether it works with your setup, why something is the way it
+        is, what we would accept as a contribution, or something that is just
+        confusing.
+
+        Blank issues are disabled, so this is the way in. No version numbers or
+        reproduction steps required — if we need them we will ask.
+    validations:
+      required: true
