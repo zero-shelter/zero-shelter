@@ -1,0 +1,61 @@
+# These two share no advisory id, so they were NOT joined and were flagged instead.
+# label: same (they were one advisory — the caution cost a duplicate) | different (leaving them apart was right) | unsure
+# Every hold is here. This is the census, and it is the most argued line in the design.
+repo	package	advisories	title_a	title_b	range	label	notes
+dvna	mathjs	CVE-2017-1001002  vs  CVE-2017-1001003	Arbitrary Code Execution in mathjs	Arbitrary Code Execution in mathjs	same		
+dvna	sequelize	CVE-2023-22580  vs  CVE-2023-22579	Sequelize information disclosure vulnerability	Unsafe fall-through in getWhereConditions	same		
+dvna	tar	CVE-2026-59871  vs  CVE-2026-59874	node-tar: Process crash via PAX numeric path type confusion	node-tar: Negative tar entry size causes infinite loop in archive replace	same		
+dvna	mysql2	CVE-2024-21508  vs  CVE-2024-21509	mysql2 Remote Code Execution (RCE) via the readCodeFor function	mysql2 vulnerable to Prototype Poisoning	same		
+dvna	libxmljs	CVE-2025-25341  vs  CVE-2024-34392	libxmljs has segmentation fault, potentially leading to a denial-of-service (DoS)	libxmljs vulnerable to type confusion when parsing specially crafted XML 	same		
+dvna	libxmljs	CVE-2025-25341  vs  CVE-2024-34391	libxmljs has segmentation fault, potentially leading to a denial-of-service (DoS)	libxmljs vulnerable to type confusion when parsing specially crafted XML	same		
+dvna	libxmljs	CVE-2024-34392  vs  CVE-2024-34391	libxmljs vulnerable to type confusion when parsing specially crafted XML 	libxmljs vulnerable to type confusion when parsing specially crafted XML	same		
+hackathon-starter	undici	CVE-2026-13697  vs  CVE-2026-14643	undici vulnerable to cross-user information disclosure and parse-time crash via degenerate private cache directives	undici vulnerable to cross-user information disclosure via whitespace around equals in Cache-Control directives	same		
+hackathon-starter	undici	CVE-2026-15157  vs  CVE-2026-16728	undici vulnerable to CRLF Injection via blob-like body 'type' property	undici vulnerable to downstream response desynchronization via retry interceptor	same		
+hackathon-starter	undici	CVE-2026-15157  vs  CVE-2026-16729	undici vulnerable to CRLF Injection via blob-like body 'type' property	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields	same		
+hackathon-starter	undici	CVE-2026-16728  vs  CVE-2026-16729	undici vulnerable to downstream response desynchronization via retry interceptor	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields	same		
+juice-shop	undici	CVE-2026-1525  vs  CVE-2026-1526	Undici has an HTTP Request/Response Smuggling issue	Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression	same		
+juice-shop	undici	CVE-2026-1525  vs  CVE-2026-2229	Undici has an HTTP Request/Response Smuggling issue	Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation	same		
+juice-shop	undici	CVE-2026-1525  vs  CVE-2026-1527	Undici has an HTTP Request/Response Smuggling issue	Undici has CRLF Injection in undici via `upgrade` option	same		
+juice-shop	tar	CVE-2026-59871  vs  CVE-2026-59874	node-tar: Process crash via PAX numeric path type confusion	node-tar: Negative tar entry size causes infinite loop in archive replace	same		
+juice-shop	undici	CVE-2026-12151  vs  CVE-2026-9679	undici WebSocket client vulnerable to denial of service via fragment count bypass	undici vulnerable to HTTP header injection via Set-Cookie percent-decoding	same		
+juice-shop	undici	CVE-2026-12151  vs  CVE-2026-11525	undici WebSocket client vulnerable to denial of service via fragment count bypass	undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching	same		
+juice-shop	undici	CVE-2026-12151  vs  CVE-2026-6733	undici WebSocket client vulnerable to denial of service via fragment count bypass	undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse	same		
+juice-shop	undici	CVE-2026-15157  vs  CVE-2026-16728	undici vulnerable to CRLF Injection via blob-like body 'type' property	undici vulnerable to downstream response desynchronization via retry interceptor	same		
+juice-shop	undici	CVE-2026-15157  vs  CVE-2026-16729	undici vulnerable to CRLF Injection via blob-like body 'type' property	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields	same		
+juice-shop	undici	CVE-2026-1526  vs  CVE-2026-2229	Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression	Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation	same		
+juice-shop	undici	CVE-2026-1526  vs  CVE-2026-1527	Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression	Undici has CRLF Injection in undici via `upgrade` option	same		
+juice-shop	jsonwebtoken	CVE-2022-23539  vs  CVE-2022-23541	jsonwebtoken unrestricted key type could lead to legacy keys usage 	jsonwebtoken's insecure implementation of key retrieval function could lead to Forgeable Public/Private Tokens from RSA to HMAC	same		
+juice-shop	multer	CVE-2026-3304  vs  CVE-2026-2359	Multer vulnerable to Denial of Service via incomplete cleanup	Multer vulnerable to Denial of Service via resource exhaustion	same		
+juice-shop	undici	CVE-2026-9679  vs  CVE-2026-11525	undici vulnerable to HTTP header injection via Set-Cookie percent-decoding	undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching	same		
+juice-shop	undici	CVE-2026-9679  vs  CVE-2026-6733	undici vulnerable to HTTP header injection via Set-Cookie percent-decoding	undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse	same		
+juice-shop	decompress	CVE-2026-10732  vs  CVE-2026-53486	decompress: Arbitrary File Write via Archive Extraction (Zip Slip)	Decompress: Archive extraction can create files and links outside of the target directory	same		
+juice-shop	undici	CVE-2026-11525  vs  CVE-2026-6733	undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching	undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse	same		
+juice-shop	undici	CVE-2026-16728  vs  CVE-2026-16729	undici vulnerable to downstream response desynchronization via retry interceptor	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields	same		
+juice-shop	undici	CVE-2026-2229  vs  CVE-2026-1527	Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation	Undici has CRLF Injection in undici via `upgrade` option	same		
+nodegoat	handlebars	CVE-2026-33937  vs  CVE-2026-33940	Handlebars.js has JavaScript Injection via AST Type Confusion	Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial	same		
+nodegoat	handlebars	CVE-2026-33937  vs  CVE-2026-33938	Handlebars.js has JavaScript Injection via AST Type Confusion	Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block	same		
+nodegoat	handlebars	CVE-2026-33937  vs  GHSA-442J-39WM-28R2	Handlebars.js has JavaScript Injection via AST Type Confusion	Handlebars.js has a Property Access Validation Bypass in container.lookup	same		
+nodegoat	handlebars	CVE-2026-33937  vs  CVE-2026-33939	Handlebars.js has JavaScript Injection via AST Type Confusion	Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation	same		
+nodegoat	handlebars	CVE-2026-33937  vs  CVE-2026-33941	Handlebars.js has JavaScript Injection via AST Type Confusion	Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options	same		
+nodegoat	tar	CVE-2026-59871  vs  CVE-2026-59874	node-tar: Process crash via PAX numeric path type confusion	node-tar: Negative tar entry size causes infinite loop in archive replace	same		
+nodegoat	handlebars	GHSA-G9R4-XPMJ-MJ65  vs  GHSA-Q2C6-C6PM-G3GH	Prototype Pollution in handlebars	Arbitrary Code Execution in handlebars	same		
+nodegoat	handlebars	GHSA-G9R4-XPMJ-MJ65  vs  CVE-2019-20920	Prototype Pollution in handlebars	Arbitrary Code Execution in Handlebars	same		
+nodegoat	bson	CVE-2019-2391  vs  CVE-2020-7610	Deserialization of Untrusted Data in bson	Deserialization of Untrusted Data in bson	same		
+nodegoat	handlebars	CVE-2021-23383  vs  CVE-2021-23369	Prototype Pollution in handlebars	Remote code execution in handlebars when compiling templates	same		
+nodegoat	handlebars	CVE-2026-33940  vs  CVE-2026-33938	Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial	Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block	same		
+nodegoat	handlebars	CVE-2026-33940  vs  GHSA-442J-39WM-28R2	Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial	Handlebars.js has a Property Access Validation Bypass in container.lookup	same		
+nodegoat	handlebars	CVE-2026-33940  vs  CVE-2026-33939	Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial	Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation	same		
+nodegoat	handlebars	CVE-2026-33940  vs  CVE-2026-33941	Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial	Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options	same		
+nodegoat	handlebars	GHSA-Q2C6-C6PM-G3GH  vs  CVE-2019-20920	Arbitrary Code Execution in handlebars	Arbitrary Code Execution in Handlebars	same		
+nodegoat	marked	CVE-2022-21680  vs  CVE-2022-21681	Inefficient Regular Expression Complexity in marked	Inefficient Regular Expression Complexity in marked	same		
+nodegoat	handlebars	CVE-2026-33938  vs  GHSA-442J-39WM-28R2	Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block	Handlebars.js has a Property Access Validation Bypass in container.lookup	same		
+nodegoat	handlebars	CVE-2026-33938  vs  CVE-2026-33939	Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block	Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation	same		
+nodegoat	handlebars	CVE-2026-33938  vs  CVE-2026-33941	Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block	Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options	same		
+nodegoat	npm	CVE-2019-16775  vs  CVE-2019-16776	Arbitrary File Write in npm	npm symlink reference outside of node_modules	same		
+nodegoat	handlebars	GHSA-442J-39WM-28R2  vs  CVE-2026-33939	Handlebars.js has a Property Access Validation Bypass in container.lookup	Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation	same		
+nodegoat	handlebars	GHSA-442J-39WM-28R2  vs  CVE-2026-33941	Handlebars.js has a Property Access Validation Bypass in container.lookup	Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options	same		
+nodegoat	qs	CVE-2014-7191  vs  CVE-2014-10064	Denial-of-Service Memory Exhaustion in qs	Denial-of-Service Extended Event Loop Blocking in qs	same		
+nodegoat	handlebars	CVE-2019-20922  vs  GHSA-F52G-6JHX-586P	Regular Expression Denial of Service in Handlebars	Denial of Service in handlebars	same		
+nodegoat	handlebars	CVE-2026-33939  vs  CVE-2026-33941	Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation	Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options	same		
+nodegoat	shelljs	CVE-2022-0144  vs  GHSA-64G7-MVW6-V9QJ	Improper Privilege Management in shelljs	Improper Privilege Management in shelljs	same		
+nodegoat	websocket-driver	CVE-2026-54466  vs  CVE-2026-54490	websocket-driver: Message corruption via abuse of protocol length headers	websocket-driver: Resource limit bypass via message compression	same		

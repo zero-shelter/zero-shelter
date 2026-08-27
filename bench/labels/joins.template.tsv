@@ -1,0 +1,76 @@
+# Did these reports describe ONE advisory?
+# label: same (one advisory, joining was right) | different (two advisories, joining hid one) | unsure
+# A false join is the expensive mistake: the second finding disappears and nobody learns it existed.
+# Sampled, not a census — see the sheet count in bench/README.md.
+repo	fingerprint	package	reported_as	members	title	label	notes
+dvna	001cacac42248bcd	mathjs	npm-audit:GHSA-VX5C-87QX-CV6C + osv-scanner:CVE-2017-1001002	2	Arbitrary Code Execution in mathjs		
+dvna	0ca203dc505bb25b	ejs	npm-audit:GHSA-PHWQ-J96M-2C2Q + osv-scanner:CVE-2022-29078	2	ejs template injection vulnerability		
+dvna	108ba2f258a96a23	sequelize	npm-audit:GHSA-8C25-F3MJ-V6H8 + osv-scanner:CVE-2023-22580	2	Sequelize information disclosure vulnerability		
+dvna	1db0056004ccb6e6	tar	npm-audit:GHSA-83G3-92JG-28CX + osv-scanner:CVE-2026-26960	2	Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction		
+dvna	27ceed0043b0aa75	mathjs	npm-audit:GHSA-X2FC-MXCX-W4MF + osv-scanner:CVE-2020-7743	2	Prototype Pollution in mathjs		
+dvna	2fc255e1f09e5242	tough-cookie	npm-audit:GHSA-72XF-G2V4-QVF3 + osv-scanner:CVE-2023-26136	2	tough-cookie Prototype Pollution vulnerability		
+dvna	44d033d61a516c2f	validator	npm-audit:GHSA-QGMG-GPPG-76G5 + osv-scanner:CVE-2021-3765	2	Inefficient Regular Expression Complexity in validator.js		
+dvna	5a5babfb702f566a	tar	npm-audit:GHSA-GVWX-54WH-QM9J + osv-scanner:CVE-2026-59875	2	node-tar: Uncaught Exception DoS via NUL byte in PAX path/linkpath records		
+dvna	622f2356617ac44c	sequelize	npm-audit:GHSA-VQFX-GJ96-3W95 + osv-scanner:CVE-2023-22579	2	Unsafe fall-through in getWhereConditions		
+dvna	7f77d8a190887087	tar	npm-audit:GHSA-23HP-3JRH-7FPW + osv-scanner:CVE-2026-59873	2	node-tar: Decompression/parse DoS via unlimited input		
+dvna	8aec0ac5f22081f0	mysql2	npm-audit:GHSA-MQR2-W7WJ-JJGR + osv-scanner:CVE-2024-21507	2	mysql2 cache poisoning vulnerability		
+dvna	9553408d1eb9025f	cookie	npm-audit:GHSA-PXG6-PF52-XH8X + osv-scanner:CVE-2024-47764	2	cookie accepts cookie name, path, and domain with out of bounds characters		
+dvna	a7be60cd187e677e	tar	npm-audit:GHSA-F5X3-32G6-XQ36 + osv-scanner:CVE-2024-28863	2	Denial of service while parsing a tar file due to lack of folders count validation		
+dvna	af90dbe7be37029a	tar	npm-audit:GHSA-34X7-HFP2-RC4V + osv-scanner:CVE-2026-24842	2	node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal		
+dvna	b8d48c1ba338a9ef	mysql2	npm-audit:GHSA-49J4-86M8-Q2JW + osv-scanner:CVE-2024-21509	2	mysql2 vulnerable to Prototype Poisoning		
+dvna	bf55841b26f78f3a	ejs	npm-audit:GHSA-GHR5-CH3P-VCR6 + osv-scanner:CVE-2024-33883	2	ejs lacks certain pollution protection		
+dvna	c79c158d38f08027	dicer	npm-audit:GHSA-WM7H-9275-46V2 + osv-scanner:CVE-2022-24434	2	Crash in HeaderParser in dicer		
+dvna	ded210f37073cbda	libxmljs	npm-audit:GHSA-MG49-JQGW-GCJ6 + osv-scanner:CVE-2024-34392	2	libxmljs vulnerable to type confusion when parsing specially crafted XML 		
+dvna	ebb15c36a1ba422a	mysql2	npm-audit:GHSA-4RCH-2FH8-94VW + osv-scanner:CVE-2024-21511	2	MySQL2 for Node Arbitrary Code Injection		
+dvna	f1a0e7069a0c0ce4	node-serialize	npm-audit:GHSA-Q4V7-4RHW-9HQM + osv-scanner:CVE-2017-5941	2	Code Execution through IIFE in node-serialize		
+hackathon-starter	26a18eece5d119e8	undici	npm-audit:GHSA-4CWX-7WF7-3272 + osv-scanner:CVE-2026-13697	2	undici vulnerable to cross-user information disclosure and parse-time crash via degenerate private cache directives		
+hackathon-starter	498d1e915dd78dae	undici	npm-audit:GHSA-M8RV-5G2X-5CG5 + osv-scanner:CVE-2026-15157	2	undici vulnerable to CRLF Injection via blob-like body 'type' property		
+hackathon-starter	4fd04976a9bf7e8f	ip-address	npm-audit:GHSA-22JQ-VG5J-6VGG + osv-scanner:CVE-2026-54272	2	ip-address: misclassification of IPv4-mapped/NAT64 IPv6 addresses can bypass SSRF and trust-boundary checks		
+hackathon-starter	76bda69c17b0d90b	js-yaml	npm-audit:GHSA-PM4M-PH32-GHV5 + osv-scanner:GHSA-PM4M-PH32-GHV5	2	js-yaml: Exponential parsing time in flow collections leads to denial of service		
+hackathon-starter	7be1f414f47d0160	undici	npm-audit:GHSA-JR45-8VMC-QM54 + osv-scanner:CVE-2026-14643	2	undici vulnerable to cross-user information disclosure via whitespace around equals in Cache-Control directives		
+hackathon-starter	8216034cc116e7a3	brace-expansion	npm-audit:GHSA-RGW5-RVV9-X895 + osv-scanner:CVE-2026-69152	3	brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation		
+hackathon-starter	98f629ff190cf452	undici	npm-audit:GHSA-8XCM-R25X-G524 + osv-scanner:CVE-2026-16728	2	undici vulnerable to downstream response desynchronization via retry interceptor		
+hackathon-starter	a08a66c1179663d1	ip-address	npm-audit:GHSA-MWP4-54F8-5FHR + osv-scanner:CVE-2026-69192	2	ip-address: Address4 decodes leading-zero octets as decimal while resolvers decode them as octal, allowing SSRF and trust-boundary bypass		
+hackathon-starter	ceee4cd19f987488	ip-address	npm-audit:GHSA-4XRF-JV44-H6HH + osv-scanner:CVE-2026-69198	2	ip-address: a CIDR suffix on the parsed address suppresses special-use classification and can bypass SSRF and trust-boundary checks		
+hackathon-starter	e3887b6d4b203113	undici	npm-audit:GHSA-V3R7-H72X-CJCM + osv-scanner:CVE-2026-16729	2	undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields		
+hackathon-starter	eed9c417453284e4	brace-expansion	npm-audit:GHSA-MH99-V99M-4GVG + osv-scanner:CVE-2026-14257	3	brace-expansion: DoS via unbounded expansion length causing an out-of-memory process crash		
+juice-shop	031d45d6ad18808d	undici	npm-audit:GHSA-G9MF-H72J-4RW9 + osv-scanner:CVE-2026-22036	2	Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion		
+juice-shop	127966064c4b177b	undici	npm-audit:GHSA-2MJP-6Q6P-2QXM + osv-scanner:CVE-2026-1525	2	Undici has an HTTP Request/Response Smuggling issue		
+juice-shop	1ac2ad1a6fbeb9fc	moment	npm-audit:GHSA-8HFJ-J24R-96C4 + osv-scanner:CVE-2022-24785	2	Path Traversal: 'dir/../../filename' in moment.locale		
+juice-shop	25585a2ee27e1d4b	tar	npm-audit:GHSA-QFFP-2RHF-9H96 + osv-scanner:CVE-2026-29786	2	tar has Hardlink Path Traversal via Drive-Relative Linkpath		
+juice-shop	33b655463b358f82	tar	npm-audit:GHSA-9PPJ-QMQM-Q256 + osv-scanner:CVE-2026-31802	2	node-tar Symlink Path Traversal via Drive-Relative Linkpath		
+juice-shop	4515e014bb35d4f0	sanitize-html	npm-audit:GHSA-QHXP-V273-G94H + osv-scanner:CVE-2019-25225	2	sanitize-html is vulnerable to XSS through incomprehensive sanitization		
+juice-shop	4a9919877b6a96ca	undici	npm-audit:GHSA-VRM6-8VPV-QV8Q + osv-scanner:CVE-2026-1526	2	Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression		
+juice-shop	56a9201ac0f546b7	sanitize-html	npm-audit:GHSA-RM97-X556-Q36H + osv-scanner:CVE-2024-21501	2	sanitize-html Information Exposure vulnerability		
+juice-shop	665a5b7899e8d507	minimatch	npm-audit:GHSA-7R86-CG39-JMMJ + osv-scanner:CVE-2026-27903	2	minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments		
+juice-shop	6c0aeca2deaccbd1	decompress	npm-audit:GHSA-H39J-R5QQ-R9MM + osv-scanner:CVE-2026-10732	2	decompress: Arbitrary File Write via Archive Extraction (Zip Slip)		
+juice-shop	825a7af11fbc836e	minimatch	npm-audit:GHSA-23C5-XMQV-RM74 + osv-scanner:CVE-2026-27904	2	minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions		
+juice-shop	8aca7b7876ea9ddd	crypto-js	npm-audit:GHSA-XWCQ-PM8M-C4VF + osv-scanner:CVE-2023-46233	2	crypto-js PBKDF2 1,000 times weaker than specified in 1993 and 1.3M times weaker than current standard		
+juice-shop	8d44946c3ad120d0	uuid	npm-audit:GHSA-W5HQ-G745-H8PQ + osv-scanner:CVE-2026-41907	2	uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided		
+juice-shop	9a374a7cfe9d652b	engine.io	npm-audit:GHSA-R635-G3XR-VW7X + osv-scanner:CVE-2026-59725	2	Socket.IO: Engine.IO Polling Transport Connection Exhaustion		
+juice-shop	ac5a481100c338ec	tar	npm-audit:GHSA-8X88-C5MF-7J5W + osv-scanner:CVE-2026-59874	2	node-tar: Negative tar entry size causes infinite loop in archive replace		
+juice-shop	b089cdefefd115cd	jws	npm-audit:GHSA-869P-CJFG-CM3X + osv-scanner:CVE-2025-65945	2	auth0/node-jws Improperly Verifies HMAC Signature		
+juice-shop	c42d60d334eeea8f	tar	npm-audit:GHSA-8QQ5-RM4J-MR97 + osv-scanner:CVE-2026-23745	2	node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization		
+juice-shop	d42b5578e3cca8dd	sanitize-html	npm-audit:GHSA-3J7M-HMH3-9JMP + osv-scanner:CVE-2016-1000237	2	Cross-Site Scripting in sanitize-html		
+juice-shop	da3c7358e454a90a	moment	npm-audit:GHSA-87VV-R9J6-G5QV + osv-scanner:CVE-2016-4055	2	Regular Expression Denial of Service in moment		
+juice-shop	f652ccb52846051f	jsonwebtoken	npm-audit:GHSA-C7HR-J4MJ-J2W6 + osv-scanner:CVE-2015-9235	2	Verification Bypass in jsonwebtoken		
+nodegoat	02970bec0953222b	handlebars	npm-audit:GHSA-2CF5-4W76-R9QV + osv-scanner:GHSA-2CF5-4W76-R9QV	2	Arbitrary Code Execution in handlebars		
+nodegoat	115e7d5149440f58	hosted-git-info	npm-audit:GHSA-43F8-2H32-F4CJ + osv-scanner:CVE-2021-23362	2	Regular Expression Denial of Service in hosted-git-info		
+nodegoat	19e430f4c00681c0	hoek	npm-audit:GHSA-JP4X-W63M-7WGM + osv-scanner:CVE-2018-3728	2	Prototype Pollution in hoek		
+nodegoat	2eab1999dc111262	jsonpointer	npm-audit:GHSA-282F-QQGM-C34Q + osv-scanner:CVE-2021-23807	2	Prototype Pollution in node-jsonpointer		
+nodegoat	38419faff211212c	lodash	npm-audit:GHSA-F23M-R3PF-42RH + npm-audit:GHSA-XXJR-MMJV-4GPG + osv-scanner:CVE-2025-13465	3	lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`		
+nodegoat	43ddb3227dcabe40	minimatch	npm-audit:GHSA-F8Q6-P94X-37V3 + osv-scanner:CVE-2022-3517	2	minimatch ReDoS vulnerability		
+nodegoat	4fcd3d5303390899	async	npm-audit:GHSA-FWR7-V2MV-HH25 + osv-scanner:CVE-2021-43138	2	Prototype Pollution in async		
+nodegoat	5a630db102bdd6e3	underscore	npm-audit:GHSA-CF4H-3JHX-XVHQ + osv-scanner:CVE-2021-23358	2	Arbitrary Code Execution in underscore		
+nodegoat	63a67d3ed0f06c0b	marked	npm-audit:GHSA-7PX7-7XJX-HXM8 + osv-scanner:CVE-2017-1000427	2	Marked vulnerable to XSS from data URIs		
+nodegoat	72573e8f1c0fa5e8	kind-of	npm-audit:GHSA-6C8F-QPHG-QJGP + osv-scanner:CVE-2019-20149	2	Validation Bypass in kind-of		
+nodegoat	8216034cc116e7a3	brace-expansion	npm-audit:GHSA-RGW5-RVV9-X895 + osv-scanner:CVE-2026-69152	2	brace-expansion: DoS via unbounded intermediate arrays, bypassing the CVE-2026-14257 mitigation		
+nodegoat	8a61a43249f065c7	ajv	npm-audit:GHSA-2G4F-4PWH-QVX6 + osv-scanner:CVE-2025-69873	2	ajv has ReDoS when using `$data` option		
+nodegoat	93144a386f07a513	debug	npm-audit:GHSA-9VVW-CC9W-F27H + osv-scanner:CVE-2017-20165	2	debug Inefficient Regular Expression Complexity vulnerability		
+nodegoat	ac5a481100c338ec	tar	npm-audit:GHSA-8X88-C5MF-7J5W + osv-scanner:CVE-2026-59874	2	node-tar: Negative tar entry size causes infinite loop in archive replace		
+nodegoat	b3910fa373ebb88a	brace-expansion	npm-audit:GHSA-3JXR-9VMJ-R5CP + osv-scanner:CVE-2026-13149	2	brace-expansion: DoS via exponential-time expansion of consecutive non-expanding {} groups		
+nodegoat	bc29d7b1640fc062	path-parse	npm-audit:GHSA-HJ48-42VR-X3V9 + osv-scanner:CVE-2021-23343	2	Regular Expression Denial of Service in path-parse		
+nodegoat	d3d4429482c75c24	moment	npm-audit:GHSA-WC69-RHJR-HC9G + osv-scanner:CVE-2022-31129	2	Moment.js vulnerable to Inefficient Regular Expression Complexity		
+nodegoat	dd1f66af7a6e7ead	shelljs	npm-audit:GHSA-64G7-MVW6-V9QJ + osv-scanner:GHSA-64G7-MVW6-V9QJ	2	Improper Privilege Management in shelljs		
+nodegoat	ec0229264ce37449	json-schema	npm-audit:GHSA-896R-F27R-55MW + osv-scanner:CVE-2021-3918	2	json-schema is vulnerable to Prototype Pollution		
+nodegoat	f7eafc891215d221	serve-static	npm-audit:GHSA-CM22-4G7W-348P + osv-scanner:CVE-2024-43800	2	serve-static vulnerable to template injection that can lead to XSS		

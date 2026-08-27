@@ -19,6 +19,52 @@ Captured 2026-08-07 with npm 11.4.2 and osv-scanner 2.5.0, frozen under
 Reproduce with `npm run build && node bench/evaluate.mjs`. Reads only the
 committed captures — no network, no scanners.
 
+## Labelling: what a human is actually asked to do
+
+The per-finding sheets (`<repo>.template.tsv`, 645 rows) ask whether each raw
+finding is worth fixing. That is a question about the scanners — they produced
+the list, and a labeller working through 645 of them is grading npm audit and
+osv-scanner rather than this tool. Two people doing it is 1,290 judgements, and
+it will not get done.
+
+This tool makes two decisions of its own, and those are the ones a benchmark can
+grade:
+
+| sheet | rows | what it asks | getting it wrong means |
+|---|---|---|---|
+| `holds.template.tsv` | 57, every one | should these two have been joined? | caution cost a duplicate |
+| `joins.template.tsv` | 71, sampled from 308 | did these reports describe one advisory? | a false join hid an advisory |
+
+128 rows. Two people can finish that.
+
+`holds` is the census and the more interesting sheet: every row is a pair we
+declined to join because they share no identifier, which is the most argued line
+in the design. A labeller saying "those were obviously the same" is telling us
+the caution costs more than it saves.
+
+`joins` is sampled, because 308 is not a census anyone finishes. The sheet says
+so, and any figure drawn from it carries that caveat.
+
+```bash
+node bench/make-decision-sheets.mjs     # regenerate the templates
+node bench/score-labels.mjs             # after two people have filled them
+```
+
+### The rules that make this worth anything
+
+- **Two people, independently.** One person's reading is not ground truth, and
+  the scorer refuses to report a figure from a single sheet.
+- **Cohen's kappa is printed.** Raw agreement flatters: if most rows are
+  obviously one answer, two people agreeing 90% of the time have told you
+  nothing. Below 0.6 the scorer says so and declines to stand behind the number.
+- **Disagreements are printed, not averaged away.** A row two careful readers
+  read differently is the most interesting row on the sheet, and how it was
+  settled belongs in the repository.
+- **No model fills a label in.** An answer key produced by the tool being graded
+  is not an answer key, and it is the first thing anyone reading this will check.
+- **Labels commit before any ranking change they would justify.** The order has
+  to survive in the git history.
+
 ### What these numbers do and do not say
 
 They say the two sources describe the same advisories under different names
