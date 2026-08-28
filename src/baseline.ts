@@ -164,11 +164,29 @@ function parseAccepted(entries: readonly unknown[]): AcceptedFinding[] {
       ...optional(record, "recordedAt"),
       ...optional(record, "reason"),
       ...optional(record, "acceptedBy"),
-      ...optional(record, "expires"),
+      ...expiry(record["expires"], fingerprint),
     };
   });
 
   return parsed.sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1));
+}
+
+/**
+ * An expiry we cannot compare is worse than none: it decides a gate.
+ *
+ * Rejected rather than ignored, because the failure is silent in the dangerous
+ * direction — a mistyped date that sorts high never expires, and the finding
+ * stays accepted forever while the file looks like it has a deadline on it.
+ */
+function expiry(value: unknown, fingerprint: string): { expires?: string } {
+  if (typeof value !== "string") return {};
+  if (!ISO_DATE.test(value)) {
+    throw new Error(
+      `${BASELINE_PATH}: ${fingerprint} has expires "${value}", which is not a YYYY-MM-DD date. ` +
+        "An expiry that cannot be compared would silently never expire.",
+    );
+  }
+  return { expires: value };
 }
 
 /**
@@ -209,14 +227,30 @@ function ordered(entry: AcceptedFinding): Record<string, unknown> {
   return out;
 }
 
+/**
+ * `previous` is what is already on disk, and dropping it is data loss.
+ *
+ * `reason`, `acceptedBy` and `expires` are written by a person — that is the
+ * whole point of them — and the skills prescribe `--update-baseline` as the way
+ * to prune a baseline after a fix lands. Rebuilding the file from findings
+ * alone destroyed the audit trail on every prune, silently, using the command
+ * we told people to run.
+ *
+ * `recordedAt` is carried too. When this acceptance was first made is a fact
+ * about a decision, not about the last time someone tidied the file.
+ */
 export function baselineFrom(
   findings: readonly RankedFinding[],
   sources?: readonly string[],
   recordedAt?: string,
+  previous?: Baseline,
 ): Baseline {
+  const kept = new Map((previous?.accepted ?? []).map((entry) => [entry.fingerprint, entry]));
+
   const byFingerprint = new Map<string, AcceptedFinding>();
   for (const { finding } of findings) {
     if (byFingerprint.has(finding.fingerprint)) continue;
+    const before = kept.get(finding.fingerprint);
     byFingerprint.set(finding.fingerprint, {
       fingerprint: finding.fingerprint,
       ecosystem: finding.ecosystem,
@@ -224,7 +258,14 @@ export function baselineFrom(
       advisory: finding.advisoryId,
       aliases: [...finding.aliases].sort(),
       severity: finding.severity,
-      ...(recordedAt === undefined ? {} : { recordedAt }),
+      ...(before?.recordedAt === undefined
+        ? recordedAt === undefined
+          ? {}
+          : { recordedAt }
+        : { recordedAt: before.recordedAt }),
+      ...(before?.reason === undefined ? {} : { reason: before.reason }),
+      ...(before?.acceptedBy === undefined ? {} : { acceptedBy: before.acceptedBy }),
+      ...(before?.expires === undefined ? {} : { expires: before.expires }),
     });
   }
 
@@ -324,11 +365,18 @@ export function applyBaseline(
  * into one another: two different vulnerabilities in the same package share no
  * alias, so a hit means the sources agreed on an identifier.
  */
-function aliasIndex(accepted: readonly AcceptedFinding[]): Map<string, AcceptedFinding> {
-  const index = new Map<string, AcceptedFinding>();
+function aliasIndex(accepted: readonly AcceptedFinding[]): Map<string, AcceptedFinding[]> {
+  const index = new Map<string, AcceptedFinding[]>();
   for (const entry of accepted) {
     for (const alias of entry.aliases) {
-      index.set(key(entry.ecosystem, entry.package, alias), entry);
+      // A list, not a value. Two acceptances in one package can share an alias
+      // — that is how the sources said they were related in the first place —
+      // and overwriting means the one that lost is never matched again and
+      // gets announced as resolved while it is still being reported.
+      const at = key(entry.ecosystem, entry.package, alias);
+      const found = index.get(at);
+      if (found === undefined) index.set(at, [entry]);
+      else found.push(entry);
     }
   }
   return index;
@@ -347,15 +395,16 @@ function aliasIndex(accepted: readonly AcceptedFinding[]): Map<string, AcceptedF
 function coveringAcceptances(
   entry: RankedFinding,
   exact: AcceptedFinding | undefined,
-  byAlias: Map<string, AcceptedFinding>,
+  byAlias: Map<string, AcceptedFinding[]>,
 ): AcceptedFinding[] {
   const { ecosystem, packageName, aliases } = entry.finding;
   const found = new Map<string, AcceptedFinding>();
 
   if (exact !== undefined) found.set(exact.fingerprint, exact);
   for (const alias of aliases) {
-    const hit = byAlias.get(key(ecosystem, packageName, alias));
-    if (hit !== undefined) found.set(hit.fingerprint, hit);
+    for (const hit of byAlias.get(key(ecosystem, packageName, alias)) ?? []) {
+      found.set(hit.fingerprint, hit);
+    }
   }
 
   return [...found.values()];
@@ -374,5 +423,14 @@ function key(ecosystem: string, packageName: string, alias: string): string {
  * means nothing expires and the caller decides whether to supply one.
  */
 function hasExpired(entry: AcceptedFinding, today?: string): boolean {
-  return entry.expires !== undefined && today !== undefined && entry.expires < today;
+  if (entry.expires === undefined || today === undefined) return false;
+  // Compared as text, which only works on a real ISO date. `2027-1-1` sorts
+  // after `2027-01-01` and `26-12-31` sorts before everything, so a typo
+  // silently becomes either "never expires" or "expired already" — and the
+  // first of those quietly turns a gate green. Anything else does not expire,
+  // and parseBaseline has already said so out loud.
+  return ISO_DATE.test(entry.expires) && entry.expires < today;
 }
+
+/** Date only. A time would make the comparison depend on a zone we do not have. */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;

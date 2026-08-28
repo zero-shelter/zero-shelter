@@ -570,7 +570,19 @@ export function renderJson(result: JudgeResult): string {
       // The commands, so a caller does not have to re-derive them from the
       // findings and get the version comparison subtly wrong.
       workspaceRoot: result.workspaceRoot === true,
-      upgrades: upgradeActions(result.applied.fresh, result.installed),
+      // The dialect reaches here last and it matters most: the skills point an
+      // agent at this field and tell it to run what it finds. `clears` is
+      // dropped where it cannot be verified, for the same reason the terminal
+      // drops it — a number an agent reports as closed had better be closed.
+      upgrades: upgradeActions(
+        result.applied.fresh,
+        result.installed,
+        result.packageManager ?? "npm",
+      ).map((action) =>
+        canPromiseClears(result.packageManager ?? "npm")
+          ? action
+          : { packageName: action.packageName, upgradeTo: action.upgradeTo, command: action.command },
+      ),
       transitiveFixes: transitiveFixes(result.applied.fresh, result.installed),
       fixNow: result.fixNow.map((entry) => ({
         fingerprint: entry.finding.fingerprint,

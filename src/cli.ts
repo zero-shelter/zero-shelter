@@ -221,7 +221,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       await mkdir(dirname(baselinePath), { recursive: true });
       await writeFile(
         baselinePath,
-        serializeBaseline(baselineFrom(all.fixNow, sources, today)),
+        serializeBaseline(baselineFrom(all.fixNow, sources, today, baseline)),
         "utf8",
       );
     } catch (error) {
@@ -530,6 +530,11 @@ async function hook(
         baselineExists: exists,
         skipped,
         packageManager: detectPackageManager(cwd),
+        // Without this an expired acceptance is invisible here while judge
+        // reports it and exits 1. The agent would be told the project is
+        // quieter than CI says it is, which is the one direction this tool is
+        // not allowed to be wrong in.
+        today: new Date().toISOString().slice(0, 10),
         ...(installed === undefined ? {} : { installed }),
       }),
     );
