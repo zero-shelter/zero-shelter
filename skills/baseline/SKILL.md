@@ -42,9 +42,14 @@ a place where things go to be forgotten.
 nothing to compare against and reports the whole backlog on every run, which is
 how the check gets switched off.
 
-It is a sorted list of fingerprints, so a pull request that changes it shows
-exactly what was accepted and by whom. Say that when someone asks why it is not
-in `.gitignore`.
+One accepted finding per line, sorted, each naming its package and advisory —
+so a pull request that changes it shows exactly what was accepted and by whom.
+Say that when someone asks why it is not in `.gitignore`.
+
+An entry may also carry `reason`, `acceptedBy` and `expires`, written by hand.
+An expiry brings the finding back into the report on that date, which is what
+keeps an accepted list from being a place things go to be forgotten. Dates are
+`YYYY-MM-DD`; anything else is rejected rather than silently never expiring.
 
 ## Keeping it honest
 

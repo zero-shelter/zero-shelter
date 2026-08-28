@@ -10,7 +10,7 @@
  *   node scripts/qa-agent.mjs [--keep]
  */
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -180,19 +180,32 @@ await check("hook speaks the project's dialect", "one dialect per manager", asyn
 
 // ── what the setup skill tells an agent to check ────────────────────────────
 
+/**
+ * This check used to enshrine the wrong semantics, which is worse than not
+ * having it: it asserted that grepping the JSON for "osv-scanner" returns
+ * non-zero when the scanner ran — and it does, but it *also* returns non-zero
+ * when the scanner is missing, because `skipped` names it. The gate was green
+ * on a happy path that could never see the failing case.
+ */
 await check(
-  "the setup skill's verification command works",
-  "judge --json names its sources",
+  "the setup skill's verification command answers both ways",
+  "one source detected, two sources detected",
   async () => {
     const dir = await project("npm");
-    const { stdout } = await cli(dir, ["judge", ...INPUTS, "--json"]);
-    const report = JSON.parse(stdout);
+    const PHRASE = "one source";
+
+    const one = (await cli(dir, ["judge", "--input", NPM_REPORT])).stdout;
+    expect(one.includes(PHRASE), "a one-source run did not say so, so the skill's check is blind");
+
+    const two = (await cli(dir, ["judge", ...INPUTS])).stdout;
+    expect(!two.includes(PHRASE), "a two-source run claimed to have one source");
+
+    // And the trap the skill now warns about, asserted rather than described.
+    const json = (await cli(dir, ["judge", "--input", NPM_REPORT, "--json"])).stdout;
+    const report = JSON.parse(json);
     expect(Array.isArray(report.fixNow), "--json did not produce the documented shape");
-    expect(
-      stdout.includes("osv-scanner"),
-      "the skill greps for osv-scanner and would find nothing",
-    );
-    return "grep -c osv-scanner would return non-zero";
+
+    return "present with one source, absent with two";
   },
 );
 
@@ -269,6 +282,24 @@ await check("clears is only promised where it can be checked", "withheld off npm
   const npmRun = await cli(await project("npm"), ["judge", ...INPUTS]);
   expect(/clears \d/.test(npmRun.stdout), "npm stopped promising counts it can verify");
   return "withheld on pnpm and yarn, kept on npm";
+});
+
+/**
+ * Recording is bookkeeping. A history file we cannot append to is worth saying
+ * out loud and is not worth throwing a finished judgement away over — exit 2
+ * means "could not judge", and the judgement was fine.
+ */
+await check("a history that cannot be written does not sink the run", "verdict survives", async () => {
+  const dir = await project("npm");
+  // A directory where the file belongs: append fails with EISDIR.
+  await mkdir(join(dir, ".zero-shelter", "history.jsonl"), { recursive: true });
+
+  const { code, stdout, stderr } = await cli(dir, ["judge", ...INPUTS, "--record"]);
+
+  expect(code === 1, `the judgement earned exit 1, --record turned it into ${code}`);
+  expect(stdout.includes("to fix"), "the report never reached the reader");
+  expect(stderr.includes("history.jsonl"), "the write failure was swallowed silently");
+  return "exit 1, report printed, failure named on stderr";
 });
 
 // ── the loop the fix skill describes ────────────────────────────────────────

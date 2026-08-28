@@ -258,13 +258,12 @@ export async function main(argv: readonly string[]): Promise<number> {
       (values.explain === true ? `\n${renderExplain(result)}\n` : "");
   }
 
-  if (values.record === true) {
-    const written = await record(cwd, result);
-    if (written !== undefined) {
-      process.stderr.write(`${written}\n`);
-      return 2;
-    }
-  }
+  // Recording is bookkeeping, not judging. A history file we could not append
+  // to is worth saying out loud, and it is not worth throwing away a finished
+  // judgement over — exit 2 means "could not judge", which would be false, and
+  // the report never reached the reader at all.
+  const recordFailure = values.record === true ? await record(cwd, result) : undefined;
+  if (recordFailure !== undefined) process.stderr.write(`${recordFailure}\n`);
 
   if (values.output === undefined) {
     process.stdout.write(rendered);

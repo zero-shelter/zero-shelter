@@ -69,11 +69,15 @@ install Python has already lost the setup it was supposed to save.
 So:
 
 - `npm audit` always runs. No preconditions.
-- Anything else runs **if it is on `PATH`**, and is skipped silently otherwise.
+- Anything else runs **if it is on `PATH`**, and is skipped otherwise, saying so.
 - Pre-existing output can be supplied with `--input`, which is what CI usually
   wants.
 
-Nothing is ever a prerequisite.
+Nothing is a prerequisite for the tool to *run*. A second source is a
+prerequisite for it to be *useful*, and that is a different sentence: with one
+source there is nothing to reconcile and the count comes out as it went in.
+Measured on uptime-kuma, npm audit alone reports 71 and leaves 71. See the
+install section of the README.
 
 ## Why CI and pull requests come first
 

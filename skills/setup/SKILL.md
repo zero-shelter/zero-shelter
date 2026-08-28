@@ -39,12 +39,17 @@ and that is a better answer than proceeding with one source and explaining a 0%.
 **Then check it actually ran**, rather than assuming the install worked:
 
 ```bash
-npx --yes zero-shelter judge --json | grep -c osv-scanner
+npx --yes zero-shelter judge | grep -q "one source" && echo "STILL ONE SOURCE"
 ```
 
-The text output says it too. A run with one source ends its summary with `one
-source, nothing to reconcile` — if that phrase is on screen, the second scanner
-is not contributing, whatever `brew` printed.
+A run with one source ends its summary with `one source, nothing to reconcile`.
+If that phrase is on screen the second scanner is not contributing, whatever
+`brew` printed.
+
+Do not grep the JSON for `osv-scanner`. It appears in `skipped` when the
+scanner is **missing**, so the count is non-zero in exactly the case the check
+is supposed to catch — an earlier version of this skill said to do that and had
+it backwards.
 
 Do not describe a one-source run as a normal result. It is a valid way to run
 this and the ranking and baseline still work, but the deduplication this tool

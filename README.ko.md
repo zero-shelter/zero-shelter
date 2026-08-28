@@ -73,19 +73,35 @@ $ npx zero-shelter judge
 
 ## 설치
 
-설치할 게 없습니다. `npx zero-shelter judge`로 실행됩니다.
+두 개를 설치합니다. 두 번째는 선택이 아닙니다.
 
-`npm audit`은 항상 돕니다. lockfile이 있는 프로젝트엔 npm이 이미 있으니까요.
-`osv-scanner`는 `PATH`에 있으면 쓰고 없으면 조용히 건너뜁니다. 출력을 보기 전에
-뭘 설치하라는 말을 듣는 일은 없습니다. 다만 설치해 두는 편이 낫습니다. 두 소스를
-맞대는 게 중복 제거의 대부분이 나오는 지점입니다.
+```console
+$ npm i -g zero-shelter          # 또는 npx zero-shelter judge
+$ brew install osv-scanner       # 또는 google/osv-scanner 릴리스
+```
+
+`npm audit`은 항상 돕니다. lockfile이 있는 프로젝트엔 npm이 이미 있으니까요. 그런데
+그건 소스 하나입니다. **이 도구가 하는 일이 소스를 맞추는 것이라, 소스가 하나면
+맞출 것이 없습니다** — 순위와 baseline은 그대로 얻지만 건수는 들어간 그대로 나옵니다.
+
+차이가 미묘하지 않습니다. uptime-kuma 실측:
+
+```console
+npm audit 단독       71건 보고 → 71건 조치   (0% 감소)
+osv-scanner 추가    142건 보고 → 71건 조치  (50% 감소)
+```
+
+두 숫자 다 사실입니다. 두 번째 스캐너가 새 문제 71개를 찾은 게 아니라, 같은 것을
+첫 번째가 쓰지 않은 식별자로 다시 말한 것이고 그걸 맞추는 게 이 도구의 일입니다.
+
+`osv-scanner` 없이 돌려도 동작하고, 그 사실을 말합니다. 다만 도구의 작은 쪽 절반입니다.
 
 pnpm 프로젝트도 그대로 됩니다. `pnpm-lock.yaml`이 있으면 `pnpm audit`을 대신
 실행합니다. npm 6의 옛 리포트 형태도 읽습니다.
 
-yarn은 `osv-scanner`로 됩니다. 그쪽이 `yarn.lock`을 직접 읽습니다. 그게 없으면 읽을
-수단이 없고(yarn v1은 NDJSON이라 우리가 파싱하지 않습니다), 그 사실과 우회 방법 두 가지를
-알려줍니다. 조용히 "아무것도 스캔 못 함"으로 끝나지 않습니다.
+yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습니다 — `npm audit`이
+`yarn.lock`을 못 읽고, yarn v1은 NDJSON이라 이 도구가 파싱하지 않습니다.
+`osv-scanner`가 `yarn.lock`을 직접 읽으니, yarn에서는 그것이 유일한 소스입니다.
 
 ## CI에서
 
