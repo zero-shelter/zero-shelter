@@ -19,11 +19,12 @@ install UX; the wording of an actual finding is output quality.
 
 | Path | Command | Status |
 |---|---|---|
-| No install | `npx zero-shelter judge` | works — the preview package is published as `zero-shelter@0.0.5` |
+| No install | `npx zero-shelter judge` | works — the preview package is published as `zero-shelter@0.0.7` |
 | Dev dependency | `npm i -D zero-shelter` then `npx zero-shelter judge` | works — uses the published package |
 | From source | `git clone … && npm ci && npm run build && npm run judge` | works |
 
-Node 20 or later. No runtime dependencies, 47.5 kB packed.
+Node 20 or later. No runtime dependencies. After a build, the `0.0.7` package is
+110.7 kB packed across 79 files (`npm pack --dry-run`).
 
 ## What the first run must never do
 
@@ -54,7 +55,8 @@ scanned; anything else does not, and zero sources scanned can never be a pass.
 
 ## QA checklist
 
-The bar for this area. Every line is a command someone else can run.
+The bar for this area. The ten rows below are the user-facing first-run cases;
+`npm run qa` executes fourteen checks in total.
 
 | # | Case | Expected | Now |
 |---|---|---|---|
@@ -64,7 +66,7 @@ The bar for this area. Every line is a command someone else can run.
 | 4 | `osv-scanner` absent | Runs to completion on npm audit alone, one quiet note | ✅ |
 | 5 | `--help` | Covers `judge` and `hook`, every flag, exit codes | ✅ |
 | 6 | Windows, macOS, Linux | Identical output | ✅ 3-OS CI |
-| 7 | Install footprint | No runtime dependencies; only `dist`, README, LICENSE shipped | ✅ 49 files, 47.5 kB |
+| 7 | Install footprint | No runtime dependencies; the package payload is `dist` plus standard npm metadata and documentation | ✅ 79 files, 110.7 kB |
 | 8 | Scanner message accuracy | Names formats we actually parse | ✅ yarn v1 removed |
 | 9 | `npx zero-shelter` with no subcommand | Same as `judge` | ✅ |
 | 10 | Second run after `--update-baseline` | `✓ nothing new to fix`, exit 0 — the honest one | ✅ |
@@ -80,6 +82,16 @@ checks against that — not against the working copy. The distinction is the
 point: this exact check caught a merge that deleted a shipped feature while
 every test and all three CI matrices stayed green, because the tests for the
 deleted code were deleted along with it.
+
+Agent-facing surfaces have a separate gate:
+
+```bash
+npm run qa:agent
+```
+
+It checks the hook, five skills, copy-paste prompts in the HTML report, the
+plugin manifest, package-manager dialects, and the quiet failure paths. It
+currently runs eighteen checks.
 
 ## Definition of done — 2026-08-25 24:00
 

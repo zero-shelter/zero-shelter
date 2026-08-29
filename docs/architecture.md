@@ -7,6 +7,9 @@ through five core layers, while the CLI adds history and presentation adapters
 around the result. That is what makes it possible for several people to work
 on different layers at once without stepping on each other.
 
+A small package-manager adapter keeps remediation commands in the same
+dialect as the project's lockfile.
+
 ## Layers
 
 ```mermaid
@@ -78,6 +81,10 @@ functions. That is not architectural taste — it is what lets the tests drive
 the judgement path from fixtures without ever spawning a scanner, so a test
 failure means the logic is wrong rather than that someone's machine lacks a
 binary.
+
+The package-manager adapter is also data-to-data: it selects the install
+command, override key, and whether a `clears N` promise is supported from the
+detected lockfile.
 
 ## One run, end to end
 
@@ -169,6 +176,11 @@ one judgement, not separate datasets.
 **Entry / acquisition** — the only place allowed to fail because of the
 environment. A missing optional scanner is a note, not an error.
 
+**Package manager** — `package-manager.ts` translates one remediation into the
+project's dialect: `npm i`, `pnpm add`, or `yarn add`; it also selects
+`overrides`, `pnpm.overrides`, or `resolutions`. Only npm has the lockfile
+range reader needed to promise a `clears N` count.
+
 ## Where to add things
 
 ```
@@ -179,6 +191,8 @@ to change what we judge → src/merge.ts, src/triage.ts
 to change what we print → src/report.ts, src/html.ts, src/sarif.ts
 to change the history   → src/history.ts, src/cli.ts
 to add a command        → src/cli.ts
+to change remediation dialect → src/package-manager.ts, src/actions.ts,
+                              src/report.ts, src/hook.ts
 
 Two callers build a judgement: `judge` and `hook`, and they assemble the
 options separately. Every field added to `JudgeOptions` has to be wired into

@@ -27,6 +27,7 @@
 | QG-05 Honest output | Pass / Fail / Not run | |
 | QG-06 Safe action | Pass / Fail / Not run | |
 | QG-07 Regression protection | Pass / Fail / Not run | |
+| QG-08 Human presentation control | Pass / Fail / Not run | |
 
 ## Release decision
 

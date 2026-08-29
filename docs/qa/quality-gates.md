@@ -13,6 +13,7 @@ These gates define the minimum evidence required to call a beta build release-re
 | QG-05 | Honest output | Text, JSON, SARIF, HTML, and hook output preserve the underlying judgment and state any limitation that matters. | `test/pipeline.test.ts`, `test/sarif.test.ts`, `test/html.test.ts`, `test/hook.test.ts` |
 | QG-06 | Safe action | Direct and transitive dependencies receive accurate, non-destructive remediation guidance. | `test/actions.test.ts`, `test/workspaces.test.ts`, `test/merged-fix.test.ts` |
 | QG-07 | Regression protection | Every confirmed defect that can be automated has a test that would fail if the defect returns. | Linked test in the case record |
+| QG-08 | Human presentation control | `--no-color` overrides `FORCE_COLOR` for human text without changing machine-readable output, findings, scores, or exit codes. | `test/no-color.test.ts` |
 
 ## Release policy
 
@@ -24,6 +25,7 @@ A beta candidate is release-ready only when all of the following are true.
 - The latest QA report names untested scope and known limitations.
 - `npm test`, `npm run typecheck`, `npm run build`, and `npm pack --dry-run` pass.
 - The packaged-install check, `npm run qa`, passes for a release candidate.
+- The agent-facing check, `npm run qa:agent`, passes when the hook, skills, HTML prompts, or plugin manifest are in scope.
 
 ## Severity policy
 

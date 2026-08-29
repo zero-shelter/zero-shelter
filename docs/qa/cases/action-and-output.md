@@ -10,4 +10,5 @@
 | OUTPUT-03 | P0 | Scanner-controlled text executes in the HTML report. | HTML escapes scanner-derived strings and remains a self-contained file. | CI | `test/html.test.ts` |
 | OUTPUT-04 | P1 | Output file failures are silent or ambiguous. | An unwritable output path returns an error that names the target. | CI | `test/error-paths.test.ts` |
 | OUTPUT-05 | P1 | A successful machine-readable output write is corrupt or incomplete. | Stored scanner input writes a valid SARIF file with one run and actionable results. | CI | `test/cli-inputs.test.ts` |
+| OUTPUT-06 | P1 | Human-readable output cannot be turned off when a terminal forces color. | `--no-color` overrides `FORCE_COLOR` without changing findings, machine output, or exit code. | CI | `test/no-color.test.ts` |
 | HOOK-01 | P2 | The agent hook blocks or fails the editor session. | A hook error is quiet and exits 0; successful output uses the expected context shape. | CI | `test/hook.test.ts` |

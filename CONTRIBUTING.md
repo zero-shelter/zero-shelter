@@ -154,6 +154,7 @@ At least one Maintainer must approve a merge. Owner approval is additionally req
 | `npm run build` | build `dist/` |
 | `npm run third-party` | regenerate notices |
 | `npm pack --dry-run` | inspect package contents |
+| `npm run qa:agent` | exercise the hook, five skills, HTML prompts, and plugin manifest |
 
 ## Language and related policies
 

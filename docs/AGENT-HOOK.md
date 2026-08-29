@@ -4,6 +4,13 @@
 before it writes anything, so it does not add a dependency this project already
 has an unfixed advisory for.
 
+The hook uses the same remediation result as the human report. On npm projects
+with a usable `package-lock.json`, it checks whether an upgrade reaches every
+installed copy before it includes a `clears N` count. On pnpm and yarn projects
+it speaks the detected package manager's command dialect (`pnpm add` or
+`yarn add`) and withholds a clears count because those lockfile range readers
+are not available.
+
 ```console
 $ echo '{"cwd":"/path/to/project"}' | npx zero-shelter hook
 {"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"zero-shelter: this project has 9 unaddressed dependency finding(s) (4 more not shown). Highest priority first:\n- critical minimist (GHSA-XVCH-5GV4-984H, fixed in 1.2.8)\n…"}}
@@ -25,7 +32,8 @@ $ echo '{"cwd":"/path/to/project"}' | npx zero-shelter hook
 
 The hook reads the session's `cwd` from the payload on stdin, so it judges the
 project being edited rather than wherever the hook process happened to start.
-`--cwd` overrides it.
+`--cwd` and `--baseline` override the payload and provide explicit project
+and baseline paths.
 
 The context carries the commands too, not only the diagnosis:
 
@@ -38,6 +46,17 @@ $ npm i lodash@4.18.1   # clears 7
 An agent told only what is broken invents a way to fix it, and the invented way
 is usually `npm i something@latest` on a package that arrives through another
 dependency — which adds a top-level entry and leaves the vulnerable copy alone.
+
+## Output limits and action wording
+
+The hook passes at most five highest-priority findings and five available
+commands. When more exist, it states how many were omitted so the agent does
+not mistake a short context for a complete report.
+
+If a direct upgrade cannot reach every installed copy, the hook omits the
+misleading install command and names the blocking dependent or range. The
+human report and the hook therefore agree on what can be promised and what
+needs an `overrides`-style constraint.
 
 ## What it will not do
 

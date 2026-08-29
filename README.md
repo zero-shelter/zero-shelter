@@ -333,6 +333,7 @@ npm test
 npm run typecheck
 npm run third-party   # regenerate THIRD_PARTY.md
 npm run qa            # pack, install into a temp project, check the install experience
+npm run qa:agent      # check the hook, skills, HTML prompts, and plugin manifest
 ```
 
 Node 20 or later.

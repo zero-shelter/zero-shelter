@@ -318,6 +318,7 @@ npm test
 npm run typecheck
 npm run third-party   # THIRD_PARTY.md·THIRD_PARTY.ko.md 재생성
 npm run qa            # 패키징해서 임시 프로젝트에 설치한 뒤 설치 경험 점검
+npm run qa:agent      # hook·skill·HTML prompt·plugin manifest 점검
 ```
 
 Node 20 이상.

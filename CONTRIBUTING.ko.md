@@ -134,6 +134,7 @@ Refs #123
 | `npm run build` | `dist/` 빌드 |
 | `npm run third-party` | 고지 재생성 |
 | `npm pack --dry-run` | package 확인 |
+| `npm run qa:agent` | hook·5개 skill·HTML prompt·plugin manifest 검증 |
 
 영어가 정책과 기술 문서의 정본이며 한국어 번역은 영어 문서와 연결하고 동작 변경과 함께 갱신합니다.
 
