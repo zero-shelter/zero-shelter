@@ -65,6 +65,14 @@ describe("keys that are always there", () => {
     ]) {
       expect(entry).toHaveProperty(key);
     }
+
+    // fixedIn is frozen only if present. The doc said it was always there and
+    // this list quietly left it out, so the gate agreed with the wrong claim
+    // rather than catching it.
+    const withFix = report.fixNow.filter((f: { fixedIn?: string }) => f.fixedIn !== undefined);
+    const without = report.fixNow.length - withFix.length;
+    expect(without).toBeGreaterThan(0);
+    for (const f of withFix) expect(typeof f.fixedIn).toBe("string");
     expect(Number.isInteger(entry.score)).toBe(true);
     expect(typeof entry.direct).toBe("boolean");
   });

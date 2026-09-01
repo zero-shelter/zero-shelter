@@ -537,6 +537,7 @@ async function hook(
         baselineExists: exists,
         skipped,
         packageManager: detectPackageManager(cwd),
+        workspaceRoot: isWorkspaceRoot(cwd),
         // Without this an expired acceptance is invisible here while judge
         // reports it and exits 1. The agent would be told the project is
         // quieter than CI says it is, which is the one direction this tool is

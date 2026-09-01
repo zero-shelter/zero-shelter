@@ -71,6 +71,16 @@ export function hookContext(result: JudgeResult): string | undefined {
               `$ ${action.command}` +
               (action.clears === 1 || !promises ? "" : `   # clears ${action.clears}`),
           ),
+          // The terminal and the html report both add this. Without it an
+          // agent runs the bare command at the root, adds a dependency the
+          // project did not declare, and leaves the workspace that did declare
+          // it on the vulnerable range.
+          ...(result.workspaceRoot === true
+            ? [
+                "This is a workspace root. Add -w <workspace> so the version lands in the " +
+                  "package that declares it; find that package.json rather than guessing.",
+              ]
+            : []),
         ];
 
   return [

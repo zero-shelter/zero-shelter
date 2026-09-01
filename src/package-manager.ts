@@ -8,7 +8,7 @@
  * had no direct commands at all, which makes the transitive block the only
  * advice those projects ever get.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readSync } from "node:fs";
 import { join } from "node:path";
 
 export type PackageManager = "npm" | "pnpm" | "yarn" | "yarn-classic";
@@ -41,14 +41,25 @@ export function detectPackageManager(cwd: string): PackageManager {
  * the marker is in the first few lines by construction.
  */
 function yarnGeneration(path: string): PackageManager {
-  let head: string;
+  // Actually the head. `readFileSync(...).slice()` read the whole file first
+  // and then threw it away, which on a large monorepo lockfile is tens of
+  // megabytes of peak memory to answer a question the first line settles.
+  const buffer = Buffer.alloc(HEAD_BYTES);
+  let read = 0;
+  let handle;
   try {
-    head = readFileSync(path, "utf8").slice(0, 2048);
+    handle = openSync(path, "r");
+    read = readSync(handle, buffer, 0, HEAD_BYTES, 0);
   } catch {
     return "yarn-classic";
+  } finally {
+    if (handle !== undefined) closeSync(handle);
   }
-  return head.includes("__metadata:") ? "yarn" : "yarn-classic";
+  return buffer.toString("utf8", 0, read).includes("__metadata:") ? "yarn" : "yarn-classic";
 }
+
+/** Enough for the marker, which berry writes in the first few lines. */
+const HEAD_BYTES = 2048;
 
 /** What to run to move one package to one version. */
 export function installCommand(

@@ -166,7 +166,7 @@ function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding
       ecosystem: typeof record["ecosystem"] === "string" ? record["ecosystem"] : "",
       package: typeof record["package"] === "string" ? record["package"] : "",
       advisory: typeof record["advisory"] === "string" ? record["advisory"] : "",
-      aliases: (asStrings(record["aliases"]) ?? []).sort(),
+      aliases: aliasesOf(record["aliases"], fingerprint, at),
       severity: typeof record["severity"] === "string" ? record["severity"] : "",
       ...optional(record, "recordedAt"),
       ...optional(record, "reason"),
@@ -176,6 +176,24 @@ function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding
   });
 
   return parsed.sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1));
+}
+
+/**
+ * The rematch rests entirely on these, so losing them quietly turns the rescue
+ * off without saying so — while `sources`, which decides much less, throws on
+ * the same mistake. Absent is fine and means a v1 record; the wrong shape is
+ * not.
+ */
+function aliasesOf(value: unknown, fingerprint: string, at: string): string[] {
+  if (value === undefined) return [];
+  const aliases = asStrings(value);
+  if (aliases === undefined) {
+    throw new Error(
+      `${at}: ${fingerprint} has aliases that are not an array of strings. ` +
+        "They are what matches an acceptance after the scanner set changes.",
+    );
+  }
+  return aliases.sort();
 }
 
 /**
@@ -348,10 +366,15 @@ export function applyBaseline(
     if (exact === undefined) rematched.push(entry);
   }
 
-  const noLongerReported = baseline.accepted
-    .filter((entry) => !matched.has(entry.fingerprint))
-    .map((entry) => entry.fingerprint)
-    .sort();
+  // Deduplicated: a file with the same fingerprint twice counted it twice, and
+  // that number is a frozen JSON key as well as a line on screen.
+  const noLongerReported = [
+    ...new Set(
+      baseline.accepted
+        .filter((entry) => !matched.has(entry.fingerprint))
+        .map((entry) => entry.fingerprint),
+    ),
+  ].sort();
 
   // Only a source that contributed then and not now casts doubt. A scanner
   // that was absent both times explains nothing, and warning about it would

@@ -54,8 +54,12 @@ These top-level keys are frozen. They will keep their names and their types:
 `noLongerReported`, all integers.
 
 Each entry in `fixNow` keeps `fingerprint`, `score`, `severity`, `ecosystem`,
-`package`, `advisory`, `title`, `vulnerableRange`, `fixedIn`, `direct`, `tools`
-and `possibleDuplicates`.
+`package`, `advisory`, `title`, `vulnerableRange`, `direct`, `tools` and
+`possibleDuplicates`.
+
+`fixedIn` is **frozen if present**. It is absent when no source named a version
+that fixes the finding, which is common — 32 of 82 on the juice-shop captures.
+Treat its absence as "no published fix", never as a key you can rely on.
 
 **`warning` is frozen if present.** It is absent on a clean run. When it is
 there it is a string, and it means the whole judgement is qualified: the
