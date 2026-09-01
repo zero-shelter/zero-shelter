@@ -84,7 +84,13 @@ export function readInstalledVersions(cwd: string): InstalledVersions | undefine
   }
 
   const packages = (parsed as { packages?: Record<string, LockEntry> }).packages;
-  if (packages === undefined) return undefined;
+  // `undefined` was guarded and `null` was not, so a lockfile with an explicit
+  // null crashed Object.entries and put a raw stack trace in front of the
+  // reader. Anything that is not a plain object is the same situation as no
+  // lockfile: less precision in the advice, not a broken run.
+  if (typeof packages !== "object" || packages === null || Array.isArray(packages)) {
+    return undefined;
+  }
   return fromPackages(packages);
 }
 

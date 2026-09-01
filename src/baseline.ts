@@ -103,10 +103,17 @@ const asStrings = (value: unknown): string[] | undefined =>
 const optional = (record: Record<string, unknown>, key: string): { [k: string]: string } =>
   typeof record[key] === "string" ? { [key]: record[key] } : {};
 
-export function parseBaseline(raw: string): Baseline {
+/**
+ * `at` is the file this actually came from.
+ *
+ * The messages named the default location, so a project passing
+ * `--baseline somewhere/else.json` was told to go and fix a file it does not
+ * use. Defaulted rather than required, because most callers are the default.
+ */
+export function parseBaseline(raw: string, at: string = BASELINE_PATH): Baseline {
   const parsed: unknown = JSON.parse(raw);
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error(`${BASELINE_PATH} is not a JSON object`);
+    throw new Error(`${at} is not a JSON object`);
   }
 
   const record = parsed as Record<string, unknown>;
@@ -115,18 +122,18 @@ export function parseBaseline(raw: string): Baseline {
   const sources = record["sources"];
 
   if (typeof schemaVersion !== "string") {
-    throw new Error(`${BASELINE_PATH} has no schemaVersion`);
+    throw new Error(`${at} has no schemaVersion`);
   }
   if (!Array.isArray(accepted)) {
-    throw new Error(`${BASELINE_PATH} accepted must be an array`);
+    throw new Error(`${at} accepted must be an array`);
   }
   if (sources !== undefined && asStrings(sources) === undefined) {
-    throw new Error(`${BASELINE_PATH} sources must be an array of strings`);
+    throw new Error(`${at} sources must be an array of strings`);
   }
 
   return {
     schemaVersion,
-    accepted: parseAccepted(accepted),
+    accepted: parseAccepted(accepted, at),
     ...(sources === undefined ? {} : { sources: asStrings(sources)!.sort() }),
   };
 }
@@ -139,19 +146,19 @@ export function parseBaseline(raw: string): Baseline {
  * is survive a change of scanners, because there are no aliases to fall back
  * on. It keeps working at the level it always did rather than being rejected.
  */
-function parseAccepted(entries: readonly unknown[]): AcceptedFinding[] {
+function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding[] {
   const parsed = entries.map((entry): AcceptedFinding => {
     if (typeof entry === "string") {
       return { fingerprint: entry, ecosystem: "", package: "", advisory: "", aliases: [], severity: "" };
     }
     if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
-      throw new Error(`${BASELINE_PATH} accepted must hold fingerprints or accepted findings`);
+      throw new Error(`${at} accepted must hold fingerprints or accepted findings`);
     }
 
     const record = entry as Record<string, unknown>;
     const fingerprint = record["fingerprint"];
     if (typeof fingerprint !== "string") {
-      throw new Error(`${BASELINE_PATH} has an accepted entry with no fingerprint`);
+      throw new Error(`${at} has an accepted entry with no fingerprint`);
     }
 
     return {
@@ -164,7 +171,7 @@ function parseAccepted(entries: readonly unknown[]): AcceptedFinding[] {
       ...optional(record, "recordedAt"),
       ...optional(record, "reason"),
       ...optional(record, "acceptedBy"),
-      ...expiry(record["expires"], fingerprint),
+      ...expiry(record["expires"], fingerprint, at),
     };
   });
 
@@ -178,11 +185,11 @@ function parseAccepted(entries: readonly unknown[]): AcceptedFinding[] {
  * direction — a mistyped date that sorts high never expires, and the finding
  * stays accepted forever while the file looks like it has a deadline on it.
  */
-function expiry(value: unknown, fingerprint: string): { expires?: string } {
+function expiry(value: unknown, fingerprint: string, at: string): { expires?: string } {
   if (typeof value !== "string") return {};
   if (!ISO_DATE.test(value)) {
     throw new Error(
-      `${BASELINE_PATH}: ${fingerprint} has expires "${value}", which is not a YYYY-MM-DD date. ` +
+      `${at}: ${fingerprint} has expires "${value}", which is not a YYYY-MM-DD date. ` +
         "An expiry that cannot be compared would silently never expire.",
     );
   }

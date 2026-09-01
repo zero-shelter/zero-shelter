@@ -66,6 +66,18 @@ export function renderSarif(result: JudgeResult): string {
             merged: result.merged,
             accepted: result.applied.suppressed.length,
             skipped: result.skipped,
+            // `--top` is a display limit, and a consumer uploading this has no
+            // other way to tell three alerts from three-of-eighty-two. Silent
+            // truncation is the thing this project objects to everywhere else;
+            // a Security tab that looks complete and is not is the worst place
+            // for it.
+            outstanding: result.applied.fresh.length,
+            truncated: result.fixNow.length < result.applied.fresh.length,
+            // A stale baseline suppressed nothing, so every finding here is
+            // reported as new. Terminal and JSON both say so; this did not.
+            ...(result.applied.warning === undefined
+              ? {}
+              : { warning: result.applied.warning }),
           },
         },
       ],

@@ -65,6 +65,13 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
 
   const body = [
     header(result, options, t),
+    // "The caller must show this" is written above the field in baseline.ts,
+    // and this caller was not showing it. A stale baseline suppresses nothing,
+    // so the page listed every finding as new with no hint that the ratchet
+    // had not run — which reads as a regression nobody caused.
+    result.applied.warning === undefined
+      ? ""
+      : `<section class="warning"><p>${escape(result.applied.warning)}</p></section>`,
     result.skipped.length > 0 ? notes(result.skipped) : "",
     outstanding.length === 0
       ? verdict(result, t)
@@ -631,6 +638,8 @@ body:has(#dark:checked) .theme .dot { background: var(--accent); }
 .count--lead .count-value { font-size: 34px; font-weight: 620; color: var(--ink); letter-spacing: -0.02em; }
 .count-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
 
+.warning { border-inline-start: 3px solid var(--accent); padding-inline-start: 14px; margin: 20px 0 0; }
+.warning p { margin: 0; color: var(--ink); font-size: 14px; }
 .notes { margin: 18px 0 0; padding: 0; list-style: none; }
 .notes li { color: var(--ink-soft); font-size: 13px; padding-inline-start: 16px; position: relative; margin-block: 5px; }
 .notes li::before { content: "·"; position: absolute; inset-inline-start: 4px; color: var(--ink-faint); }

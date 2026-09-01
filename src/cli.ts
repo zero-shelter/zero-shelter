@@ -299,6 +299,10 @@ function reasonFor(error: unknown): string {
       return "no space left on device";
     case "EROFS":
       return "read-only filesystem";
+    case "EISDIR":
+      return "that is a directory";
+    case "ENOTDIR":
+      return "a component of that path is not a directory";
     default:
       return code ?? (error as Error).message;
   }
@@ -324,8 +328,12 @@ async function readInput(path: string): Promise<ScaFinding[]> {
   let raw: string;
   try {
     raw = await readFile(path, "utf8");
-  } catch {
-    throw new Error(`cannot read ${path}`);
+  } catch (error) {
+    // A missing file, a directory, and a permissions problem are three
+    // different things to go and fix, and "cannot read" was the same sentence
+    // for all of them. reasonFor already existed; this was the one read that
+    // did not use it.
+    throw new Error(`cannot read ${path}: ${reasonFor(error)}`);
   }
 
   let probe: unknown;
@@ -546,7 +554,7 @@ async function hook(
 
 async function loadBaseline(path: string) {
   try {
-    return { baseline: parseBaseline(await readFile(path, "utf8")), exists: true };
+    return { baseline: parseBaseline(await readFile(path, "utf8"), path), exists: true };
   } catch (error) {
     // JSON.parse says "Unexpected end of JSON input" and nothing about where.
     // The reader is left guessing which file the tool even means — and an
