@@ -1,5 +1,78 @@
 # Changelog
 
+## 0.0.8
+
+**The ratchet survives a second scanner.** README says the second source is the
+premise rather than an optional extra, and following that advice used to turn a
+quiet build red: accept 73 findings with npm audit alone, add osv-scanner, and
+79 came back as new while 70 were announced as no longer reported. They had not
+gone anywhere. A fingerprint is derived after merge and merge output depends on
+who contributed, so the recorded key stops existing — 73 fingerprints with one
+source, 82 with two, 3 shared. Accepted entries now carry the alias set the two
+scanners agreed on, and a finding is matched on the exact fingerprint first and
+a shared alias within the same package second. The same measurement now reports
+9, and those 9 are real: findings only osv-scanner sees. A rescue by alias is
+printed rather than done quietly.
+
+**The baseline can be read by the person who has to defend it.** It was a list
+of hex strings. Each acceptance now names its package, advisory and severity,
+and may carry `reason`, `acceptedBy` and `expires` written by hand. An expired
+acceptance returns to the report, which is what keeps an accepted list from
+being a place things go to be forgotten. One entry per line, sorted, so a diff
+moves one line.
+
+**Every surface speaks the project's own dialect.** pnpm ignores a top-level
+`overrides` key outright and yarn wants `resolutions`, so a pasted npm snippet
+did nothing at all rather than failing loudly. Terminal, HTML, SARIF, JSON, the
+copy-paste agent prompts and the hook now all write the remedy the way this
+project reads it. Six repositories out of eight had no direct commands at all,
+which makes that block the only advice those projects ever get.
+
+**`clears N` is withheld where it cannot be checked.** The promise rests on
+reading dependents' required ranges out of `package-lock.json`, and there is no
+reader for `pnpm-lock.yaml` or `yarn.lock`. The number is left out and the
+reason is printed.
+
+**Two things the lockfile knows and no scanner reports.** A high in a test
+runner and a high in something serving requests arrived with the same score,
+side by side; findings now carry a scope read off the lockfile's own `dev` flag
+and the summary splits the denominator. And `hasInstallScript` marks the
+packages that execute code before any test runs — 13 of 1,308 on uptime-kuma —
+which has no CVE and which nothing else surfaces. Both are labels. Neither
+touches the score.
+
+**How long a finding has been public.** Severity is assigned when an advisory is
+written and never moves again, so it could say a finding was critical and could
+not say anyone had eight years to act. `published` and the CVSS vector were
+arriving on 453 and 424 of 453 findings and being discarded; they are carried
+verbatim now, shown beside the finding, and kept out of the score — a CVSS
+number is float arithmetic over a vector we did not compute.
+
+**Which scanners ran is a fact about the run.** It used to be recovered from the
+outstanding findings, so a run where everything was accepted recorded that no
+scanner had run at all — precisely on the days the scan was healthy. A run with
+one source now says why the reduction is zero rather than leaving `(0% less
+noise)` to read as a broken tool.
+
+**Interfaces a pipeline can bet on.** `docs/STABILITY.md` states what is frozen
+below 1.0 — the exit codes, and the top-level shape of `--format json` — with a
+contract test that asserts it against real output rather than restating it.
+
+**`zero-shelter hook --input`.** The surface an agent reads on every prompt was
+the only one that could not be exercised offline. It also had not learned the
+package manager, was still printing a count it could not verify, and could not
+see an expired acceptance that `judge` was failing the build over.
+
+**A history that cannot be written no longer sinks the run.** `--record` was
+discarding a finished judgement and returning the code that means "could not
+judge". Recording is bookkeeping: the failure is named on stderr and the run
+keeps the exit code it earned.
+
+**The onboarding skill stopped calling the second scanner optional**, and the
+command it offered for checking that osv-scanner had actually run answered
+backwards — `skipped` names the scanner when it is *missing*, so a failed
+install counted as success.
+
 ## 0.0.7
 
 **`clears 12` cleared nothing.** uptime-kuma has `tar@~6.2.1` in its
