@@ -172,6 +172,27 @@ UTC 기준 오늘이다.
 SHA와 주장하는 점수를 적는다. CI가 그 커밋을 체크아웃해 다시 계산하고, 숫자가 다르면
 pull request를 실패시킨다.
 
+
+## 작업 항목
+
+| # | 조각 | 선행 |
+|---|---|---|
+| [#126](https://github.com/zero-shelter/zero-shelter/issues/126) | 조사: 어떤 스캐너가 OSV나 SARIF를 내보내고, 그 형식이 필요한 필드를 담는가 | — |
+| [#128](https://github.com/zero-shelter/zero-shelter/issues/128) | SARIF를 쓰기만 하지 말고 읽기 | #126 |
+| [#129](https://github.com/zero-shelter/zero-shelter/issues/129) | 스캐너 추가는 `src/scan.ts` 패치가 아니라 JSON 파일이어야 한다 | #128 |
+| [#130](https://github.com/zero-shelter/zero-shelter/issues/130) | 프로젝트가 자기 기준을 말할 방법이 없다 | — |
+| [#131](https://github.com/zero-shelter/zero-shelter/issues/131) | 심각도는 얼마나 나쁜지 말하고, 언제까지인지는 아무것도 말하지 않는다 | #130 |
+| [#132](https://github.com/zero-shelter/zero-shelter/issues/132) | `skills/policy`: 스키마를 읽는 대신 질문에 답해서 정책을 쓴다 | #130, #131 |
+| [#133](https://github.com/zero-shelter/zero-shelter/issues/133) | 자세 점수: 논쟁할 수 있는 정수 테이블 | #129, #131 |
+| [#134](https://github.com/zero-shelter/zero-shelter/issues/134) | `zero-shelter badge`: 쓰기만 하고 올리지 않는 파일 | #133 |
+| [#135](https://github.com/zero-shelter/zero-shelter/issues/135) | Pages 위의 leaderboard: 등록은 pull request, 검증은 재실행 | #133, #134 |
+
+#126부터 시작한다. 코드가 필요 없고, #128이 parser 하나인지 여럿인지를 결정하는
+측정이다.
+
+스캐너별 adapter Issue는 #129가 들어온 뒤에 만든다. 아무도 시작할 수 없는 일에
+`good first issue`를 붙이는 것이 #91이 지적한 결함이다.
+
 ## 아키텍처
 
 | 조각 | 변경 예상 파일 | 건드리는 공유 계약 |

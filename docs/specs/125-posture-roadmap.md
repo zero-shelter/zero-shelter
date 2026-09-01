@@ -181,6 +181,27 @@ An entry is `entries/<owner>-<repo>.json` added by pull request, naming a public
 repository, a commit SHA, and the score being claimed. CI checks out that commit,
 recomputes, and fails the pull request when the numbers differ.
 
+
+## Work items
+
+| # | Piece | Depends on |
+|---|---|---|
+| [#126](https://github.com/zero-shelter/zero-shelter/issues/126) | Survey: which scanners emit OSV or SARIF, and do those formats carry what we need | — |
+| [#128](https://github.com/zero-shelter/zero-shelter/issues/128) | Read SARIF as input, not only write it | #126 |
+| [#129](https://github.com/zero-shelter/zero-shelter/issues/129) | Adding a scanner should be a JSON file, not a patch to `src/scan.ts` | #128 |
+| [#130](https://github.com/zero-shelter/zero-shelter/issues/130) | A project has no way to say what it cares about | — |
+| [#131](https://github.com/zero-shelter/zero-shelter/issues/131) | Severity says how bad, and nothing says by when | #130 |
+| [#132](https://github.com/zero-shelter/zero-shelter/issues/132) | `skills/policy`: write the policy by answering questions | #130, #131 |
+| [#133](https://github.com/zero-shelter/zero-shelter/issues/133) | Posture score: an integer table you can argue with | #129, #131 |
+| [#134](https://github.com/zero-shelter/zero-shelter/issues/134) | `zero-shelter badge`: a file we write and never upload | #133 |
+| [#135](https://github.com/zero-shelter/zero-shelter/issues/135) | Leaderboard on Pages: joining is a pull request, verifying is a re-run | #133, #134 |
+
+Start at #126. It needs no code, and it is the measurement that decides whether
+#128 is one parser or several.
+
+Per-scanner adapter Issues are filed once #129 lands, not before: labelling work
+`good first issue` when nobody can start it is the defect #91 described.
+
 ## Architecture
 
 | Piece | Files expected to change | Shared contracts touched |
