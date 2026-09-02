@@ -29,9 +29,11 @@ to an older release than the one they need.
 
 `transitiveFixes` is a different list on purpose. Those packages arrive through
 someone else's dependency, so `npm i` adds a top-level entry nobody asked for
-and leaves the vulnerable copy in place. The mechanism that works is
-`overrides`, and it can break the parent that pinned the old version — propose
-it, name the risk, do not apply it silently.
+and leaves the vulnerable copy in place. Use the project's package-manager-
+specific override or resolution mechanism; the [install notes](./README.md#install)
+explain how the lockfile selects that package manager. Forcing a transitive
+version can break the parent that pinned the old version — propose it, name the
+risk, do not apply it silently.
 
 ## Verify with this tool, not with `npm audit`
 
@@ -51,6 +53,10 @@ reproducible; your reconstruction of it is not. If the ranking looks wrong, say
 which finding and why so the weights can be argued with, rather than quietly
 sorting the list differently on the way to the screen.
 
+The `(dev)` scope label and the age column are context, not hidden score inputs.
+Do not re-rank production packages above development packages, or older findings
+above newer ones, unless the printed weights say so.
+
 `possibleDuplicates` means "suspected same, not merged". Report them as
 unresolved. Merging on a hunch is how a real vulnerability ends up hidden behind
 an unrelated one.
@@ -59,7 +65,7 @@ an unrelated one.
 
 - `--update-baseline` — accepting a finding is a judgement about risk. Never run
   it to make output quiet, and never as a way to finish a task.
-- `overrides` entries, for the reason above.
+- Package-manager-specific override or resolution entries, for the reason above.
 - Removing a dependency, or pinning to an older version.
 
 ## What this tool cannot tell you
