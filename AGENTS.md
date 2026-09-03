@@ -29,11 +29,11 @@ to an older release than the one they need.
 
 `transitiveFixes` is a different list on purpose. Those packages arrive through
 someone else's dependency, so `npm i` adds a top-level entry nobody asked for
-and leaves the vulnerable copy in place. Use the project's package-manager-
-specific override or resolution mechanism; the [install notes](./README.md#install)
-explain how the lockfile selects that package manager. Forcing a transitive
-version can break the parent that pinned the old version — propose it, name the
-risk, do not apply it silently.
+and leaves the vulnerable copy in place. Use the project's
+package-manager-specific override or resolution mechanism; the
+[install notes](./README.md#install) explain how the lockfile selects that
+package manager. Forcing a transitive version can break the parent that pinned
+the old version — propose it, name the risk, do not apply it silently.
 
 ## Verify with this tool, not with `npm audit`
 
