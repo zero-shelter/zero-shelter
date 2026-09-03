@@ -42,12 +42,15 @@ nothing to compare against and reports the whole backlog on every run.
 
 The repository ships one at `examples/github-action.yml`. Copy it rather than
 writing a new one — it already handles the pieces that are easy to get wrong.
+Keep the SHAs when you copy it. Tags are mutable, so a tag can change what the
+workflow runs without leaving a diff in the repository. The version comments
+make the pins readable when it is time to update them.
 
 ```yaml
 - run: npx zero-shelter judge --format sarif --output zero-shelter.sarif
   continue-on-error: true
 
-- uses: github/codeql-action/upload-sarif@v3
+- uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
   with:
     sarif_file: zero-shelter.sarif
 ```

@@ -118,7 +118,7 @@ Offer these; do not add them unasked.
 - run: npx zero-shelter judge --format sarif --output zero-shelter.sarif
   continue-on-error: true
 
-- uses: github/codeql-action/upload-sarif@v3
+- uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
   with:
     sarif_file: zero-shelter.sarif
 ```

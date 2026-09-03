@@ -330,6 +330,45 @@ await check("a scanner joining later does not reopen the backlog", "ratchet hold
   return `${outstanding} genuinely new, nothing falsely resolved`;
 });
 
+// ── the action examples people copy ─────────────────────────────────────────
+
+// The examples are copied into repositories where these actions get access to
+// source and security results. A tag can move; a commit SHA cannot.
+await check("copy-paste actions are pinned to commits", "all pinned", async () => {
+  const { stdout } = await run(
+    "git",
+    ["ls-files", "-z", "--", "*.md", "examples"],
+    { cwd: ROOT },
+  );
+  const files = stdout.split("\0").filter(Boolean);
+  const floating = [];
+  let actions = 0;
+
+  const targetFrom = (line) => {
+    const match = /^\s*(?:-\s+)?uses\s*:\s*(\S+)/.exec(line);
+    return match?.[1].replace(/^(['"])(.*)\1$/, "$2") ?? null;
+  };
+  const pinned = (target) => /@[0-9a-f]{40}$/i.test(target);
+
+  expect(!pinned("owner/action@v1"), "a version tag passed as a commit pin");
+  expect(pinned(`owner/action@${"a".repeat(40)}`), "a full commit SHA was rejected");
+
+  for (const file of files) {
+    const lines = readFileSync(join(ROOT, file), "utf8").split("\n");
+    for (const [index, line] of lines.entries()) {
+      const target = targetFrom(line);
+      if (target === null || target.startsWith("./") || target.startsWith("docker://")) continue;
+
+      actions += 1;
+      if (!pinned(target)) floating.push(`${file}:${index + 1} (${target})`);
+    }
+  }
+
+  expect(actions > 0, "no external action references found in docs or examples");
+  expect(floating.length === 0, `floating action refs: ${floating.join(", ")}`);
+  return `${actions} action refs, all pinned`;
+});
+
 // ── the plugin an agent installs ────────────────────────────────────────────
 
 await check("the plugin manifest points at skills that exist", "5 skills", async () => {
