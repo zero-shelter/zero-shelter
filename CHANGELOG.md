@@ -37,7 +37,7 @@ reason is printed.
 runner and a high in something serving requests arrived with the same score,
 side by side; findings now carry a scope read off the lockfile's own `dev` flag
 and the summary splits the denominator. And `hasInstallScript` marks the
-packages that execute code before any test runs — 13 of 1,308 on uptime-kuma —
+packages that execute code before any test runs — 13 of them on uptime-kuma —
 which has no CVE and which nothing else surfaces. Both are labels. Neither
 touches the score.
 
