@@ -51,9 +51,9 @@ const USAGE = `zero-shelter judge — decide which dependency findings to fix no
   --update-baseline     record the current findings as accepted and exit 0
   --baseline <file>     baseline location (default ${BASELINE_PATH})
   --cwd <dir>           project directory (default .)
-  --no-color             disable ANSI colors in text output
+  --no-color            disable ANSI colors in text output
   --version             print the installed package version
-  --help
+  --help                print this help
 
 Exit code is 1 when there is anything new to fix, so CI fails on regressions
 rather than on the backlog it inherited.

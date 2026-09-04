@@ -217,8 +217,9 @@ would take that away.
 --update-baseline     record current findings as accepted
 --baseline <file>     baseline location (default .zero-shelter/baseline.json)
 --cwd <dir>           project directory
---no-color             disable ANSI colors in text output
+--no-color            disable ANSI colors in text output
 --version             print the installed package version
+--help                print this help
 ```
 
 `--no-color` affects human-readable text only and overrides `FORCE_COLOR`.

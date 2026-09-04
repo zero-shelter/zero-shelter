@@ -207,8 +207,9 @@ $ npx zero-shelter judge --format html --output report.html
 --update-baseline     현재 항목들을 수용으로 기록
 --baseline <file>     baseline 위치 (기본 .zero-shelter/baseline.json)
 --cwd <dir>           프로젝트 디렉터리
---no-color             text output의 ANSI 색상을 끔
+--no-color            text output의 ANSI 색상을 끔
 --version             설치된 package version 출력
+--help                도움말 출력
 ```
 
 `--no-color`는 사람이 읽는 text output에만 적용되고 `FORCE_COLOR`보다 우선합니다.

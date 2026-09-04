@@ -40,6 +40,9 @@ const FLAGS = [
   "--update-baseline",
   "--baseline",
   "--cwd",
+  "--no-color",
+  "--version",
+  "--help",
 ];
 
 const COMMANDS = ["judge", "hook", "history", "version"];
@@ -116,6 +119,48 @@ describe("the docs describe the tool that exists", () => {
 
     for (const format of claimed) {
       expect(accepted, `README offers --format ${format}`).toContain(format);
+    }
+  });
+
+  it("keeps option descriptions aligned across CLI usage and READMEs", () => {
+    const extractOptionOffsets = (text: string, pattern: RegExp) => {
+      const offsets: { line: string; descIndex: number }[] = [];
+      for (const line of text.split("\n")) {
+        const match = pattern.exec(line);
+        if (match) {
+          const descMatch = /^\s*(\S.*)$/.exec(line.slice(match[0].length));
+          if (descMatch && descMatch[1]) {
+            offsets.push({ line, descIndex: line.indexOf(descMatch[1]) });
+          } else {
+            offsets.push({ line, descIndex: -1 });
+          }
+        }
+      }
+      return offsets;
+    };
+
+    const usage = cli.slice(cli.indexOf("const USAGE"), cli.indexOf("export async function main"));
+    const usageOffsets = extractOptionOffsets(usage, /^\s{2}--[a-z-]+(\s+<[^>]+>)?/);
+    expect(usageOffsets.length).toBeGreaterThan(0);
+    const expectedUsageCol = usageOffsets[0]!.descIndex;
+    for (const entry of usageOffsets) {
+      expect(entry.descIndex, `misaligned or missing desc in USAGE: "${entry.line}"`).toBe(expectedUsageCol);
+    }
+
+    const extractReadmeBlock = (readme: string) => {
+      const start = readme.indexOf("## Options\n\n```\n") + "## Options\n\n```\n".length;
+      const end = readme.indexOf("```\n", start);
+      return readme.slice(start, end);
+    };
+
+    for (const [name, doc] of [["README.md", docs["README.md"]], ["README.ko.md", docs["README.ko.md"]]] as const) {
+      const block = extractReadmeBlock(doc);
+      const offsets = extractOptionOffsets(block, /^--[a-z-]+(\s+<[^>]+>)?/);
+      expect(offsets.length).toBeGreaterThan(0);
+      const expectedCol = offsets[0]!.descIndex;
+      for (const entry of offsets) {
+        expect(entry.descIndex, `misaligned or missing desc in ${name}: "${entry.line}"`).toBe(expectedCol);
+      }
     }
   });
 });
