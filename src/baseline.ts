@@ -205,13 +205,31 @@ function aliasesOf(value: unknown, fingerprint: string, at: string): string[] {
  */
 function expiry(value: unknown, fingerprint: string, at: string): { expires?: string } {
   if (typeof value !== "string") return {};
-  if (!ISO_DATE.test(value)) {
+  if (!isRealDate(value)) {
     throw new Error(
-      `${at}: ${fingerprint} has expires "${value}", which is not a YYYY-MM-DD date. ` +
+      `${at}: ${fingerprint} has expires "${value}", which is not a real YYYY-MM-DD date. ` +
         "An expiry that cannot be compared would silently never expire.",
     );
   }
   return { expires: value };
+}
+
+/**
+ * A date that exists, not merely one shaped like a date.
+ *
+ * `ISO_DATE` alone accepts `9999-99-99`, which is exactly the mistyped date
+ * that sorts high — it passes the shape check, sorts above every real date,
+ * and so never expires. `2026-02-31` is the quieter version: `Date` accepts
+ * it and rolls it forward to March, so a loose parse would silently move the
+ * deadline three days.
+ *
+ * The round trip is what catches both. A date that survives parsing and
+ * re-serialising unchanged is one the calendar has.
+ */
+function isRealDate(value: string): boolean {
+  if (!ISO_DATE.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
 }
 
 /**
@@ -459,7 +477,10 @@ function hasExpired(entry: AcceptedFinding, today?: string): boolean {
   // silently becomes either "never expires" or "expired already" — and the
   // first of those quietly turns a gate green. Anything else does not expire,
   // and parseBaseline has already said so out loud.
-  return ISO_DATE.test(entry.expires) && entry.expires < today;
+  //
+  // The same predicate as the parser on purpose: two gates that disagree about
+  // what a date is would let one of them through.
+  return isRealDate(entry.expires) && entry.expires < today;
 }
 
 /** Date only. A time would make the comparison depend on a zone we do not have. */
