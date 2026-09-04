@@ -13,6 +13,7 @@
  */
 
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -99,8 +100,39 @@ const check = async (name, expectation, fn) => {
  */
 let couldNotJudge;
 
+/**
+ * The scanner has already failed for want of a report, so it will fail the
+ * same way for every remaining check in this environment.
+ *
+ * Each of those costs the tool's own 120-second timeout, and thirteen of them
+ * runs past the job cap — so the run is killed before it can print why, which
+ * is the one thing this harness needed to say. Every check still runs and
+ * still reports; it just stops paying again for an answer already known.
+ *
+ * Only set when a directory that *has* a lockfile still produced nothing. The
+ * empty-directory check exits 2 by design — that is a fact about the directory
+ * and says nothing about the next one — so it must not arm this.
+ */
+let noScannerAnywhere;
+
+/**
+ * Invocations that never reach a scanner.
+ *
+ * `history` reads a recorded file, and exits 2 when there is none yet — which
+ * this harness asserts on purpose. Treating that as a scanner failure both
+ * mislabels it and, once the short circuit exists, stops the `--record` that
+ * the same check is about to make.
+ */
+const SCANS_NOTHING = new Set(["--version", "--help", "history"]);
+
 /** Run the installed CLI and return { code, stdout, stderr } without throwing. */
 const cli = async (cwd, args) => {
+  const scans = !args.some((arg) => SCANS_NOTHING.has(arg));
+  if (scans && noScannerAnywhere !== undefined) {
+    couldNotJudge = noScannerAnywhere;
+    return { code: 2, stdout: "", stderr: noScannerAnywhere };
+  }
+
   const bin = join(project, "node_modules", ".bin", windows ? "zero-shelter.cmd" : "zero-shelter");
   try {
     const { stdout, stderr } = await run(bin, args, {
@@ -114,8 +146,14 @@ const cli = async (cwd, args) => {
     if (error?.killed === true) {
       return { code: error.code ?? 1, stdout: error.stdout ?? "", stderr: error.message };
     }
-    if (error.code === 2 && couldNotJudge === undefined) {
-      couldNotJudge = stderr.trim().split("\n").filter(Boolean).slice(0, 3).join(" ");
+    // Exit 2 is "could not judge" — but only for something that judges.
+    if (error.code === 2 && scans) {
+      const said = stderr.trim().split("\n").filter(Boolean).slice(0, 3).join(" ");
+      couldNotJudge ??= said;
+      // A lockfile present and still nothing scanned is the machine, not the
+      // directory. Structural rather than a match on npm's wording, which
+      // differs per failure and per npm version.
+      if (existsSync(join(cwd, "package-lock.json"))) noScannerAnywhere ??= said;
     }
     return { code: error.code ?? 1, stdout: error.stdout ?? "", stderr };
   }
