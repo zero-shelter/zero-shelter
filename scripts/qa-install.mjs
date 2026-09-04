@@ -19,15 +19,46 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
-const run = promisify(execFile);
+const exec = promisify(execFile);
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const keep = process.argv.includes("--keep");
 const windows = process.platform === "win32";
 
+/**
+ * A stalled subprocess must not become a stalled job.
+ *
+ * `src/scan.ts` bounds the scanners it spawns for this reason. This harness
+ * spawns the same things one layer out and had no bound of its own, so when
+ * npm's advisory endpoint stopped answering, every scan-dependent check sat
+ * for two minutes and the job ran for half an hour with no output. Nothing
+ * below GitHub's six-hour cap would have stopped a genuinely infinite one.
+ */
+const STEP_TIMEOUT_MS = 120_000;
+// `npm ci` and a tarball install into a cold temp directory are legitimately
+// slower than anything else here, and a false timeout is worse than no bound.
+const INSTALL_TIMEOUT_MS = 300_000;
+
+/** Run a command with a bound, and say which one it was if the bound is hit. */
+const run = async (command, args, options = {}) => {
+  try {
+    return await exec(command, args, { timeout: STEP_TIMEOUT_MS, ...options });
+  } catch (error) {
+    // `execFile` sets `killed` when it is the one that ended the process. A
+    // timeout that reports only "failed" leaves a reader no better off than
+    // the hang did.
+    if (error?.killed === true) {
+      const seconds = (options.timeout ?? STEP_TIMEOUT_MS) / 1000;
+      error.message = `timed out after ${seconds}s: ${command} ${args.join(" ")}`;
+    }
+    throw error;
+  }
+};
+
 // npm and pnpm ship as .cmd shims on Windows, which execFile cannot invoke
 // without a shell. Everything else here is Node's own filesystem API, because
 // mkdir -p is not a thing on a runner without a POSIX shell.
-const npm = (args, options) => run("npm", args, { ...options, shell: windows });
+const npm = (args, options) =>
+  run("npm", args, { timeout: INSTALL_TIMEOUT_MS, ...options, shell: windows });
 
 // Old enough to have advisories that will not be revoked, pinned so the
 // expected counts do not drift when a new one is published.
@@ -35,13 +66,38 @@ const VULNERABLE = { lodash: "4.17.11" };
 
 const results = [];
 const check = async (name, expectation, fn) => {
+  // Scoped to this check on purpose. Some checks exit 2 because that is what
+  // they are asserting — "nothing scanned is not a pass" runs in an empty
+  // directory and a lockfile complaint there is the expected answer, not a
+  // symptom. Only a check that actually failed gets to explain itself.
+  couldNotJudge = undefined;
   try {
     const detail = await fn();
     results.push({ name, ok: true, detail: detail ?? expectation });
   } catch (error) {
-    results.push({ name, ok: false, detail: (error instanceof Error ? error.message : String(error)).split("\n")[0] });
+    results.push({
+      name,
+      ok: false,
+      detail: (error instanceof Error ? error.message : String(error)).split("\n")[0],
+      ...(couldNotJudge === undefined ? {} : { because: couldNotJudge }),
+    });
   }
 };
+
+/**
+ * Why the CLI could not judge during the check that is running now.
+ *
+ * Exit 2 means "could not judge", and the reason — usually npm's own words
+ * about a registry it could not reach — goes to stderr. Without it, a check
+ * that needed findings fails on an assertion that says nothing about why, and
+ * a reader concludes the packaged code is broken. Carrying it onto the failed
+ * result is the difference between "the registry is down" and "you broke the
+ * report".
+ *
+ * Reset per check by `check`, so a deliberate exit 2 in a passing check is
+ * never offered as the explanation for a different one.
+ */
+let couldNotJudge;
 
 /** Run the installed CLI and return { code, stdout, stderr } without throwing. */
 const cli = async (cwd, args) => {
@@ -54,7 +110,14 @@ const cli = async (cwd, args) => {
     });
     return { code: 0, stdout, stderr };
   } catch (error) {
-    return { code: error.code ?? 1, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
+    const stderr = error.stderr ?? "";
+    if (error?.killed === true) {
+      return { code: error.code ?? 1, stdout: error.stdout ?? "", stderr: error.message };
+    }
+    if (error.code === 2 && couldNotJudge === undefined) {
+      couldNotJudge = stderr.trim().split("\n").filter(Boolean).slice(0, 3).join(" ");
+    }
+    return { code: error.code ?? 1, stdout: error.stdout ?? "", stderr };
   }
 };
 
@@ -272,6 +335,17 @@ for (const { name, ok, detail } of results) {
   console.log(`${ok ? "✅" : "❌"} ${name}${detail ? ` — ${detail}` : ""}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
+
+// Without this, an unreachable advisory database reads as a broken report.
+const unjudged = failed.filter((result) => result.because !== undefined);
+if (unjudged.length > 0) {
+  console.log(
+    `\n${unjudged.length} of ${failed.length} failure(s) could not judge at all. The first said:\n` +
+      `  ${unjudged[0].because}\n` +
+      "That is the scanner, not the packaged code under test.",
+  );
+}
+
 if (keep) console.log(`workspace kept at ${workspace}`);
 
 // 4 and 6 are covered elsewhere and named here so the list is not silently

@@ -15,6 +15,11 @@ permissions:
 
 jobs:
   test:
+    # A job with no bound waits for GitHub's six-hour cap. Every job here
+    # finishes in single digits, so a cap well under that turns a stall into a
+    # failure someone can read. See #158.
+    timeout-minutes: 15
+
     # The OS matrix is the point: fingerprints must be identical on every host,
     # so a green run on one of them proves nothing on its own.
     strategy:
@@ -42,6 +47,11 @@ jobs:
   # and every one of them was invisible to the unit tests. Windows is included
   # because it is the platform none of us develops on.
   install-experience:
+    # This one reaches the registry, so it is the one that stalls. The bound in
+    # scripts/qa-install.mjs should fire first; this is what catches the case it
+    # cannot see.
+    timeout-minutes: 20
+
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +75,7 @@ jobs:
       - run: npm run qa:agent
 
   third-party:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -85,6 +96,7 @@ jobs:
   # SARIF, exit code) executes as a user would run it. The unit tests drive
   # everything from fixtures on purpose, so they cannot catch a break here.
   self:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
