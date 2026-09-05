@@ -21,6 +21,11 @@ Read the exit code — it is the answer, not decoration:
 Requires Node 20+. If it prints a Node version message, that is the whole
 problem; do not try to work around it.
 
+Scope: this skill covers dependency vulnerabilities only (`npm audit` and
+`osv-scanner`). Dockerfiles, Terraform/IaC, Actions workflows, secrets, and
+first-party source are out of scope — a clean dependency run does not mean
+the project as a whole is clean.
+
 ## The second scanner
 
 This tool reconciles what two scanners each called by a different name. With one
@@ -55,6 +60,58 @@ Do not describe a one-source run as a normal result. It is a valid way to run
 this and the ranking and baseline still work, but the deduplication this tool
 exists for is switched off, and a reader who is not told that will conclude the
 tool does nothing.
+
+## What else to look for
+
+`ls` the tree before concluding anything. When several of these are present,
+start with Trivy — one install covers several of them.
+
+| You see | Domain | Install |
+|---|---|---|
+| `Dockerfile` | container | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0) — `brew install trivy` |
+| `*.tf` | IaC | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0); [Checkov](https://github.com/bridgecrewio/checkov) (Apache-2.0) also reads Terraform |
+| `.github/workflows/` | CI/CD | [zizmor](https://github.com/zizmorcore/zizmor) (MIT) |
+| source with no usable lockfile | first-party code | [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1) |
+| any history at all | secrets | [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT) |
+
+Why Opengrep and not Semgrep: Semgrep's engine was relicensed to LGPL-2.1
+with a separate rules licence restricting commercial and competing use
+([background](https://socket.dev/blog/opengrep-forks-semgrep)), so naming
+"semgrep" is itself a licence decision — Opengrep is the consortium-governed
+fork.
+
+On secrets: [TruffleHog](https://github.com/trufflesecurity/trufflehog)
+(AGPL-3.0) is also a good scanner, but that licence matters for commercial
+products, so the default here is Gitleaks (MIT). This skill names tools only;
+it does not read their output — ingesting a new scanner's report is separate
+work, not part of a first run.
+
+## 범위와 추가 점검 (한국어)
+
+이 스킬은 의존성 취약점만 다룬다 (`npm audit`과 `osv-scanner`).
+Dockerfile, Terraform/IaC, Actions 워크플로, 시크릿, 직접 작성한 소스
+코드는 범위 밖이다 — 의존성 스캔이 깨끗해도 프로젝트 전체가 깨끗하다는
+뜻은 아니다.
+
+결론 전에 `ls`로 트리를 확인하라. 여러 항목이 함께 있으면 Trivy부터
+설치하라 — 하나로 여러 영역을 본다.
+
+| 보이면 | 영역 | 설치 |
+|---|---|---|
+| `Dockerfile` | 컨테이너 | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0) — `brew install trivy` |
+| `*.tf` | IaC | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0); [Checkov](https://github.com/bridgecrewio/checkov) (Apache-2.0)도 Terraform을 읽는다 |
+| `.github/workflows/` | CI/CD | [zizmor](https://github.com/zizmorcore/zizmor) (MIT) |
+| 쓸 만한 lockfile이 없는 소스 | 직접 작성한 코드 | [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1) |
+| 모든 히스토리 | 시크릿 | [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT) |
+
+Opengrep을 권하는 이유: Semgrep 엔진이 LGPL-2.1로 바뀌면서 상업적·경쟁적
+사용을 제한하는 별도 규칙 라이선스가 붙었고
+([배경](https://socket.dev/blog/opengrep-forks-semgrep)), "semgrep"이라
+쓰는 것 자체가 라이선스 결정이 된다 — Opengrep은 컨소시엄 운영 포크다.
+
+시크릿: [TruffleHog](https://github.com/trufflesecurity/trufflehog)
+(AGPL-3.0)도 좋은 스캐너지만 상용 제품에는 라이선스가 부담되므로 기본값은
+Gitleaks (MIT)다. 이 스킬은 도구 이름만 전한다; 그 출력은 읽지 않는다.
 
 ## Recording the backlog
 
