@@ -45,18 +45,20 @@ describe("parseOsv", () => {
   });
 
   it("renders OSV event ranges into something a human can read", () => {
+    // Spelled the way npm spells it, so the same range from two sources is
+    // one string. The space between clauses is meaningful and stays. See #151.
     expect(osvFindings.find((f) => f.packageName === "semver")?.vulnerableRange).toBe(
-      "< 5.7.2",
+      "<5.7.2",
     );
     expect(osvFindings.find((f) => f.packageName === "lodash")?.vulnerableRange).toBe(
-      ">= 4.0.0 < 4.17.12",
+      ">=4.0.0 <4.17.12",
     );
   });
 
   it("falls back to the installed version when the advisory has no usable range", () => {
     const raw = JSON.parse(read("osv-scanner.json"));
     raw.results = [raw.results[1]];
-    expect(parseOsv(JSON.stringify(raw))[0]?.vulnerableRange).toBe("= 5.7.1");
+    expect(parseOsv(JSON.stringify(raw))[0]?.vulnerableRange).toBe("=5.7.1");
   });
 
   it("is stable across runs and input order", () => {
@@ -136,9 +138,23 @@ describe("mergeFindings", () => {
   it("keeps both ranges when sources describe them differently", () => {
     const differing: ScaFinding[] = [
       base({ vulnerableRange: "<1.0.0", sources: [{ tool: "a", ruleId: "CVE-2024-1" }] }),
+      base({ vulnerableRange: "<2.0.0", sources: [{ tool: "b", ruleId: "CVE-2024-1" }] }),
+    ];
+    expect(mergeFindings(differing)[0]?.vulnerableRange).toBe("<1.0.0 | <2.0.0");
+  });
+
+  /**
+   * This case used to be the example above, which meant the assertion was
+   * that one range written two ways is two ranges. It is not — and `<0.2.4`
+   * against `< 0.2.4` was a difference we produced, since `ingest/osv.ts`
+   * builds the spaced form and npm writes the closed one. See #151.
+   */
+  it("does not report a difference of spelling as a difference of range", () => {
+    const spelled: ScaFinding[] = [
+      base({ vulnerableRange: "<1.0.0", sources: [{ tool: "a", ruleId: "CVE-2024-1" }] }),
       base({ vulnerableRange: "< 1.0.0", sources: [{ tool: "b", ruleId: "CVE-2024-1" }] }),
     ];
-    expect(mergeFindings(differing)[0]?.vulnerableRange).toBe("< 1.0.0 | <1.0.0");
+    expect(mergeFindings(spelled)[0]?.vulnerableRange).toBe("<1.0.0");
   });
 
   it("joins a chain of findings linked through intermediate aliases", () => {

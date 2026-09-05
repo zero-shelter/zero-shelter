@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { collect, type Capture } from "../src/scan.js";
+import { collect, type Capture, type CaptureOutcome } from "../src/scan.js";
 
 const NO_LOCKFILE = JSON.stringify({
   error: {
@@ -39,8 +39,12 @@ const ONE_FINDING = JSON.stringify({
   },
 });
 
+/** A stubbed answer: a string is a report, undefined is a scanner that is not installed. */
+const answer = (stdout: string | undefined): CaptureOutcome =>
+  stdout === undefined ? { ok: false, why: "absent" } : { ok: true, stdout };
+
 const capturing = (npm: string | undefined, osv?: string): Capture =>
-  async (command) => (command === "npm" ? npm : osv);
+  async (command) => answer(command === "npm" ? npm : osv);
 
 describe("when nothing could be scanned", () => {
   it("contributes nothing and repeats npm's own explanation", async () => {

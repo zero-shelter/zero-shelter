@@ -115,6 +115,27 @@ describe("an expiry we cannot compare", () => {
   it("accepts a real date", () => {
     expect(parseBaseline(withExpires("2026-12-31")).accepted[0]?.expires).toBe("2026-12-31");
   });
+
+  /**
+   * The shape check passes and the date does not exist. `9999-99-99` sorts
+   * above every real date, so it is the mistyped-date-that-sorts-high case
+   * the rejection was written for, arriving through the check meant to stop
+   * it. A generator writing a sentinel produces the same thing.
+   */
+  it.each([
+    ["9999-99-99", "sorts above every real date and would never expire"],
+    ["2026-13-01", "month 13"],
+    ["2026-00-10", "month 0"],
+    ["2026-01-32", "the plausible typo"],
+    ["2026-02-31", "rolls forward to March if parsed loosely"],
+    ["2026-02-29", "2026 is not a leap year"],
+  ])("rejects %s — %s", (value) => {
+    expect(() => parseBaseline(withExpires(value))).toThrow(/YYYY-MM-DD/);
+  });
+
+  it("accepts a real leap day", () => {
+    expect(parseBaseline(withExpires("2024-02-29")).accepted[0]?.expires).toBe("2024-02-29");
+  });
 });
 
 /**

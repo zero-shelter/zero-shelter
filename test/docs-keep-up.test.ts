@@ -40,6 +40,9 @@ const FLAGS = [
   "--update-baseline",
   "--baseline",
   "--cwd",
+  "--no-color",
+  "--version",
+  "--help",
 ];
 
 const COMMANDS = ["judge", "hook", "history", "version"];
@@ -116,6 +119,67 @@ describe("the docs describe the tool that exists", () => {
 
     for (const format of claimed) {
       expect(accepted, `README offers --format ${format}`).toContain(format);
+    }
+  });
+
+  it("keeps option descriptions aligned across CLI usage and READMEs", () => {
+    const extractOptionOffsets = (text: string, pattern: RegExp) => {
+      const offsets: { line: string; descIndex: number }[] = [];
+      // Split on either ending: a CRLF checkout would otherwise leave \r on
+      // every line and shift the column this whole test is measuring.
+      for (const line of text.split(/\r?\n/)) {
+        const match = pattern.exec(line);
+        if (match) {
+          const descMatch = /^\s*(\S.*)$/.exec(line.slice(match[0].length));
+          if (descMatch && descMatch[1]) {
+            offsets.push({ line, descIndex: line.indexOf(descMatch[1]) });
+          } else {
+            offsets.push({ line, descIndex: -1 });
+          }
+        }
+      }
+      return offsets;
+    };
+
+    const usage = cli.slice(cli.indexOf("const USAGE"), cli.indexOf("export async function main"));
+    const usageOffsets = extractOptionOffsets(usage, /^\s{2}--[a-z-]+(\s+<[^>]+>)?/);
+    expect(usageOffsets.length).toBeGreaterThan(0);
+    const expectedUsageCol = usageOffsets[0]!.descIndex;
+    for (const entry of usageOffsets) {
+      expect(entry.descIndex, `misaligned or missing desc in USAGE: "${entry.line}"`).toBe(expectedUsageCol);
+    }
+
+    /**
+     * Found by the option lines, not by the heading above them.
+     *
+     * Anchoring on `## Options` missed `README.ko.md`, which heads the section
+     * `## 옵션` — and on a CRLF checkout the literal missed both files, so the
+     * slice spanned most of the document and picked up the options by
+     * accident. That is why this test passed on Windows while checking
+     * nothing. Failing loudly beats falling through to a slice of the file.
+     */
+    const extractReadmeBlock = (name: string, readme: string) => {
+      const lines = readme.split(/\r?\n/);
+      const first = lines.findIndex((line) => /^--[a-z-]+/.test(line));
+      expect(first, `${name} has no option lines at all`).toBeGreaterThan(-1);
+
+      const fence = lines.slice(0, first).lastIndexOf("```");
+      expect(fence, `${name} option lines are not inside a code block`).toBeGreaterThan(-1);
+
+      const end = lines.indexOf("```", fence + 1);
+      expect(end, `${name} code block is never closed`).toBeGreaterThan(-1);
+
+      return lines.slice(fence + 1, end).join("\n");
+    };
+
+    for (const [name, doc] of [["README.md", docs["README.md"]], ["README.ko.md", docs["README.ko.md"]]] as const) {
+      const block = extractReadmeBlock(name, doc);
+      const offsets = extractOptionOffsets(block, /^--[a-z-]+(\s+<[^>]+>)?/);
+      expect(offsets.length).toBeGreaterThan(0);
+      const expectedCol = offsets[0]!.descIndex;
+      for (const entry of offsets) {
+        expect(entry.descIndex, `misaligned or missing desc in ${name}: "${entry.line}"`).toBe(expectedCol);
+      }
     }
   });
 });

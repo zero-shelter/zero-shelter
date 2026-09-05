@@ -62,6 +62,7 @@ describe("keys that are always there", () => {
       "vulnerableRange",
       "direct",
       "tools",
+      "possibleDuplicates",
     ]) {
       expect(entry).toHaveProperty(key);
     }
@@ -75,6 +76,27 @@ describe("keys that are always there", () => {
     for (const f of withFix) expect(typeof f.fixedIn).toBe("string");
     expect(Number.isInteger(entry.score)).toBe(true);
     expect(typeof entry.direct).toBe("boolean");
+    expect(Array.isArray(entry.possibleDuplicates)).toBe(true);
+  });
+
+  /**
+   * Every entry, not only the one that ranked first.
+   *
+   * A key present on the highest-scoring finding and absent on the rest passes
+   * a check that only ever reads `fixNow[0]` — and `possibleDuplicates` is
+   * built from `relatedTo`, which is empty far more often than not, so an
+   * always-present array is exactly the kind of promise that fails quietly on
+   * the entries nobody looked at.
+   */
+  it("does so for every entry, not just the one that ranked first", () => {
+    expect(report.fixNow.length).toBeGreaterThan(1);
+
+    for (const entry of report.fixNow) {
+      for (const key of ["fingerprint", "score", "severity", "package", "advisory", "possibleDuplicates"]) {
+        expect(entry, `${entry.package} has no ${key}`).toHaveProperty(key);
+      }
+      expect(Array.isArray(entry.possibleDuplicates), `${entry.package}`).toBe(true);
+    }
   });
 });
 

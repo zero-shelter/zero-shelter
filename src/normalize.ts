@@ -16,6 +16,26 @@ export function normalizeText(input: string): string {
 }
 
 /**
+ * One spelling for a version range.
+ *
+ * `ingest/osv.ts` builds `< 0.2.4` from OSV's event list; npm writes `<0.2.4`
+ * and we take it verbatim. Same range, two strings, one of them ours — and
+ * `siblingKey` in merge.ts includes the range, so two findings describing an
+ * identical range never matched as suspected duplicates. That is precisely
+ * the case `possibleDuplicates` exists for.
+ *
+ * Syntactic, deliberately. This closes the gap after a comparison operator
+ * and nothing else: it does not know that `>=1.0.0 <2.0.0` and `1.0.0 - 2.0.0`
+ * describe the same versions, and deciding that needs a resolver we do not
+ * have. `src/version-range.ts` is where that question lives.
+ */
+export function normalizeRange(input: string): string {
+  // The space between two clauses is meaningful and stays. Only the one
+  // between an operator and the version it applies to is noise.
+  return normalizeText(input).replace(/([<>]=?|=|~|\^)[ \t]+/g, "$1");
+}
+
+/**
  * Normalize a file path to a repo-relative POSIX path.
  *
  * Scanners report paths in whatever the host OS uses, and some prefix them

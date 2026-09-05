@@ -13,6 +13,8 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import type { ScaFinding } from "./finding.js";
 import { parseNpmAudit } from "./ingest/npm-audit.js";
+import { normalizeText } from "./normalize.js";
+import { detectPackageManager } from "./package-manager.js";
 import { parseOsv } from "./ingest/osv.js";
 
 const run = promisify(execFile);
@@ -37,6 +39,49 @@ export function isWorkspaceRoot(cwd: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * The package names this project asks for by name.
+ *
+ * A scanner that reads a lockfile knows what is installed and not who asked
+ * for it, so `osv-scanner` and pnpm's older report shape both decline to say
+ * whether a finding is direct — correctly, since guessing would be worse. But
+ * they decline to a source that knows, and on every project that is not npm
+ * with a `package-lock.json` no such source runs. The placeholder then becomes
+ * the answer, and a package the project declared itself is described as
+ * arriving through another dependency. See #186.
+ *
+ * Being named here is not a promise that an upgrade reaches the vulnerable
+ * copy — `reachesEveryCopy` is the gate for that and still runs afterwards.
+ * This answers only the question `package.json` can answer.
+ *
+ * `peerDependencies` is deliberately out. A peer is a compatibility statement
+ * about something someone else installs, not something this project pulls in.
+ *
+ * Undefined when there is no readable manifest, which keeps the old behaviour
+ * exactly where we cannot do better.
+ */
+export function declaredDependencies(cwd: string): ReadonlySet<string> | undefined {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(readFileSync(join(cwd, "package.json"), "utf8"));
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(manifest)) return undefined;
+
+  const names = new Set<string>();
+  for (const field of ["dependencies", "devDependencies", "optionalDependencies"]) {
+    const map = manifest[field];
+    if (!isRecord(map)) continue;
+    for (const name of Object.keys(map)) names.add(normalizeText(name));
+  }
+  return names;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export interface Collected {
@@ -65,7 +110,32 @@ export type Capture = (
   command: string,
   args: readonly string[],
   options: ScanOptions,
-) => Promise<string | undefined>;
+) => Promise<CaptureOutcome>;
+
+/**
+ * Absent, timed out and failed are three different facts about a scanner, and
+ * they were two messages.
+ *
+ * A scanner killed at our own bound reported "produced no report", which reads
+ * as the scanner's fault. On Windows any failure without stdout reported "not
+ * on PATH", which sent someone to install a tool they already had. Both then
+ * left the run with one source and an exit code of 0.
+ */
+export type CaptureOutcome =
+  | { readonly ok: true; readonly stdout: string }
+  | {
+      readonly ok: false;
+      readonly why: "absent" | "timeout" | "failed";
+      readonly detail?: string;
+      /**
+       * The exit code, when the process got far enough to have one.
+       *
+       * Carried rather than interpreted: what a code means is the scanner's
+       * business, not ours. osv-scanner reserves 128 for "no package sources
+       * found", and only `runOsvScanner` knows that.
+       */
+      readonly exitCode?: number;
+    };
 
 export interface ScanOptions {
   readonly cwd: string;
@@ -91,6 +161,9 @@ export async function collect(options: ScanOptions): Promise<Collected> {
   const skipped: string[] = [];
   const contributed: string[] = [];
 
+  // Read once, before either scanner runs, and hand the same answer to both.
+  const declared = declaredDependencies(options.cwd);
+
   // Which audit to run is decided by the lockfile in front of us. `npm audit`
   // needs a package-lock.json and fails with ENOLOCK in a pnpm project, which
   // used to leave a pnpm user with "nothing was scanned" and a tool that claims
@@ -103,7 +176,7 @@ export async function collect(options: ScanOptions): Promise<Collected> {
     // Swallowing it would silently drop a whole source and still look like a
     // clean run.
     try {
-      findings.push(...parseNpmAudit(audit.stdout));
+      findings.push(...parseNpmAudit(audit.stdout, declared));
       contributed.push(audit.tool ?? "npm audit");
     } catch (error) {
       skipped.push(`${audit.tool ?? "npm audit"} output unreadable: ${(error as Error).message}`);
@@ -115,7 +188,7 @@ export async function collect(options: ScanOptions): Promise<Collected> {
   const osv = await runOsvScanner(options);
   if (osv.ok) {
     try {
-      findings.push(...parseOsv(osv.stdout, osv.version));
+      findings.push(...parseOsv(osv.stdout, osv.version, declared));
       contributed.push("osv-scanner");
     } catch (error) {
       skipped.push(`osv-scanner output unreadable: ${(error as Error).message}`);
@@ -149,8 +222,9 @@ type Attempt =
  */
 async function runNpmAudit(options: ScanOptions): Promise<Attempt> {
   const run = options.capture ?? capture;
-  const stdout = await run("npm", ["audit", "--json"], options);
-  if (stdout === undefined) return { ok: false, reason: "npm is not available" };
+  const outcome = await run("npm", ["audit", "--json"], options);
+  if (!outcome.ok) return { ok: false, reason: whyOf("npm", outcome) };
+  const { stdout } = outcome;
   if (stdout.trim() === "") return { ok: false, reason: "npm produced no report" };
 
   // npm reports its own failures as JSON with an `error` envelope — no
@@ -159,9 +233,34 @@ async function runNpmAudit(options: ScanOptions): Promise<Attempt> {
   // "output has neither vulnerabilities nor advisories", which sends people
   // looking for a bug in us.
   const explained = npmError(stdout);
-  if (explained !== undefined) return { ok: false, reason: explained };
+  if (explained !== undefined) {
+    return { ok: false, reason: notForThisProject(options.cwd) ?? explained };
+  }
 
   return { ok: true, stdout };
+}
+
+/**
+ * npm's own explanation, and when it is the wrong one to pass on.
+ *
+ * `npm audit` answers the question it was asked — *how do I get a lockfile* —
+ * without knowing it is standing in a yarn project, where following it writes a
+ * `package-lock.json` beside the `yarn.lock` and leaves two files that can
+ * disagree. A security tool suggesting that is worse than saying nothing.
+ *
+ * We do know which project this is, from the lockfile that is present. Only
+ * when a lockfile we recognise says this is not an npm project: with no
+ * lockfile at all, npm's advice is the right advice and is passed through
+ * unchanged. See #187.
+ *
+ * yarn is the only case that reaches here. `collect` sends a project with a
+ * `pnpm-lock.yaml` to `pnpm audit` before this runs, so pnpm never arrives.
+ */
+function notForThisProject(cwd: string): string | undefined {
+  const manager = detectPackageManager(cwd);
+  if (manager !== "yarn" && manager !== "yarn-classic") return undefined;
+
+  return "it does not read yarn.lock. osv-scanner is the source that does";
 }
 
 function npmError(stdout: string): string | undefined {
@@ -189,21 +288,40 @@ function npmError(stdout: string): string | undefined {
 }
 
 /**
+ * One sentence for a scanner that did not produce a report.
+ *
+ * "Absent" earns install advice; the other two must not, because telling
+ * someone to install a tool they already have is how a real failure gets
+ * mistaken for a missing dependency.
+ */
+function whyOf(tool: string, outcome: { why: "absent" | "timeout" | "failed"; detail?: string }): string {
+  if (outcome.why === "absent") return `${tool} is not available`;
+  if (outcome.why === "timeout") {
+    return `${tool} timed out — ${outcome.detail ?? "no answer in time"}. It is installed and did not finish`;
+  }
+  return `${tool} failed: ${outcome.detail ?? "no output"}. It is installed and did not produce a report`;
+}
+
+/**
  * pnpm reports in the older `advisories` shape, which the npm parser already
  * reads — so this is a different process to spawn, not a different format to
  * support.
  */
 async function runPnpmAudit(options: ScanOptions): Promise<Attempt> {
   const run = options.capture ?? capture;
-  const stdout = await run("pnpm", ["audit", "--json"], options);
+  const outcome = await run("pnpm", ["audit", "--json"], options);
 
-  if (stdout === undefined) {
+  if (!outcome.ok) {
     return {
       ok: false,
       tool: "pnpm audit",
-      reason: "pnpm-lock.yaml is here but pnpm is not on PATH",
+      reason:
+        outcome.why === "absent"
+          ? "pnpm-lock.yaml is here but pnpm is not on PATH"
+          : whyOf("pnpm", outcome),
     };
   }
+  const { stdout } = outcome;
   if (stdout.trim() === "") {
     return { ok: false, tool: "pnpm audit", reason: "pnpm produced no report" };
   }
@@ -214,15 +332,29 @@ async function runPnpmAudit(options: ScanOptions): Promise<Attempt> {
   return { ok: true, stdout, tool: "pnpm audit" };
 }
 
+/** osv-scanner's exit code for a tree with no package source in it. */
+const NOTHING_TO_SCAN = 128;
+
 async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
   const run = options.capture ?? capture;
-  const stdout = await run(
+  const outcome = await run(
     "osv-scanner",
     ["--format", "json", "--recursive", options.cwd],
     options,
   );
 
-  if (stdout === undefined) {
+  // 128 is osv-scanner's own code for "no package sources found" — an empty
+  // lockfile, or a tree holding nothing it can read. It ran and it had nothing
+  // to say, which is the fourth outcome after absent, timed out and failed.
+  // Reporting it as a failure opened a new project's first run by telling the
+  // reader their scanner was broken.
+  if (!outcome.ok && outcome.exitCode === NOTHING_TO_SCAN) {
+    return { ok: false, reason: "found no package it could scan in this tree" };
+  }
+  if (!outcome.ok && outcome.why !== "absent") {
+    return { ok: false, reason: whyOf("osv-scanner", outcome) };
+  }
+  if (!outcome.ok) {
     // Cross-source reconciliation is where most of the noise reduction comes
     // from, so "optional" undersells it — but telling someone to go install
     // something without saying how is how a suggestion becomes a chore.
@@ -234,10 +366,11 @@ async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
         "https://github.com/google/osv-scanner/releases",
     };
   }
+  const { stdout } = outcome;
   if (stdout.trim() === "") return { ok: false, reason: "produced no report" };
 
   const version = await run("osv-scanner", ["--version"], options);
-  const parsed = version?.match(/\d+\.\d+\.\d+/)?.[0];
+  const parsed = version.ok ? version.stdout.match(/\d+\.\d+\.\d+/)?.[0] : undefined;
 
   return parsed === undefined
     ? { ok: true, stdout }
@@ -255,25 +388,87 @@ export async function capture(
   command: string,
   args: readonly string[],
   options: ScanOptions,
-): Promise<string | undefined> {
+): Promise<CaptureOutcome> {
+  const timeout = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   try {
     const { stdout } = await run(command, [...args], {
       cwd: options.cwd,
-      timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      timeout,
       maxBuffer: MAX_OUTPUT_BYTES,
       // npm and osv-scanner ship as .cmd shims on Windows, which execFile
       // cannot invoke without a shell.
       shell: process.platform === "win32",
     });
-    return stdout;
+    return { ok: true, stdout };
   } catch (error) {
-    const failure = error as NodeJS.ErrnoException & { stdout?: string };
-
-    if (failure.code === "ENOENT") return undefined;
-    // A shell reports a missing command through the exit code instead.
-    if (process.platform === "win32" && failure.stdout === undefined) return undefined;
-
-    // Findings were reported and the process exited non-zero. That is success.
-    return failure.stdout ?? undefined;
+    return classify(error as SpawnFailure, timeout, process.platform === "win32");
   }
 }
+
+/** What `execFile` rejects with, in the fields that decide the answer. */
+export interface SpawnFailure {
+  readonly code?: string | number | null | undefined;
+  readonly killed?: boolean | undefined;
+  readonly signal?: string | null | undefined;
+  readonly stdout?: string | undefined;
+  readonly stderr?: string | undefined;
+}
+
+/**
+ * Which of the three answers a failed spawn is.
+ *
+ * Separated from `capture` so the Windows branch can be exercised anywhere.
+ * Driving it through real subprocesses meant the platform it exists for was
+ * the one platform it could not be tested on — and the first version of these
+ * tests passed on macOS and Linux while failing on Windows.
+ */
+export function classify(
+  failure: SpawnFailure,
+  timeoutMs: number,
+  windows: boolean,
+): CaptureOutcome {
+  if (failure.code === "ENOENT") return { ok: false, why: "absent" };
+
+  // `killed` is set when we ended it. Output already written is not a report —
+  // a scanner cut off mid-document yields truncated JSON, and parsing it would
+  // report our own timeout as the scanner's bad output.
+  if (failure.killed === true) {
+    return { ok: false, why: "timeout", detail: `no answer within ${timeoutMs / 1000}s` };
+  }
+
+  // `shell: true` means a missing command surfaces as an exit code rather than
+  // ENOENT. Narrowed to the codes and words that mean exactly that: the old
+  // check treated every stdout-less failure as absence, so a crash or a
+  // permissions error was reported as "install this".
+  if (windows && notRecognised(failure)) return { ok: false, why: "absent" };
+
+  // Findings were reported and the process exited non-zero. That is the normal
+  // case for a scanner and it is success.
+  const stdout = failure.stdout ?? "";
+  if (stdout.trim() !== "") return { ok: true, stdout };
+
+  return {
+    ok: false,
+    why: "failed",
+    detail: describe(failure),
+    ...(typeof failure.code === "number" ? { exitCode: failure.code } : {}),
+  };
+}
+
+/** cmd.exe answers 9009 for a command it cannot find; PowerShell says so. */
+function notRecognised(failure: SpawnFailure): boolean {
+  if (failure.code === 9009 || failure.code === "9009") return true;
+  const said = typeof failure.stderr === "string" ? failure.stderr : "";
+  return /not recognized as|CommandNotFoundException|is not recognized/i.test(said);
+}
+
+function describe(failure: SpawnFailure): string {
+  if (typeof failure.signal === "string" && failure.signal !== "") {
+    return `ended by ${failure.signal}`;
+  }
+  return failure.code === undefined || failure.code === null
+    ? "no output and no exit code"
+    : `exited ${failure.code} with no output`;
+}
+
+

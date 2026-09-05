@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { collect, type Capture } from "../src/scan.js";
+import { collect, type Capture, type CaptureOutcome } from "../src/scan.js";
 
 // The real thing pnpm emits, already committed as a fixture — a hand-written
 // stand-in would only prove the parser reads what I imagined it reads.
@@ -27,12 +27,16 @@ const ENOLOCK = JSON.stringify({
   error: { code: "ENOLOCK", summary: "This command requires an existing lockfile." },
 });
 
+/** A stubbed answer: a string is a report, undefined is a scanner that is not installed. */
+const answer = (stdout: string | undefined): CaptureOutcome =>
+  stdout === undefined ? { ok: false, why: "absent" } : { ok: true, stdout };
+
 /** Records which commands were attempted, so we can assert on the choice. */
 const spy = (responses: Record<string, string | undefined>) => {
   const called: string[] = [];
   const capture: Capture = async (command) => {
     called.push(command);
-    return responses[command];
+    return answer(responses[command]);
   };
   return { called, capture };
 };

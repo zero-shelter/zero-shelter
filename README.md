@@ -112,7 +112,7 @@ only source there is.
 - run: npx zero-shelter judge --format sarif --output zero-shelter.sarif
   continue-on-error: true
 
-- uses: github/codeql-action/upload-sarif@v3
+- uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
   with:
     sarif_file: zero-shelter.sarif
 ```
@@ -127,6 +127,10 @@ There is an irony here worth naming: this project exists because SARIF from
 different tools cannot be reconciled by the tools that consume it. Emitting
 SARIF is not a contradiction — downstream receives one already-judged run
 instead of four raw ones it will fail to merge.
+
+Before you gate a build on a `0.0.x` tool, [`docs/STABILITY.md`](./docs/STABILITY.md)
+says which surfaces are frozen and which can change in a patch. The version
+number says the feature set is moving; it does not say the exit codes are.
 
 ## In your coding agent
 
@@ -217,8 +221,9 @@ would take that away.
 --update-baseline     record current findings as accepted
 --baseline <file>     baseline location (default .zero-shelter/baseline.json)
 --cwd <dir>           project directory
---no-color             disable ANSI colors in text output
+--no-color            disable ANSI colors in text output
 --version             print the installed package version
+--help                print this help
 ```
 
 `--no-color` affects human-readable text only and overrides `FORCE_COLOR`.
@@ -357,6 +362,15 @@ Feature specifications and QA evidence use the [spec template](./docs/feature-sp
 [QA checklist](./docs/qa-checklist.md), and [Beta QA Guide](./docs/qa/README.md). The repository
 also provides GitHub issue and pull request templates for feature, bug, and security-control
 contributions.
+
+Looking for somewhere to start? [`good first issue`](https://github.com/zero-shelter/zero-shelter/labels/good%20first%20issue)
+names the file and the line, gives a command that reproduces the defect, and says
+which part needs a judgement rather than typing.
+
+If it turned out useful, a star helps other people find it. If it did not, an
+issue saying why is worth more.
+
+[![Star history](https://api.star-history.com/svg?repos=zero-shelter/zero-shelter&type=Date)](https://star-history.com/#zero-shelter/zero-shelter&Date)
 
 ## License
 

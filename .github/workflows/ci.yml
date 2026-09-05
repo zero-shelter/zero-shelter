@@ -9,9 +9,14 @@ permissions:
   contents: read
 
 # The org allows only actions/checkout and requires SHA pinning, so this
-# workflow uses the Node preinstalled on each runner instead of setup-node.
-# That costs us the Node 20/22 dimension — tracked in "restore the Node version
-# matrix in CI".
+# workflow cannot use setup-node and takes whatever Node each runner ships.
+#
+# Measured on a recent run: 22.23.2 on ubuntu, 24.18.0 on macOS, 22.23.2 on
+# windows. So the spread is accidental rather than chosen, it moves when GitHub
+# updates an image, and package.json's declared floor of 20 — which
+# src/node-support.ts enforces at startup — is the one version never exercised.
+#
+# Open, and genuinely open rather than assumed to be: #154.
 
 jobs:
   test:
