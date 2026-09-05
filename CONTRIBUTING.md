@@ -160,6 +160,14 @@ At least one Maintainer must approve a merge. Owner approval is additionally req
 
 English is canonical. Korean translations should link to the English source and be updated with behavior changes.
 
+**`skills/*/SKILL.md` is the exception, and its body stays English.** A skill is read by an agent rather than a person: it is matched on the frontmatter `description`, which carries the Korean phrasings a request arrives in, and then the body is read in English and answered in whatever language the human used. A translated body is therefore a second copy to keep in step for a reader that does not need one.
+
+So Korean belongs in the `description` and nowhere else in a skill:
+
+```yaml
+description: ... Korean requests look like: 의존성 취약점 점검해줘, 보안 스캔 돌려줘.
+```
+
 - [`GOVERNANCE.md`](./GOVERNANCE.md) — Owner and Maintainer responsibilities
 - [`SECURITY.md`](./SECURITY.md) — vulnerability reporting and privacy rules
 - [`docs/feature-spec-template.md`](./docs/feature-spec-template.md)
