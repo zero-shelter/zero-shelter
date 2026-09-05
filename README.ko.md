@@ -341,6 +341,16 @@ Node 20 이상.
 [QA 체크리스트](./docs/qa-checklist.ko.md)를 사용합니다. 저장소에는 기능·버그·보안 제어
 기여를 위한 GitHub Issue와 PR 템플릿도 있습니다.
 
+
+시작할 곳을 찾는다면 [`good first issue`](https://github.com/zero-shelter/zero-shelter/labels/good%20first%20issue)를
+보세요. 파일과 줄을 지목하고, 결함을 재현하는 명령을 담고, 타이핑이 아니라 판단이
+필요한 부분이 어디인지 적어 둡니다.
+
+써 보고 쓸모가 있었다면 star가 다른 사람이 찾는 데 도움이 됩니다. 쓸모가 없었다면
+왜 그런지 적은 이슈가 더 값어치 있습니다.
+
+[![Star history](https://api.star-history.com/svg?repos=zero-shelter/zero-shelter&type=Date)](https://star-history.com/#zero-shelter/zero-shelter&Date)
+
 ## 라이선스
 
 [Apache-2.0](./LICENSE)

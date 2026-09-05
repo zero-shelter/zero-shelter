@@ -358,6 +358,15 @@ Feature specifications and QA evidence use the [spec template](./docs/feature-sp
 also provides GitHub issue and pull request templates for feature, bug, and security-control
 contributions.
 
+Looking for somewhere to start? [`good first issue`](https://github.com/zero-shelter/zero-shelter/labels/good%20first%20issue)
+names the file and the line, gives a command that reproduces the defect, and says
+which part needs a judgement rather than typing.
+
+If it turned out useful, a star helps other people find it. If it did not, an
+issue saying why is worth more.
+
+[![Star history](https://api.star-history.com/svg?repos=zero-shelter/zero-shelter&type=Date)](https://star-history.com/#zero-shelter/zero-shelter&Date)
+
 ## License
 
 [Apache-2.0](./LICENSE)
