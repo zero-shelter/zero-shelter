@@ -39,6 +39,21 @@ const STEP_TIMEOUT_MS = 120_000;
 // slower than anything else here, and a false timeout is worse than no bound.
 const INSTALL_TIMEOUT_MS = 300_000;
 
+/**
+ * The CLI gets more than the scanner it is waiting on.
+ *
+ * An outer bound equal to the product's own means a race: `src/scan.ts` ends a
+ * stalled scanner at its boundary and is still writing "could not judge" when
+ * we end the CLI at the same moment. The caller then sees a generic timeout
+ * instead of the explanation this whole change exists to surface.
+ *
+ * Read off the packaged artifact rather than restated, so the two cannot drift
+ * apart. Filled in once the tarball is installed; the fallback is only for the
+ * checks that run before that.
+ */
+let cliTimeoutMs = 240_000;
+const HEADROOM_MS = 60_000;
+
 /** Run a command with a bound, and say which one it was if the bound is hit. */
 const run = async (command, args, options = {}) => {
   try {
@@ -137,6 +152,7 @@ const cli = async (cwd, args) => {
   try {
     const { stdout, stderr } = await run(bin, args, {
       cwd,
+      timeout: cliTimeoutMs,
       maxBuffer: 64 * 1024 * 1024,
       shell: windows,
     });
@@ -200,6 +216,28 @@ await writeFile(
 console.log("installing the tarball into a throwaway project…");
 await npm(["install", "--package-lock-only", "--no-audit", "--no-fund", "--ignore-scripts"], { cwd: project });
 await npm(["install", "--no-save", "--no-audit", "--no-fund", tarball], { cwd: project });
+
+/**
+ * The bound the packaged CLI gives a scanner, read from the tarball we just
+ * installed rather than from our own source.
+ */
+await check("the CLI gets longer than the scanner it waits on", "outer bound clears inner", async () => {
+  const { DEFAULT_TIMEOUT_MS } = await import(
+    pathToFileURL(join(project, "node_modules", "zero-shelter", "dist", "scan.js")).href
+  );
+
+  expect(Number.isInteger(DEFAULT_TIMEOUT_MS), `the package did not export a scanner timeout`);
+  cliTimeoutMs = DEFAULT_TIMEOUT_MS + HEADROOM_MS;
+
+  // Equal bounds race: scan.ts ends a stalled scanner at its boundary and is
+  // still writing "could not judge" when we end the CLI at the same moment,
+  // so the reason never reaches the summary below.
+  expect(
+    cliTimeoutMs > DEFAULT_TIMEOUT_MS,
+    `cli bound ${cliTimeoutMs}ms does not clear the scanner's ${DEFAULT_TIMEOUT_MS}ms`,
+  );
+  return `${DEFAULT_TIMEOUT_MS / 1000}s scanner, ${cliTimeoutMs / 1000}s CLI`;
+});
 
 await check("2. --version prints a version", "matches package.json", async () => {
   const { stdout, code } = await cli(project, ["--version"]);

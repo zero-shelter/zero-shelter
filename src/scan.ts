@@ -73,7 +73,15 @@ export interface ScanOptions {
   readonly capture?: Capture;
 }
 
-const DEFAULT_TIMEOUT_MS = 120_000;
+/**
+ * How long a scanner gets before we end it.
+ *
+ * Exported so anything wrapping this CLI can give itself headroom above it.
+ * An outer bound equal to this one races: we kill the scanner at the boundary
+ * and are still writing the reason when the wrapper kills us, so the caller
+ * gets a generic failure instead of the explanation. See #158.
+ */
+export const DEFAULT_TIMEOUT_MS = 120_000;
 // Scanner output on a large monorepo is big; the default 1MB buffer truncates
 // it into a JSON parse error that looks like a parser bug.
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
