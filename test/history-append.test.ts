@@ -7,97 +7,95 @@
  * and the next. `history` went on reporting "1 line(s) could not be read"
  * while recording had silently stopped. See #196.
  *
- * Driven through the CLI rather than a helper, because the defect was in how
- * the file was opened and not in anything a unit could see. `--input` keeps it
- * offline: no scanner runs, so this stays a test about appending.
+ * Driven through `appendEntry` rather than a spawned CLI. The first version of
+ * this file ran `dist/bin.js`, which passed here and failed on all three
+ * runners: the `test` job runs `npm ci`, `typecheck` and `test`, and never
+ * builds. A test that needs an artifact its own job does not produce is a test
+ * that only works on the machine that happened to build.
  */
-import { execFileSync } from "node:child_process";
-import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
-import { parseHistory } from "../src/history.js";
+import { type HistoryEntry, appendEntry, parseHistory } from "../src/history.js";
 
-const cli = join(dirname(fileURLToPath(import.meta.url)), "..", "dist", "bin.js");
-const TORN = '{"v":"1","at":"2026-01-01T00:00:00.000Z","sources":["npm audit"],"raw":5,"merg';
+const roots: string[] = [];
 
-let project: string;
-
-function run(...args: string[]): void {
-  // judge exits 1 when there are findings, which is the normal case here.
-  try {
-    execFileSync(process.execPath, [cli, ...args], { cwd: project, stdio: "ignore" });
-  } catch {
-    /* the exit code is not what this file is about */
-  }
+function file(): string {
+  const dir = mkdtempSync(join(tmpdir(), "zs-history-"));
+  roots.push(dir);
+  return join(dir, "history.jsonl");
 }
 
-const historyPath = (): string => join(project, ".zero-shelter", "history.jsonl");
-
-beforeAll(() => {
-  project = mkdtempSync(join(tmpdir(), "zs-history-"));
-  writeFileSync(
-    join(project, "report.json"),
-    JSON.stringify({
-      vulnerabilities: {
-        lodash: {
-          name: "lodash",
-          severity: "critical",
-          isDirect: true,
-          via: [
-            {
-              source: 1065,
-              title: "Prototype Pollution",
-              url: "https://github.com/advisories/GHSA-jf85-cpcp-j695",
-              severity: "critical",
-              range: "<4.17.12",
-            },
-          ],
-          range: "<4.17.12",
-          fixAvailable: { name: "lodash", version: "4.17.21" },
-        },
-      },
-    }),
-  );
+const entry = (at: string): HistoryEntry => ({
+  v: "1",
+  at,
+  sources: ["npm audit"],
+  raw: 12,
+  merged: 5,
+  accepted: 5,
+  outstanding: [],
 });
 
-afterAll(() => rmSync(project, { recursive: true, force: true }));
+/** What a write that stopped part-way through leaves behind. */
+const TORN = '{"v":"1","at":"2026-01-01T00:00:00.000Z","sources":["npm audit"],"raw":5,"merg';
 
-describe("--record after an interrupted write", () => {
-  it("keeps the entry readable instead of welding it onto the torn line", () => {
-    run("judge", "--input", "report.json", "--record");
+afterAll(() => {
+  for (const dir of roots) rmSync(dir, { recursive: true, force: true });
+});
 
-    const before = parseHistory(readFileSync(historyPath(), "utf8"));
-    expect(before.entries).toHaveLength(1);
-    expect(before.unreadable).toBe(0);
+describe("appendEntry", () => {
+  it("writes the first entry into a file that does not exist yet", async () => {
+    const path = file();
 
-    appendFileSync(historyPath(), TORN);
-    run("judge", "--input", "report.json", "--record");
+    await appendEntry(path, entry("2026-01-01T00:00:01.000Z"));
 
-    const after = parseHistory(readFileSync(historyPath(), "utf8"));
-
-    // The torn line stays broken and stays counted. The run after it does not
-    // join it — which is the whole defect.
-    expect(after.unreadable).toBe(1);
-    expect(after.entries).toHaveLength(2);
+    expect(parseHistory(readFileSync(path, "utf8"))).toEqual({
+      entries: [entry("2026-01-01T00:00:01.000Z")],
+      unreadable: 0,
+    });
   });
 
-  it("keeps recording after that, rather than stopping for good", () => {
-    run("judge", "--input", "report.json", "--record");
-    run("judge", "--input", "report.json", "--record");
+  it("keeps a new entry readable when the last write was cut short", async () => {
+    const path = file();
+    await appendEntry(path, entry("2026-01-01T00:00:01.000Z"));
+    appendFileSync(path, TORN);
 
-    const after = parseHistory(readFileSync(historyPath(), "utf8"));
+    await appendEntry(path, entry("2026-01-01T00:00:02.000Z"));
 
-    expect(after.unreadable).toBe(1);
-    expect(after.entries).toHaveLength(4);
+    const { entries, unreadable } = parseHistory(readFileSync(path, "utf8"));
+    // The torn line stays torn and stays counted. The run after it does not
+    // join it, which is the whole defect.
+    expect(unreadable).toBe(1);
+    expect(entries.map((e) => e.at)).toEqual([
+      "2026-01-01T00:00:01.000Z",
+      "2026-01-01T00:00:02.000Z",
+    ]);
   });
 
-  it("does not add a blank line to a file that was written cleanly", () => {
-    const raw = readFileSync(historyPath(), "utf8");
+  it("goes on recording after that, rather than stopping for good", async () => {
+    const path = file();
+    appendFileSync(path, TORN);
 
-    expect(raw).not.toMatch(/\n\n/);
+    for (const at of ["...:01", "...:02", "...:03"]) await appendEntry(path, entry(at));
+
+    const { entries, unreadable } = parseHistory(readFileSync(path, "utf8"));
+    expect(unreadable).toBe(1);
+    expect(entries).toHaveLength(3);
+  });
+
+  /**
+   * Prefixing a newline unconditionally would also work — `parseHistory` skips
+   * blank lines — and would put one between every entry forever, for a case
+   * that almost never happens.
+   */
+  it("adds no blank line to a file that was written cleanly", async () => {
+    const path = file();
+
+    for (const at of ["...:01", "...:02", "...:03"]) await appendEntry(path, entry(at));
+
+    expect(readFileSync(path, "utf8")).not.toMatch(/\n\n/);
   });
 });

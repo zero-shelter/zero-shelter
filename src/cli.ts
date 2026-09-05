@@ -1,4 +1,4 @@
-import { appendFile, mkdir, open, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -24,6 +24,7 @@ import { renderSarif } from "./sarif.js";
 import {
   HISTORY_PATH,
   type Change,
+  appendEntry,
   changes,
   entryFrom,
   parseHistory,
@@ -397,44 +398,12 @@ async function record(cwd: string, result: JudgeResult): Promise<string | undefi
     await mkdir(dirname(path), { recursive: true });
     // The only clock in the tool. Everything else stays reproducible; a history
     // without time answers none of the questions it exists for.
-    const line = serializeEntry(entryFrom(result, new Date().toISOString()));
-    await appendFile(path, ((await endsMidLine(path)) ? "\n" : "") + line, "utf8");
+    await appendEntry(path, entryFrom(result, new Date().toISOString()));
     return undefined;
   } catch (error) {
     return `cannot write ${path}: ${reasonFor(error)}`;
   }
 }
-
-/**
- * Whether the last write stopped part-way through a line.
- *
- * A cancelled workflow or a reclaimed runner leaves the file without its final
- * newline. Appending onto that welds the next run into the broken line, so it
- * is unreadable too — and so is every run after it. `history` keeps reporting
- * "1 line(s) could not be read" while recording has silently stopped, which
- * looks exactly like nobody running the command. See #196.
- *
- * One byte, whatever the file's size. Reading it whole to check its last
- * character would grow with the history it is protecting.
- */
-async function endsMidLine(path: string): Promise<boolean> {
-  let handle;
-  try {
-    handle = await open(path, "r");
-    const { size } = await handle.stat();
-    if (size === 0) return false;
-    const { buffer } = await handle.read(Buffer.alloc(1), 0, 1, size - 1);
-    return buffer[0] !== NEWLINE;
-  } catch {
-    // No file yet, or one we cannot read. `appendFile` is about to answer
-    // whichever it is, and it reports failures better than a guess here would.
-    return false;
-  } finally {
-    await handle?.close();
-  }
-}
-
-const NEWLINE = 0x0a;
 
 /**
  * `zero-shelter history` — what happened, in the order it happened.
