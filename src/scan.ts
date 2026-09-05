@@ -297,49 +297,63 @@ export async function capture(
     });
     return { ok: true, stdout };
   } catch (error) {
-    const failure = error as NodeJS.ErrnoException & {
-      stdout?: string;
-      killed?: boolean;
-      signal?: string | null;
-    };
-
-    if (failure.code === "ENOENT") return { ok: false, why: "absent" };
-
-    // `killed` is set when we ended it. Output already written is not a
-    // report — a scanner cut off mid-document yields truncated JSON, and
-    // parsing it would report our own timeout as the scanner's bad output.
-    if (failure.killed === true) {
-      return { ok: false, why: "timeout", detail: `no answer within ${timeout / 1000}s` };
-    }
-
-    // `shell: true` means a missing command surfaces as an exit code rather
-    // than ENOENT. Narrowed to the codes and words that mean exactly that:
-    // the old check treated every stdout-less failure as absence, so a crash
-    // or a permissions error was reported as "install this".
-    if (process.platform === "win32" && notRecognised(failure)) {
-      return { ok: false, why: "absent" };
-    }
-
-    // Findings were reported and the process exited non-zero. That is the
-    // normal case for a scanner and it is success.
-    const stdout = failure.stdout ?? "";
-    if (stdout.trim() !== "") return { ok: true, stdout };
-
-    return { ok: false, why: "failed", detail: describe(failure) };
+    return classify(error as SpawnFailure, timeout, process.platform === "win32");
   }
 }
 
+/** What `execFile` rejects with, in the fields that decide the answer. */
+export interface SpawnFailure {
+  readonly code?: string | number | null | undefined;
+  readonly killed?: boolean | undefined;
+  readonly signal?: string | null | undefined;
+  readonly stdout?: string | undefined;
+  readonly stderr?: string | undefined;
+}
+
+/**
+ * Which of the three answers a failed spawn is.
+ *
+ * Separated from `capture` so the Windows branch can be exercised anywhere.
+ * Driving it through real subprocesses meant the platform it exists for was
+ * the one platform it could not be tested on — and the first version of these
+ * tests passed on macOS and Linux while failing on Windows.
+ */
+export function classify(
+  failure: SpawnFailure,
+  timeoutMs: number,
+  windows: boolean,
+): CaptureOutcome {
+  if (failure.code === "ENOENT") return { ok: false, why: "absent" };
+
+  // `killed` is set when we ended it. Output already written is not a report —
+  // a scanner cut off mid-document yields truncated JSON, and parsing it would
+  // report our own timeout as the scanner's bad output.
+  if (failure.killed === true) {
+    return { ok: false, why: "timeout", detail: `no answer within ${timeoutMs / 1000}s` };
+  }
+
+  // `shell: true` means a missing command surfaces as an exit code rather than
+  // ENOENT. Narrowed to the codes and words that mean exactly that: the old
+  // check treated every stdout-less failure as absence, so a crash or a
+  // permissions error was reported as "install this".
+  if (windows && notRecognised(failure)) return { ok: false, why: "absent" };
+
+  // Findings were reported and the process exited non-zero. That is the normal
+  // case for a scanner and it is success.
+  const stdout = failure.stdout ?? "";
+  if (stdout.trim() !== "") return { ok: true, stdout };
+
+  return { ok: false, why: "failed", detail: describe(failure) };
+}
+
 /** cmd.exe answers 9009 for a command it cannot find; PowerShell says so. */
-function notRecognised(failure: { code?: string | number | undefined; stderr?: unknown }): boolean {
+function notRecognised(failure: SpawnFailure): boolean {
   if (failure.code === 9009 || failure.code === "9009") return true;
   const said = typeof failure.stderr === "string" ? failure.stderr : "";
   return /not recognized as|CommandNotFoundException|is not recognized/i.test(said);
 }
 
-function describe(failure: {
-  code?: string | number | null | undefined;
-  signal?: string | null | undefined;
-}): string {
+function describe(failure: SpawnFailure): string {
   if (typeof failure.signal === "string" && failure.signal !== "") {
     return `ended by ${failure.signal}`;
   }
@@ -347,3 +361,5 @@ function describe(failure: {
     ? "no output and no exit code"
     : `exited ${failure.code} with no output`;
 }
+
+
