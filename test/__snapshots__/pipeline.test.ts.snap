@@ -24,7 +24,7 @@ exports[`parseOsv > matches the recorded shape 1`] = `
     ],
     "title": "Prototype Pollution in minimist",
     "transitive": true,
-    "vulnerableRange": "< 0.2.4",
+    "vulnerableRange": "<0.2.4",
   },
   {
     "advisoryId": "CVE-2022-25883",
@@ -48,7 +48,7 @@ exports[`parseOsv > matches the recorded shape 1`] = `
     ],
     "title": "semver vulnerable to Regular Expression Denial of Service",
     "transitive": true,
-    "vulnerableRange": "< 5.7.2",
+    "vulnerableRange": "<5.7.2",
   },
   {
     "advisoryId": "OSV-2020-1234",
@@ -71,7 +71,7 @@ exports[`parseOsv > matches the recorded shape 1`] = `
     ],
     "title": "Prototype pollution in lodash",
     "transitive": true,
-    "vulnerableRange": ">= 4.0.0 < 4.17.12",
+    "vulnerableRange": ">=4.0.0 <4.17.12",
   },
 ]
 `;

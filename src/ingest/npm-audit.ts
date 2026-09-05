@@ -13,7 +13,7 @@ import {
   normalizeAliases,
   pickAdvisoryId,
 } from "../finding.js";
-import { normalizeText } from "../normalize.js";
+import { normalizeText, normalizeRange } from "../normalize.js";
 
 const TOOL = "npm-audit";
 const ECOSYSTEM = "npm";
@@ -98,7 +98,7 @@ function parseAdvisories(advisories: Record<string, unknown>): ScaFinding[] {
       ),
       ecosystem: ECOSYSTEM,
       packageName: normalizeText(packageName),
-      vulnerableRange: normalizeText(
+      vulnerableRange: normalizeRange(
         asString(advisory["vulnerable_versions"]) ?? "*",
       ),
       advisoryId,
@@ -144,7 +144,7 @@ function toFinding(
   const aliases = normalizeAliases(aliasesOf(advisory));
   const advisoryId = pickAdvisoryId(aliases);
 
-  const vulnerableRange = normalizeText(
+  const vulnerableRange = normalizeRange(
     asString(advisory["range"]) ?? asString(entry["range"]) ?? "*",
   );
 

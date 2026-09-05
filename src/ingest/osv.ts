@@ -14,7 +14,7 @@ import {
   normalizeAliases,
   pickAdvisoryId,
 } from "../finding.js";
-import { normalizeText } from "../normalize.js";
+import { normalizeText, normalizeRange } from "../normalize.js";
 
 const TOOL = "osv-scanner";
 
@@ -131,7 +131,7 @@ function rangeOf(
 
   // Nothing usable in the advisory: say what we actually know, which is the
   // version present, rather than implying a range we did not read.
-  return installedVersion === undefined ? "*" : `= ${normalizeText(installedVersion)}`;
+  return installedVersion === undefined ? "*" : normalizeRange(`= ${installedVersion}`);
 }
 
 function renderRanges(ranges: unknown): string | undefined {
@@ -164,7 +164,7 @@ function renderRanges(ranges: unknown): string | undefined {
     if (introduced !== undefined) parts.push(`>= ${introduced}`);
   }
 
-  return parts.length === 0 ? undefined : normalizeText(parts.join(" || "));
+  return parts.length === 0 ? undefined : normalizeRange(parts.join(" || "));
 }
 
 function fixedVersionOf(
