@@ -14,6 +14,7 @@ import { promisify } from "node:util";
 import type { ScaFinding } from "./finding.js";
 import { parseNpmAudit } from "./ingest/npm-audit.js";
 import { normalizeText } from "./normalize.js";
+import { detectPackageManager } from "./package-manager.js";
 import { parseOsv } from "./ingest/osv.js";
 
 const run = promisify(execFile);
@@ -224,9 +225,34 @@ async function runNpmAudit(options: ScanOptions): Promise<Attempt> {
   // "output has neither vulnerabilities nor advisories", which sends people
   // looking for a bug in us.
   const explained = npmError(stdout);
-  if (explained !== undefined) return { ok: false, reason: explained };
+  if (explained !== undefined) {
+    return { ok: false, reason: notForThisProject(options.cwd) ?? explained };
+  }
 
   return { ok: true, stdout };
+}
+
+/**
+ * npm's own explanation, and when it is the wrong one to pass on.
+ *
+ * `npm audit` answers the question it was asked — *how do I get a lockfile* —
+ * without knowing it is standing in a yarn project, where following it writes a
+ * `package-lock.json` beside the `yarn.lock` and leaves two files that can
+ * disagree. A security tool suggesting that is worse than saying nothing.
+ *
+ * We do know which project this is, from the lockfile that is present. Only
+ * when a lockfile we recognise says this is not an npm project: with no
+ * lockfile at all, npm's advice is the right advice and is passed through
+ * unchanged. See #187.
+ *
+ * yarn is the only case that reaches here. `collect` sends a project with a
+ * `pnpm-lock.yaml` to `pnpm audit` before this runs, so pnpm never arrives.
+ */
+function notForThisProject(cwd: string): string | undefined {
+  const manager = detectPackageManager(cwd);
+  if (manager !== "yarn" && manager !== "yarn-classic") return undefined;
+
+  return "it does not read yarn.lock. osv-scanner is the source that does";
 }
 
 function npmError(stdout: string): string | undefined {
