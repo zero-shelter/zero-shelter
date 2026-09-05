@@ -29,6 +29,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "third-party": "node scripts/third-party.mjs",
+    "contributors": "node scripts/contributors.mjs",
     "qa": "node scripts/qa-install.mjs",
     "qa:agent": "node scripts/qa-agent.mjs",
     "bench:sheets": "node bench/make-decision-sheets.mjs",
