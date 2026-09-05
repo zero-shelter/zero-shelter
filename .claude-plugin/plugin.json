@@ -1,7 +1,7 @@
 {
   "name": "zero-shelter",
   "description": "Judge dependency scanner output locally: what to fix now, and why.",
-  "version": "0.0.1",
+  "version": "0.0.8",
   "author": { "name": "zero-shelter" },
   "homepage": "https://github.com/zero-shelter/zero-shelter",
   "repository": "https://github.com/zero-shelter/zero-shelter",
