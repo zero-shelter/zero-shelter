@@ -162,6 +162,7 @@ English is canonical. Korean translations should link to the English source and 
 
 - [`GOVERNANCE.md`](./GOVERNANCE.md) — Owner and Maintainer responsibilities
 - [`SECURITY.md`](./SECURITY.md) — vulnerability reporting and privacy rules
+- [`docs/STABILITY.md`](./docs/STABILITY.md) — the interfaces a change may not break quietly
 - [`docs/feature-spec-template.md`](./docs/feature-spec-template.md)
 - [`docs/qa-checklist.md`](./docs/qa-checklist.md)
 

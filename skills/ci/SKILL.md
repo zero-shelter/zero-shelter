@@ -64,7 +64,9 @@ upload fails with a permissions error that reads like an authentication problem.
 
 ## Another CI system
 
-The contract is the exit code, and it is the same everywhere:
+The contract is the exit code, and it is the same everywhere. It is frozen —
+[`docs/STABILITY.md`](../../docs/STABILITY.md) says so, along with what else is
+and is not safe to depend on below 1.0:
 
 | Code | Meaning |
 |---|---|

@@ -128,6 +128,10 @@ different tools cannot be reconciled by the tools that consume it. Emitting
 SARIF is not a contradiction — downstream receives one already-judged run
 instead of four raw ones it will fail to merge.
 
+Before you gate a build on a `0.0.x` tool, [`docs/STABILITY.md`](./docs/STABILITY.md)
+says which surfaces are frozen and which can change in a patch. The version
+number says the feature set is moving; it does not say the exit codes are.
+
 ## In your coding agent
 
 A coding agent starts every session blind to what is already broken here, and
