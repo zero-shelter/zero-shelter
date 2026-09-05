@@ -1,0 +1,19 @@
+# The baseline is a review artifact. `src/baseline.ts` writes one entry per
+# line, sorted, so that a diff moves one line when one acceptance changes —
+# and a reviewer can see which `reason`, `acceptedBy` or `expires` was edited.
+#
+# Git for Windows installs with core.autocrlf=true, so without this the file
+# is checked out as CRLF and rewritten as LF by the next `--update-baseline`.
+# Every line changes, and a pull request that adds one acceptance becomes
+# indistinguishable from one that quietly rewrote twenty.
+.zero-shelter/*.json text eol=lf
+.zero-shelter/*.jsonl text eol=lf
+
+# Pinned inputs to the benchmark. A line-ending flip changes the bytes without
+# changing the content, which is the same problem one layer down: `bench/README.md`
+# pins these by commit precisely so a re-run compares against what was captured.
+bench/captures/**/*.json text eol=lf
+
+# Fixtures are compared byte for byte in places, and the tests assert fixed
+# hash values across three operating systems.
+test/fixtures/**/*.json text eol=lf

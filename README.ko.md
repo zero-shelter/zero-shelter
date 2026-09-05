@@ -124,6 +124,11 @@ yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습
 건 모순이 아닙니다. 받는 쪽이 가져가는 것은 맞대는 데 실패할 원시 실행 네 개가 아니라
 **이미 판정이 끝난 하나**입니다.
 
+
+`0.0.x` 도구에 빌드를 걸기 전에 [`docs/STABILITY.md`](./docs/STABILITY.md)를
+보세요. 어떤 표면이 얼어 있고 무엇이 패치 릴리스에서 바뀔 수 있는지 적혀 있습니다.
+버전 숫자는 기능이 움직인다는 뜻이지 exit code가 움직인다는 뜻이 아닙니다.
+
 ## 코딩 에이전트에서
 
 코딩 에이전트는 매 세션을 이 프로젝트가 뭐가 깨져 있는지 모르는 채로 시작합니다.
@@ -207,8 +212,9 @@ $ npx zero-shelter judge --format html --output report.html
 --update-baseline     현재 항목들을 수용으로 기록
 --baseline <file>     baseline 위치 (기본 .zero-shelter/baseline.json)
 --cwd <dir>           프로젝트 디렉터리
---no-color             text output의 ANSI 색상을 끔
+--no-color            text output의 ANSI 색상을 끔
 --version             설치된 package version 출력
+--help                도움말 출력
 ```
 
 `--no-color`는 사람이 읽는 text output에만 적용되고 `FORCE_COLOR`보다 우선합니다.
@@ -340,6 +346,16 @@ Node 20 이상.
 기능 명세와 QA 근거는 [명세 템플릿](./docs/feature-spec-template.ko.md)과
 [QA 체크리스트](./docs/qa-checklist.ko.md)를 사용합니다. 저장소에는 기능·버그·보안 제어
 기여를 위한 GitHub Issue와 PR 템플릿도 있습니다.
+
+
+시작할 곳을 찾는다면 [`good first issue`](https://github.com/zero-shelter/zero-shelter/labels/good%20first%20issue)를
+보세요. 파일과 줄을 지목하고, 결함을 재현하는 명령을 담고, 타이핑이 아니라 판단이
+필요한 부분이 어디인지 적어 둡니다.
+
+써 보고 쓸모가 있었다면 star가 다른 사람이 찾는 데 도움이 됩니다. 쓸모가 없었다면
+왜 그런지 적은 이슈가 더 값어치 있습니다.
+
+[![Star history](https://api.star-history.com/svg?repos=zero-shelter/zero-shelter&type=Date)](https://star-history.com/#zero-shelter/zero-shelter&Date)
 
 ## 라이선스
 

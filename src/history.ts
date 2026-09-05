@@ -15,6 +15,8 @@
  * in rather than read here so tests and reproducible builds keep control of it.
  */
 
+import { appendFile, open } from "node:fs/promises";
+
 import { SCHEMA_VERSION } from "./fingerprint.js";
 import type { JudgeResult } from "./report.js";
 
@@ -76,6 +78,51 @@ export function serializeEntry(entry: HistoryEntry): string {
  * throwing the whole history away over it would lose everything that was
  * recorded correctly.
  */
+/**
+ * Append one entry, without joining it to a line that was cut short.
+ *
+ * `--record` used to append straight onto whatever the file held. A write that
+ * stopped part-way — a cancelled workflow, a reclaimed runner, a container
+ * killed mid-step — leaves no final newline, and the next entry was welded into
+ * the broken one and became unreadable with it. So was the one after that.
+ * `history` went on reporting "1 line(s) could not be read" while recording had
+ * silently stopped, which looks exactly like nobody running the command.
+ * See #196.
+ *
+ * The torn line stays torn and stays counted. Reading the file to repair it
+ * would turn a one-line append into a read-modify-write on an append-only file,
+ * which gives the next interruption more to destroy.
+ */
+export async function appendEntry(path: string, entry: HistoryEntry): Promise<void> {
+  const separator = (await endsMidLine(path)) ? "\n" : "";
+  await appendFile(path, separator + serializeEntry(entry), "utf8");
+}
+
+const NEWLINE = 0x0a;
+
+/**
+ * One byte, whatever the file's size.
+ *
+ * Reading it whole to look at its last character would grow with the history
+ * this is protecting, and it runs on every `--record`.
+ */
+async function endsMidLine(path: string): Promise<boolean> {
+  let handle;
+  try {
+    handle = await open(path, "r");
+    const { size } = await handle.stat();
+    if (size === 0) return false;
+    const { buffer } = await handle.read(Buffer.alloc(1), 0, 1, size - 1);
+    return buffer[0] !== NEWLINE;
+  } catch {
+    // No file yet, or one we cannot read. The append is about to answer
+    // whichever it is, and it reports failures better than a guess here would.
+    return false;
+  } finally {
+    await handle?.close();
+  }
+}
+
 export function parseHistory(raw: string): { entries: HistoryEntry[]; unreadable: number } {
   const entries: HistoryEntry[] = [];
   let unreadable = 0;

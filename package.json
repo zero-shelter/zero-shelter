@@ -1,6 +1,6 @@
 {
   "name": "zero-shelter",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Local-first, deterministic security tooling for AI-assisted development.",
   "license": "Apache-2.0",
   "contributors": [

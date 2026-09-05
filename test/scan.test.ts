@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Capture, collect } from "../src/scan.js";
+import { type Capture, type CaptureOutcome, collect } from "../src/scan.js";
 
 /**
  * These are the paths a green CI run does not cover.
@@ -53,8 +53,12 @@ const OSV = JSON.stringify({
 });
 
 /** Build a capture that answers per command, defaulting to "not installed". */
+/** A stubbed answer: a string is a report, undefined is a scanner that is not installed. */
+const answer = (stdout: string | undefined): CaptureOutcome =>
+  stdout === undefined ? { ok: false, why: "absent" } : { ok: true, stdout };
+
 function fake(responses: Record<string, string | undefined>): Capture {
-  return async (command) => responses[command];
+  return async (command) => answer(responses[command]);
 }
 
 describe("collect", () => {
@@ -133,9 +137,9 @@ describe("collect", () => {
 
   it("records the scanner version so a run can be reproduced", async () => {
     const capture: Capture = async (command, args) => {
-      if (command === "npm") return NPM_AUDIT;
-      if (args.includes("--version")) return "osv-scanner version 1.9.2\n";
-      return OSV;
+      if (command === "npm") return answer(NPM_AUDIT);
+      if (args.includes("--version")) return answer("osv-scanner version 1.9.2\n");
+      return answer(OSV);
     };
 
     const { findings } = await collect({ cwd: ".", capture });
@@ -145,9 +149,9 @@ describe("collect", () => {
 
   it("omits the version rather than inventing one when it cannot be read", async () => {
     const capture: Capture = async (command, args) => {
-      if (command === "npm") return NPM_AUDIT;
-      if (args.includes("--version")) return "unhelpful banner";
-      return OSV;
+      if (command === "npm") return answer(NPM_AUDIT);
+      if (args.includes("--version")) return answer("unhelpful banner");
+      return answer(OSV);
     };
 
     const { findings } = await collect({ cwd: ".", capture });
@@ -159,10 +163,47 @@ describe("collect", () => {
     const seen: string[][] = [];
     const capture: Capture = async (command, args) => {
       seen.push([command, ...args]);
-      return command === "npm" ? NPM_AUDIT : OSV;
+      return answer(command === "npm" ? NPM_AUDIT : OSV);
     };
 
     await collect({ cwd: "/some/project", capture });
     expect(seen.some((call) => call.includes("/some/project"))).toBe(true);
+  });
+});
+
+/**
+ * osv-scanner exits 128 when it walks a tree and finds no package source in
+ * it — an empty lockfile, or a directory holding nothing it reads. It ran.
+ *
+ * Reported as a failure, that opened a new project's first run with a line
+ * saying part of the tool was broken, on a project where nothing was wrong.
+ * The three outcomes #159 separated needed a fourth. See #189.
+ */
+describe("a scanner that ran and had nothing to scan", () => {
+  it("is not reported as a failure", async () => {
+    const { skipped, contributed } = await collect({
+      cwd: ".",
+      capture: async (command) =>
+        command === "npm"
+          ? { ok: true, stdout: NPM_AUDIT }
+          : { ok: false, why: "failed", detail: "exited 128 with no output", exitCode: 128 },
+    });
+
+    expect(contributed).toEqual(["npm audit"]);
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]).not.toMatch(/failed|is installed|not on PATH/);
+    expect(skipped[0]).toContain("no package it could scan");
+  });
+
+  it("still reports any other non-zero exit as a failure", async () => {
+    const { skipped } = await collect({
+      cwd: ".",
+      capture: async (command) =>
+        command === "npm"
+          ? { ok: true, stdout: NPM_AUDIT }
+          : { ok: false, why: "failed", detail: "exited 127 with no output", exitCode: 127 },
+    });
+
+    expect(skipped[0]).toContain("failed");
   });
 });

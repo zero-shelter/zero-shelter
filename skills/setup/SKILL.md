@@ -21,6 +21,11 @@ Read the exit code — it is the answer, not decoration:
 Requires Node 20+. If it prints a Node version message, that is the whole
 problem; do not try to work around it.
 
+Scope: this skill covers dependency vulnerabilities only (`npm audit` and
+`osv-scanner`). Dockerfiles, Terraform/IaC, Actions workflows, secrets, and
+first-party source are out of scope — a clean dependency run does not mean
+the project as a whole is clean.
+
 ## The second scanner
 
 This tool reconciles what two scanners each called by a different name. With one
@@ -55,6 +60,32 @@ Do not describe a one-source run as a normal result. It is a valid way to run
 this and the ranking and baseline still work, but the deduplication this tool
 exists for is switched off, and a reader who is not told that will conclude the
 tool does nothing.
+
+## What else to look for
+
+`ls` the tree before concluding anything. When several of these are present,
+start with Trivy — one install covers several of them.
+
+| You see | Domain | Install |
+|---|---|---|
+| `Dockerfile` | container | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0) — `brew install trivy` |
+| `*.tf` | IaC | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0); [Checkov](https://github.com/bridgecrewio/checkov) (Apache-2.0) also reads Terraform |
+| `.github/workflows/` | CI/CD | [zizmor](https://github.com/zizmorcore/zizmor) (MIT) |
+| source with no usable lockfile | first-party code | [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1) |
+| any history at all | secrets | [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT) |
+
+Why Opengrep and not Semgrep: Semgrep's engine remains LGPL-2.1, but its
+rules repository moved to a separate licence restricting some commercial,
+SaaS, and competing-product use
+([background](https://socket.dev/blog/opengrep-forks-semgrep)), so naming
+"semgrep" is itself a licence decision — Opengrep is the consortium-governed
+fork created to preserve an open SAST ecosystem.
+
+On secrets: [TruffleHog](https://github.com/trufflesecurity/trufflehog)
+(AGPL-3.0) is also a good scanner, but that licence matters for commercial
+products, so the default here is Gitleaks (MIT). This skill names tools only;
+it does not read their output — ingesting a new scanner's report is separate
+work, not part of a first run.
 
 ## Recording the backlog
 

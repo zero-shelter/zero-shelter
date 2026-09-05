@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
@@ -6,6 +6,7 @@ import {
   BASELINE_PATH,
   baselineFrom,
   emptyBaseline,
+  type BaselineNote,
   parseBaseline,
   serializeBaseline,
 } from "./baseline.js";
@@ -13,7 +14,7 @@ import { judge } from "./judge.js";
 import type { JudgeResult } from "./report.js";
 import { parseNpmAudit } from "./ingest/npm-audit.js";
 import { parseOsv } from "./ingest/osv.js";
-import { collect, isWorkspaceRoot } from "./scan.js";
+import { collect, declaredDependencies, isWorkspaceRoot } from "./scan.js";
 import { cwdFromPayload, hookContext, hookOutput, readStdin } from "./hook.js";
 import { readInstalledVersions } from "./lockfile.js";
 import { detectPackageManager } from "./package-manager.js";
@@ -24,6 +25,7 @@ import { renderSarif } from "./sarif.js";
 import {
   HISTORY_PATH,
   type Change,
+  appendEntry,
   changes,
   entryFrom,
   parseHistory,
@@ -51,9 +53,9 @@ const USAGE = `zero-shelter judge — decide which dependency findings to fix no
   --update-baseline     record the current findings as accepted and exit 0
   --baseline <file>     baseline location (default ${BASELINE_PATH})
   --cwd <dir>           project directory (default .)
-  --no-color             disable ANSI colors in text output
+  --no-color            disable ANSI colors in text output
   --version             print the installed package version
-  --help
+  --help                print this help
 
 Exit code is 1 when there is anything new to fix, so CI fails on regressions
 rather than on the backlog it inherited.
@@ -152,7 +154,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       findings = [];
       skipped = [];
       for (const file of values.input) {
-        findings.push(...(await readInput(resolve(cwd, file))));
+        findings.push(...(await readInput(resolve(cwd, file), declaredDependencies(cwd))));
       }
       // With --input the files are the sources, and which tool wrote each one
       // is only knowable from what it contains.
@@ -186,7 +188,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   let baseline;
   let baselineExists = true;
   try {
-    const loaded = await loadBaseline(baselinePath);
+    const loaded = await loadBaseline(baselinePath, (note) => process.stderr.write(`${note}\n`));
     baseline = loaded.baseline;
     baselineExists = loaded.exists;
   } catch (error) {
@@ -221,7 +223,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       await mkdir(dirname(baselinePath), { recursive: true });
       await writeFile(
         baselinePath,
-        serializeBaseline(baselineFrom(all.fixNow, sources, today, baseline)),
+        serializeBaseline(baselineFrom(all.fixNow, sources, today, baseline, installed)),
         "utf8",
       );
     } catch (error) {
@@ -324,7 +326,10 @@ function parseTop(raw: string | undefined): number | undefined | Error {
  * People name these files anything, and guessing from `.json` tells us nothing.
  * Both shapes have an unambiguous top-level key.
  */
-async function readInput(path: string): Promise<ScaFinding[]> {
+async function readInput(
+  path: string,
+  declared: ReadonlySet<string> | undefined,
+): Promise<ScaFinding[]> {
   let raw: string;
   try {
     raw = await readFile(path, "utf8");
@@ -348,8 +353,8 @@ async function readInput(path: string): Promise<ScaFinding[]> {
   }
 
   const record = probe as Record<string, unknown>;
-  if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw);
-  if ("results" in record) return parseOsv(raw);
+  if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw, declared);
+  if ("results" in record) return parseOsv(raw, undefined, declared);
 
   // People reach for the file this tool just wrote. Saying "unrecognised" to
   // our own output format is a needlessly puzzling answer to a reasonable move.
@@ -394,7 +399,7 @@ async function record(cwd: string, result: JudgeResult): Promise<string | undefi
     await mkdir(dirname(path), { recursive: true });
     // The only clock in the tool. Everything else stays reproducible; a history
     // without time answers none of the questions it exists for.
-    await appendFile(path, serializeEntry(entryFrom(result, new Date().toISOString())), "utf8");
+    await appendEntry(path, entryFrom(result, new Date().toISOString()));
     return undefined;
   } catch (error) {
     return `cannot write ${path}: ${reasonFor(error)}`;
@@ -517,7 +522,7 @@ async function hook(
     let skipped: string[] = [];
     if (inputs !== undefined && inputs.length > 0) {
       findings = [];
-      for (const file of inputs) findings.push(...(await readInput(resolve(cwd, file))));
+      for (const file of inputs) findings.push(...(await readInput(resolve(cwd, file), declaredDependencies(cwd))));
     } else {
       const collected = await collect({ cwd });
       findings = collected.findings;
@@ -553,9 +558,9 @@ async function hook(
   return 0;
 }
 
-async function loadBaseline(path: string) {
+async function loadBaseline(path: string, onNote?: BaselineNote) {
   try {
-    return { baseline: parseBaseline(await readFile(path, "utf8"), path), exists: true };
+    return { baseline: parseBaseline(await readFile(path, "utf8"), path, onNote), exists: true };
   } catch (error) {
     // JSON.parse says "Unexpected end of JSON input" and nothing about where.
     // The reader is left guessing which file the tool even means — and an

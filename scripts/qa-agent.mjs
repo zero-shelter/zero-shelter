@@ -371,6 +371,24 @@ await check("copy-paste actions are pinned to commits", "all pinned", async () =
 
 // ── the plugin an agent installs ────────────────────────────────────────────
 
+// A version corrected by hand drifts again on the next release. plugin.json
+// sat at 0.0.1 through seven of them while the package moved, so anyone
+// installing the plugin saw a number six releases stale — and the harness that
+// reads this very file never looked at it.
+await check("the plugin version is the package version", "in step", async () => {
+  const read = async (...path) => JSON.parse(await readFile(join(ROOT, ...path), "utf8"));
+  const pkg = await read("package.json");
+  const plugin = await read(".claude-plugin", "plugin.json");
+
+  expect(typeof pkg.version === "string", "package.json has no version");
+  expect(typeof plugin.version === "string", "plugin.json has no version");
+  expect(
+    plugin.version === pkg.version,
+    `plugin.json says ${plugin.version}, package.json says ${pkg.version}`,
+  );
+  return `both ${pkg.version}`;
+});
+
 await check("the plugin manifest points at skills that exist", "5 skills", async () => {
   const manifest = JSON.parse(
     await readFile(join(ROOT, ".claude-plugin", "plugin.json"), "utf8"),

@@ -15,6 +15,7 @@
  */
 
 import { SCHEMA_VERSION } from "./fingerprint.js";
+import type { InstalledVersions } from "./lockfile.js";
 import type { RankedFinding } from "./triage.js";
 
 export const BASELINE_PATH = ".zero-shelter/baseline.json";
@@ -34,6 +35,18 @@ export interface AcceptedFinding {
   /** Every id naming this advisory. What a rematch is decided on. */
   readonly aliases: readonly string[];
   readonly severity: string;
+  /**
+   * The versions the tree held when this was accepted, sorted.
+   *
+   * Context about the decision rather than part of its identity: rematching
+   * is still by fingerprint and shared alias, so upgrading one vulnerable
+   * version to another does not resurface a finding somebody already settled.
+   *
+   * It is the one field a reader cannot recover later — the tree has moved on
+   * — and the one a PURL needs, which is what an emitted VEX document is
+   * blocked on. Absent when there was no lockfile to ask.
+   */
+  readonly versions?: readonly string[];
   /** Never read from a clock while judging — supplied by the caller. */
   readonly recordedAt?: string;
   readonly reason?: string;
@@ -104,13 +117,53 @@ const optional = (record: Record<string, unknown>, key: string): { [k: string]: 
   typeof record[key] === "string" ? { [key]: record[key] } : {};
 
 /**
+ * Dropped rather than rejected when it is the wrong shape.
+ *
+ * An unreadable `expires` throws because it decides a gate. This decides
+ * nothing — it is context — so a malformed one costs a reader some history
+ * and must not cost them the run.
+ */
+function versionsOf(value: unknown): { versions?: readonly string[] } {
+  if (!Array.isArray(value)) return {};
+  const versions = value.filter((entry): entry is string => typeof entry === "string");
+  return versions.length === 0 ? {} : { versions: [...new Set(versions)].sort() };
+}
+
+/**
  * `at` is the file this actually came from.
  *
  * The messages named the default location, so a project passing
  * `--baseline somewhere/else.json` was told to go and fix a file it does not
  * use. Defaulted rather than required, because most callers are the default.
  */
-export function parseBaseline(raw: string, at: string = BASELINE_PATH): Baseline {
+/** A note about the file that is worth saying and is not a reason to stop. */
+export type BaselineNote = (note: string) => void;
+
+/**
+ * Every key an accepted entry can carry. Anything else is doing nothing.
+ *
+ * Kept beside `AcceptedFinding` on purpose: a field added there and forgotten
+ * here starts warning about itself, which is a loud way to be reminded.
+ */
+const KNOWN_KEYS: ReadonlySet<string> = new Set([
+  "fingerprint",
+  "ecosystem",
+  "package",
+  "advisory",
+  "aliases",
+  "severity",
+  "versions",
+  "recordedAt",
+  "reason",
+  "acceptedBy",
+  "expires",
+]);
+
+export function parseBaseline(
+  raw: string,
+  at: string = BASELINE_PATH,
+  onNote?: BaselineNote,
+): Baseline {
   const parsed: unknown = JSON.parse(raw);
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error(`${at} is not a JSON object`);
@@ -133,7 +186,7 @@ export function parseBaseline(raw: string, at: string = BASELINE_PATH): Baseline
 
   return {
     schemaVersion,
-    accepted: parseAccepted(accepted, at),
+    accepted: parseAccepted(accepted, at, onNote),
     ...(sources === undefined ? {} : { sources: asStrings(sources)!.sort() }),
   };
 }
@@ -146,7 +199,11 @@ export function parseBaseline(raw: string, at: string = BASELINE_PATH): Baseline
  * is survive a change of scanners, because there are no aliases to fall back
  * on. It keeps working at the level it always did rather than being rejected.
  */
-function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding[] {
+function parseAccepted(
+  entries: readonly unknown[],
+  at: string,
+  onNote?: BaselineNote,
+): AcceptedFinding[] {
   const parsed = entries.map((entry): AcceptedFinding => {
     if (typeof entry === "string") {
       return { fingerprint: entry, ecosystem: "", package: "", advisory: "", aliases: [], severity: "" };
@@ -161,6 +218,19 @@ function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding
       throw new Error(`${at} has an accepted entry with no fingerprint`);
     }
 
+    // A key we do not read is not an error — a newer zero-shelter's baseline
+    // looks exactly like this to an older one, and STABILITY.md promises we
+    // read whatever version we find. It is worth saying out loud, because the
+    // likeliest reason for one is a misspelling of `expires`, and a deadline
+    // that does not exist is invisible until it fails to arrive. See #192.
+    for (const key of Object.keys(record)) {
+      if (KNOWN_KEYS.has(key)) continue;
+      onNote?.(
+        `${at}: ${fingerprint} carries "${key}", which nothing reads. ` +
+          `Keys this tool acts on: ${[...KNOWN_KEYS].join(", ")}.`,
+      );
+    }
+
     return {
       fingerprint,
       ecosystem: typeof record["ecosystem"] === "string" ? record["ecosystem"] : "",
@@ -168,6 +238,7 @@ function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding
       advisory: typeof record["advisory"] === "string" ? record["advisory"] : "",
       aliases: aliasesOf(record["aliases"], fingerprint, at),
       severity: typeof record["severity"] === "string" ? record["severity"] : "",
+      ...versionsOf(record["versions"]),
       ...optional(record, "recordedAt"),
       ...optional(record, "reason"),
       ...optional(record, "acceptedBy"),
@@ -205,13 +276,31 @@ function aliasesOf(value: unknown, fingerprint: string, at: string): string[] {
  */
 function expiry(value: unknown, fingerprint: string, at: string): { expires?: string } {
   if (typeof value !== "string") return {};
-  if (!ISO_DATE.test(value)) {
+  if (!isRealDate(value)) {
     throw new Error(
-      `${at}: ${fingerprint} has expires "${value}", which is not a YYYY-MM-DD date. ` +
+      `${at}: ${fingerprint} has expires "${value}", which is not a real YYYY-MM-DD date. ` +
         "An expiry that cannot be compared would silently never expire.",
     );
   }
   return { expires: value };
+}
+
+/**
+ * A date that exists, not merely one shaped like a date.
+ *
+ * `ISO_DATE` alone accepts `9999-99-99`, which is exactly the mistyped date
+ * that sorts high — it passes the shape check, sorts above every real date,
+ * and so never expires. `2026-02-31` is the quieter version: `Date` accepts
+ * it and rolls it forward to March, so a loose parse would silently move the
+ * deadline three days.
+ *
+ * The round trip is what catches both. A date that survives parsing and
+ * re-serialising unchanged is one the calendar has.
+ */
+function isRealDate(value: string): boolean {
+  if (!ISO_DATE.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
 }
 
 /**
@@ -237,6 +326,16 @@ export function serializeBaseline(baseline: Baseline): string {
 }
 
 /** Fixed key order so a re-record produces a byte-identical file. */
+function versionsAt(
+  packageName: string,
+  installed: InstalledVersions | undefined,
+  before: AcceptedFinding | undefined,
+): { versions?: readonly string[] } {
+  const present = installed?.versions.get(packageName);
+  if (present !== undefined && present.size > 0) return { versions: [...present].sort() };
+  return before?.versions === undefined ? {} : { versions: before.versions };
+}
+
 function ordered(entry: AcceptedFinding): Record<string, unknown> {
   const out: Record<string, unknown> = {
     fingerprint: entry.fingerprint,
@@ -246,6 +345,7 @@ function ordered(entry: AcceptedFinding): Record<string, unknown> {
     aliases: [...entry.aliases].sort(),
     severity: entry.severity,
   };
+  if (entry.versions !== undefined) out["versions"] = [...entry.versions];
   for (const key of ["recordedAt", "reason", "acceptedBy", "expires"] as const) {
     if (entry[key] !== undefined) out[key] = entry[key];
   }
@@ -269,6 +369,7 @@ export function baselineFrom(
   sources?: readonly string[],
   recordedAt?: string,
   previous?: Baseline,
+  installed?: InstalledVersions,
 ): Baseline {
   const kept = new Map((previous?.accepted ?? []).map((entry) => [entry.fingerprint, entry]));
 
@@ -283,6 +384,9 @@ export function baselineFrom(
       advisory: finding.advisoryId,
       aliases: [...finding.aliases].sort(),
       severity: finding.severity,
+      // What this run can see wins; otherwise keep what an earlier one saw.
+      // A run without a lockfile must not erase a version already recorded.
+      ...versionsAt(finding.packageName, installed, before),
       ...(before?.recordedAt === undefined
         ? recordedAt === undefined
           ? {}
@@ -459,7 +563,10 @@ function hasExpired(entry: AcceptedFinding, today?: string): boolean {
   // silently becomes either "never expires" or "expired already" — and the
   // first of those quietly turns a gate green. Anything else does not expire,
   // and parseBaseline has already said so out loud.
-  return ISO_DATE.test(entry.expires) && entry.expires < today;
+  //
+  // The same predicate as the parser on purpose: two gates that disagree about
+  // what a date is would let one of them through.
+  return isRealDate(entry.expires) && entry.expires < today;
 }
 
 /** Date only. A time would make the comparison depend on a zone we do not have. */
