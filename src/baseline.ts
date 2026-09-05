@@ -136,7 +136,34 @@ function versionsOf(value: unknown): { versions?: readonly string[] } {
  * `--baseline somewhere/else.json` was told to go and fix a file it does not
  * use. Defaulted rather than required, because most callers are the default.
  */
-export function parseBaseline(raw: string, at: string = BASELINE_PATH): Baseline {
+/** A note about the file that is worth saying and is not a reason to stop. */
+export type BaselineNote = (note: string) => void;
+
+/**
+ * Every key an accepted entry can carry. Anything else is doing nothing.
+ *
+ * Kept beside `AcceptedFinding` on purpose: a field added there and forgotten
+ * here starts warning about itself, which is a loud way to be reminded.
+ */
+const KNOWN_KEYS: ReadonlySet<string> = new Set([
+  "fingerprint",
+  "ecosystem",
+  "package",
+  "advisory",
+  "aliases",
+  "severity",
+  "versions",
+  "recordedAt",
+  "reason",
+  "acceptedBy",
+  "expires",
+]);
+
+export function parseBaseline(
+  raw: string,
+  at: string = BASELINE_PATH,
+  onNote?: BaselineNote,
+): Baseline {
   const parsed: unknown = JSON.parse(raw);
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error(`${at} is not a JSON object`);
@@ -159,7 +186,7 @@ export function parseBaseline(raw: string, at: string = BASELINE_PATH): Baseline
 
   return {
     schemaVersion,
-    accepted: parseAccepted(accepted, at),
+    accepted: parseAccepted(accepted, at, onNote),
     ...(sources === undefined ? {} : { sources: asStrings(sources)!.sort() }),
   };
 }
@@ -172,7 +199,11 @@ export function parseBaseline(raw: string, at: string = BASELINE_PATH): Baseline
  * is survive a change of scanners, because there are no aliases to fall back
  * on. It keeps working at the level it always did rather than being rejected.
  */
-function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding[] {
+function parseAccepted(
+  entries: readonly unknown[],
+  at: string,
+  onNote?: BaselineNote,
+): AcceptedFinding[] {
   const parsed = entries.map((entry): AcceptedFinding => {
     if (typeof entry === "string") {
       return { fingerprint: entry, ecosystem: "", package: "", advisory: "", aliases: [], severity: "" };
@@ -185,6 +216,19 @@ function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding
     const fingerprint = record["fingerprint"];
     if (typeof fingerprint !== "string") {
       throw new Error(`${at} has an accepted entry with no fingerprint`);
+    }
+
+    // A key we do not read is not an error — a newer zero-shelter's baseline
+    // looks exactly like this to an older one, and STABILITY.md promises we
+    // read whatever version we find. It is worth saying out loud, because the
+    // likeliest reason for one is a misspelling of `expires`, and a deadline
+    // that does not exist is invisible until it fails to arrive. See #192.
+    for (const key of Object.keys(record)) {
+      if (KNOWN_KEYS.has(key)) continue;
+      onNote?.(
+        `${at}: ${fingerprint} carries "${key}", which nothing reads. ` +
+          `Keys this tool acts on: ${[...KNOWN_KEYS].join(", ")}.`,
+      );
     }
 
     return {

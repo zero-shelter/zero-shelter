@@ -6,6 +6,7 @@ import {
   BASELINE_PATH,
   baselineFrom,
   emptyBaseline,
+  type BaselineNote,
   parseBaseline,
   serializeBaseline,
 } from "./baseline.js";
@@ -187,7 +188,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   let baseline;
   let baselineExists = true;
   try {
-    const loaded = await loadBaseline(baselinePath);
+    const loaded = await loadBaseline(baselinePath, (note) => process.stderr.write(`${note}\n`));
     baseline = loaded.baseline;
     baselineExists = loaded.exists;
   } catch (error) {
@@ -557,9 +558,9 @@ async function hook(
   return 0;
 }
 
-async function loadBaseline(path: string) {
+async function loadBaseline(path: string, onNote?: BaselineNote) {
   try {
-    return { baseline: parseBaseline(await readFile(path, "utf8"), path), exists: true };
+    return { baseline: parseBaseline(await readFile(path, "utf8"), path, onNote), exists: true };
   } catch (error) {
     // JSON.parse says "Unexpected end of JSON input" and nothing about where.
     // The reader is left guessing which file the tool even means — and an
