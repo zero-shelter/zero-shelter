@@ -18,7 +18,11 @@ import { normalizeText, normalizeRange } from "../normalize.js";
 
 const TOOL = "osv-scanner";
 
-export function parseOsv(raw: string, toolVersion?: string): ScaFinding[] {
+export function parseOsv(
+  raw: string,
+  toolVersion?: string,
+  declared?: ReadonlySet<string>,
+): ScaFinding[] {
   const report: unknown = JSON.parse(raw);
   if (!isRecord(report)) throw new Error("osv-scanner output is not a JSON object");
 
@@ -36,7 +40,7 @@ export function parseOsv(raw: string, toolVersion?: string): ScaFinding[] {
 
     for (const pkg of packages) {
       if (!isRecord(pkg)) continue;
-      findings.push(...findingsForPackage(pkg, toolVersion));
+      findings.push(...findingsForPackage(pkg, toolVersion, declared));
     }
   }
 
@@ -45,9 +49,27 @@ export function parseOsv(raw: string, toolVersion?: string): ScaFinding[] {
   );
 }
 
+/**
+ * Whether the manifest asks for this package by name.
+ *
+ * The comment below is still right that this source cannot tell. What changed
+ * is that it used to defer to a source that knows, and on yarn, pnpm and every
+ * non-npm ecosystem no such source runs — so the placeholder became the answer
+ * and a declared dependency was described as arriving through another one.
+ * `declared` is `package.json` answering the only part of the question it can.
+ * Undefined where there is no readable manifest, which is the old behaviour.
+ */
+function isTransitive(
+  packageName: string,
+  declared: ReadonlySet<string> | undefined,
+): boolean {
+  return declared === undefined ? true : !declared.has(packageName);
+}
+
 function findingsForPackage(
   pkg: Record<string, unknown>,
   toolVersion: string | undefined,
+  declared: ReadonlySet<string> | undefined,
 ): ScaFinding[] {
   const meta = isRecord(pkg["package"]) ? pkg["package"] : {};
   const packageName = asString(meta["name"]);
@@ -88,8 +110,9 @@ function findingsForPackage(
       aliases,
       // osv-scanner reports what it finds in the lockfile without saying
       // whether the manifest asks for it directly. Claiming to know would be
-      // worse than deferring to a source that does.
-      transitive: true,
+      // worse than deferring to a source that does — see isTransitive for what
+      // happens when no such source runs.
+      transitive: isTransitive(normalizeText(packageName), declared),
       fixAvailable: fixed !== undefined,
       sources: toolVersion === undefined
         ? [{ tool: TOOL, ruleId: id }]

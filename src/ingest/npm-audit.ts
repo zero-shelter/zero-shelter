@@ -26,7 +26,10 @@ const SEVERITIES = new Set<Severity>([
   "info",
 ]);
 
-export function parseNpmAudit(raw: string): ScaFinding[] {
+export function parseNpmAudit(
+  raw: string,
+  declared?: ReadonlySet<string>,
+): ScaFinding[] {
   const report: unknown = JSON.parse(raw);
   if (!isRecord(report)) {
     throw new Error("npm audit output is not a JSON object");
@@ -36,7 +39,7 @@ export function parseNpmAudit(raw: string): ScaFinding[] {
   // Rejecting it would turn "we support npm" into "we support npm 7+", which
   // is a much smaller promise than it needs to be.
   if (isRecord(report["advisories"])) {
-    return parseAdvisories(report["advisories"]);
+    return parseAdvisories(report["advisories"], declared);
   }
 
   const vulnerabilities = readVulnerabilities(report);
@@ -64,7 +67,27 @@ export function parseNpmAudit(raw: string): ScaFinding[] {
  * unpick — and it carries `cves` and `github_advisory_id` explicitly, which
  * makes its aliases richer than what npm 7+ leaves us to scrape out of a URL.
  */
-function parseAdvisories(advisories: Record<string, unknown>): ScaFinding[] {
+/**
+ * Whether the manifest asks for this package by name.
+ *
+ * The comment below is still right that this source cannot tell. What changed
+ * is that it used to defer to a source that knows, and on yarn, pnpm and every
+ * non-npm ecosystem no such source runs — so the placeholder became the answer
+ * and a declared dependency was described as arriving through another one.
+ * `declared` is `package.json` answering the only part of the question it can.
+ * Undefined where there is no readable manifest, which is the old behaviour.
+ */
+function isTransitive(
+  packageName: string,
+  declared: ReadonlySet<string> | undefined,
+): boolean {
+  return declared === undefined ? true : !declared.has(packageName);
+}
+
+function parseAdvisories(
+  advisories: Record<string, unknown>,
+  declared: ReadonlySet<string> | undefined,
+): ScaFinding[] {
   const findings: ScaFinding[] = [];
 
   for (const key of Object.keys(advisories).sort()) {
@@ -104,8 +127,9 @@ function parseAdvisories(advisories: Record<string, unknown>): ScaFinding[] {
       advisoryId,
       aliases,
       // This shape says nothing about direct versus transitive. Guessing would
-      // hand the ranking a fact nobody established.
-      transitive: true,
+      // hand the ranking a fact nobody established — but `package.json` is not
+      // a guess. See isTransitive.
+      transitive: isTransitive(normalizeText(packageName), declared),
       // "<0.0.0" is how this format spells "no patch exists".
       fixAvailable: patched !== undefined && patched !== "<0.0.0",
       sources: [{ tool: TOOL, ruleId: advisoryId }],

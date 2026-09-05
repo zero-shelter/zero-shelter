@@ -13,7 +13,7 @@ import { judge } from "./judge.js";
 import type { JudgeResult } from "./report.js";
 import { parseNpmAudit } from "./ingest/npm-audit.js";
 import { parseOsv } from "./ingest/osv.js";
-import { collect, isWorkspaceRoot } from "./scan.js";
+import { collect, declaredDependencies, isWorkspaceRoot } from "./scan.js";
 import { cwdFromPayload, hookContext, hookOutput, readStdin } from "./hook.js";
 import { readInstalledVersions } from "./lockfile.js";
 import { detectPackageManager } from "./package-manager.js";
@@ -152,7 +152,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       findings = [];
       skipped = [];
       for (const file of values.input) {
-        findings.push(...(await readInput(resolve(cwd, file))));
+        findings.push(...(await readInput(resolve(cwd, file), declaredDependencies(cwd))));
       }
       // With --input the files are the sources, and which tool wrote each one
       // is only knowable from what it contains.
@@ -324,7 +324,10 @@ function parseTop(raw: string | undefined): number | undefined | Error {
  * People name these files anything, and guessing from `.json` tells us nothing.
  * Both shapes have an unambiguous top-level key.
  */
-async function readInput(path: string): Promise<ScaFinding[]> {
+async function readInput(
+  path: string,
+  declared: ReadonlySet<string> | undefined,
+): Promise<ScaFinding[]> {
   let raw: string;
   try {
     raw = await readFile(path, "utf8");
@@ -348,8 +351,8 @@ async function readInput(path: string): Promise<ScaFinding[]> {
   }
 
   const record = probe as Record<string, unknown>;
-  if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw);
-  if ("results" in record) return parseOsv(raw);
+  if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw, declared);
+  if ("results" in record) return parseOsv(raw, undefined, declared);
 
   // People reach for the file this tool just wrote. Saying "unrecognised" to
   // our own output format is a needlessly puzzling answer to a reasonable move.
@@ -517,7 +520,7 @@ async function hook(
     let skipped: string[] = [];
     if (inputs !== undefined && inputs.length > 0) {
       findings = [];
-      for (const file of inputs) findings.push(...(await readInput(resolve(cwd, file))));
+      for (const file of inputs) findings.push(...(await readInput(resolve(cwd, file), declaredDependencies(cwd))));
     } else {
       const collected = await collect({ cwd });
       findings = collected.findings;

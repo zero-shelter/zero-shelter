@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import type { ScaFinding } from "./finding.js";
 import { parseNpmAudit } from "./ingest/npm-audit.js";
+import { normalizeText } from "./normalize.js";
 import { parseOsv } from "./ingest/osv.js";
 
 const run = promisify(execFile);
@@ -37,6 +38,49 @@ export function isWorkspaceRoot(cwd: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * The package names this project asks for by name.
+ *
+ * A scanner that reads a lockfile knows what is installed and not who asked
+ * for it, so `osv-scanner` and pnpm's older report shape both decline to say
+ * whether a finding is direct — correctly, since guessing would be worse. But
+ * they decline to a source that knows, and on every project that is not npm
+ * with a `package-lock.json` no such source runs. The placeholder then becomes
+ * the answer, and a package the project declared itself is described as
+ * arriving through another dependency. See #186.
+ *
+ * Being named here is not a promise that an upgrade reaches the vulnerable
+ * copy — `reachesEveryCopy` is the gate for that and still runs afterwards.
+ * This answers only the question `package.json` can answer.
+ *
+ * `peerDependencies` is deliberately out. A peer is a compatibility statement
+ * about something someone else installs, not something this project pulls in.
+ *
+ * Undefined when there is no readable manifest, which keeps the old behaviour
+ * exactly where we cannot do better.
+ */
+export function declaredDependencies(cwd: string): ReadonlySet<string> | undefined {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(readFileSync(join(cwd, "package.json"), "utf8"));
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(manifest)) return undefined;
+
+  const names = new Set<string>();
+  for (const field of ["dependencies", "devDependencies", "optionalDependencies"]) {
+    const map = manifest[field];
+    if (!isRecord(map)) continue;
+    for (const name of Object.keys(map)) names.add(normalizeText(name));
+  }
+  return names;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export interface Collected {
@@ -108,6 +152,9 @@ export async function collect(options: ScanOptions): Promise<Collected> {
   const skipped: string[] = [];
   const contributed: string[] = [];
 
+  // Read once, before either scanner runs, and hand the same answer to both.
+  const declared = declaredDependencies(options.cwd);
+
   // Which audit to run is decided by the lockfile in front of us. `npm audit`
   // needs a package-lock.json and fails with ENOLOCK in a pnpm project, which
   // used to leave a pnpm user with "nothing was scanned" and a tool that claims
@@ -120,7 +167,7 @@ export async function collect(options: ScanOptions): Promise<Collected> {
     // Swallowing it would silently drop a whole source and still look like a
     // clean run.
     try {
-      findings.push(...parseNpmAudit(audit.stdout));
+      findings.push(...parseNpmAudit(audit.stdout, declared));
       contributed.push(audit.tool ?? "npm audit");
     } catch (error) {
       skipped.push(`${audit.tool ?? "npm audit"} output unreadable: ${(error as Error).message}`);
@@ -132,7 +179,7 @@ export async function collect(options: ScanOptions): Promise<Collected> {
   const osv = await runOsvScanner(options);
   if (osv.ok) {
     try {
-      findings.push(...parseOsv(osv.stdout, osv.version));
+      findings.push(...parseOsv(osv.stdout, osv.version, declared));
       contributed.push("osv-scanner");
     } catch (error) {
       skipped.push(`osv-scanner output unreadable: ${(error as Error).message}`);
