@@ -87,34 +87,6 @@ products, so the default here is Gitleaks (MIT). This skill names tools only;
 it does not read their output — ingesting a new scanner's report is separate
 work, not part of a first run.
 
-## 범위와 추가 점검 (한국어)
-
-이 스킬은 의존성 취약점만 다룬다 (`npm audit`과 `osv-scanner`).
-Dockerfile, Terraform/IaC, Actions 워크플로, 시크릿, 직접 작성한 소스
-코드는 범위 밖이다 — 의존성 스캔이 깨끗해도 프로젝트 전체가 깨끗하다는
-뜻은 아니다.
-
-결론 전에 `ls`로 트리를 확인하라. 여러 항목이 함께 있으면 Trivy부터
-설치하라 — 하나로 여러 영역을 본다.
-
-| 보이면 | 영역 | 설치 |
-|---|---|---|
-| `Dockerfile` | 컨테이너 | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0) — `brew install trivy` |
-| `*.tf` | IaC | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0); [Checkov](https://github.com/bridgecrewio/checkov) (Apache-2.0)도 Terraform을 읽는다 |
-| `.github/workflows/` | CI/CD | [zizmor](https://github.com/zizmorcore/zizmor) (MIT) |
-| 쓸 만한 lockfile이 없는 소스 | 직접 작성한 코드 | [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1) |
-| 모든 히스토리 | 시크릿 | [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT) |
-
-Opengrep을 권하는 이유: Semgrep 엔진은 LGPL-2.1 그대로지만, 규칙 저장소가
-일부 상업적·SaaS·경쟁 제품 사용을 제한하는 별도 라이선스로 바뀌었고
-([배경](https://socket.dev/blog/opengrep-forks-semgrep)), "semgrep"이라
-쓰는 것 자체가 라이선스 결정이 된다 — Opengrep은 열린 SAST 생태계를
-지키기 위해 만들어진 컨소시엄 운영 포크다.
-
-시크릿: [TruffleHog](https://github.com/trufflesecurity/trufflehog)
-(AGPL-3.0)도 좋은 스캐너지만 상용 제품에는 라이선스가 부담되므로 기본값은
-Gitleaks (MIT)다. 이 스킬은 도구 이름만 전한다; 그 출력은 읽지 않는다.
-
 ## Recording the backlog
 
 A project that has never run this has a backlog it inherited. Fixing all of it
