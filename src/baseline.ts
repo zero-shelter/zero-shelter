@@ -15,6 +15,7 @@
  */
 
 import { SCHEMA_VERSION } from "./fingerprint.js";
+import type { InstalledVersions } from "./lockfile.js";
 import type { RankedFinding } from "./triage.js";
 
 export const BASELINE_PATH = ".zero-shelter/baseline.json";
@@ -34,6 +35,18 @@ export interface AcceptedFinding {
   /** Every id naming this advisory. What a rematch is decided on. */
   readonly aliases: readonly string[];
   readonly severity: string;
+  /**
+   * The versions the tree held when this was accepted, sorted.
+   *
+   * Context about the decision rather than part of its identity: rematching
+   * is still by fingerprint and shared alias, so upgrading one vulnerable
+   * version to another does not resurface a finding somebody already settled.
+   *
+   * It is the one field a reader cannot recover later — the tree has moved on
+   * — and the one a PURL needs, which is what an emitted VEX document is
+   * blocked on. Absent when there was no lockfile to ask.
+   */
+  readonly versions?: readonly string[];
   /** Never read from a clock while judging — supplied by the caller. */
   readonly recordedAt?: string;
   readonly reason?: string;
@@ -104,6 +117,19 @@ const optional = (record: Record<string, unknown>, key: string): { [k: string]: 
   typeof record[key] === "string" ? { [key]: record[key] } : {};
 
 /**
+ * Dropped rather than rejected when it is the wrong shape.
+ *
+ * An unreadable `expires` throws because it decides a gate. This decides
+ * nothing — it is context — so a malformed one costs a reader some history
+ * and must not cost them the run.
+ */
+function versionsOf(value: unknown): { versions?: readonly string[] } {
+  if (!Array.isArray(value)) return {};
+  const versions = value.filter((entry): entry is string => typeof entry === "string");
+  return versions.length === 0 ? {} : { versions: [...new Set(versions)].sort() };
+}
+
+/**
  * `at` is the file this actually came from.
  *
  * The messages named the default location, so a project passing
@@ -168,6 +194,7 @@ function parseAccepted(entries: readonly unknown[], at: string): AcceptedFinding
       advisory: typeof record["advisory"] === "string" ? record["advisory"] : "",
       aliases: aliasesOf(record["aliases"], fingerprint, at),
       severity: typeof record["severity"] === "string" ? record["severity"] : "",
+      ...versionsOf(record["versions"]),
       ...optional(record, "recordedAt"),
       ...optional(record, "reason"),
       ...optional(record, "acceptedBy"),
@@ -237,6 +264,16 @@ export function serializeBaseline(baseline: Baseline): string {
 }
 
 /** Fixed key order so a re-record produces a byte-identical file. */
+function versionsAt(
+  packageName: string,
+  installed: InstalledVersions | undefined,
+  before: AcceptedFinding | undefined,
+): { versions?: readonly string[] } {
+  const present = installed?.versions.get(packageName);
+  if (present !== undefined && present.size > 0) return { versions: [...present].sort() };
+  return before?.versions === undefined ? {} : { versions: before.versions };
+}
+
 function ordered(entry: AcceptedFinding): Record<string, unknown> {
   const out: Record<string, unknown> = {
     fingerprint: entry.fingerprint,
@@ -246,6 +283,7 @@ function ordered(entry: AcceptedFinding): Record<string, unknown> {
     aliases: [...entry.aliases].sort(),
     severity: entry.severity,
   };
+  if (entry.versions !== undefined) out["versions"] = [...entry.versions];
   for (const key of ["recordedAt", "reason", "acceptedBy", "expires"] as const) {
     if (entry[key] !== undefined) out[key] = entry[key];
   }
@@ -269,6 +307,7 @@ export function baselineFrom(
   sources?: readonly string[],
   recordedAt?: string,
   previous?: Baseline,
+  installed?: InstalledVersions,
 ): Baseline {
   const kept = new Map((previous?.accepted ?? []).map((entry) => [entry.fingerprint, entry]));
 
@@ -283,6 +322,9 @@ export function baselineFrom(
       advisory: finding.advisoryId,
       aliases: [...finding.aliases].sort(),
       severity: finding.severity,
+      // What this run can see wins; otherwise keep what an earlier one saw.
+      // A run without a lockfile must not erase a version already recorded.
+      ...versionsAt(finding.packageName, installed, before),
       ...(before?.recordedAt === undefined
         ? recordedAt === undefined
           ? {}

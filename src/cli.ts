@@ -221,7 +221,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       await mkdir(dirname(baselinePath), { recursive: true });
       await writeFile(
         baselinePath,
-        serializeBaseline(baselineFrom(all.fixNow, sources, today, baseline)),
+        serializeBaseline(baselineFrom(all.fixNow, sources, today, baseline, installed)),
         "utf8",
       );
     } catch (error) {
