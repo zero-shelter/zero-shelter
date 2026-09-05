@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.0.9
+
+**Five people from outside the team fixed something here.** Every contribution
+below came from someone who found an issue, read the file, and sent a change:
+manager-specific transitive advice (#143), a rendering defect in it (#155), the
+action pins in the CI example plus a check that keeps them pinned (#157), the
+scope of what a first run actually covers along with which scanner to reach for
+per domain and under which licence (#177), and one flag a space out of line in
+all three places the option list is written, with a test that now catches the
+next one (#162).
+
+**A scanner that crashed is not a scanner that is missing.** Three facts were
+two messages, and neither said "timed out". A scanner ended at our own
+120-second bound reported "produced no report", which reads as its fault rather
+than ours; on Windows, where a missing command surfaces as an exit code instead
+of `ENOENT`, any failure without output reported "not on PATH" and answered it
+with install instructions for a tool that was already installed. Both then left
+the run with one source and an exit code of 0. Absent, timed out and failed are
+now distinguishable, and only the first earns install advice.
+
+**One range written two ways is one range.** We built `< 0.2.4` from OSV's
+event list and took `<0.2.4` verbatim from npm, then showed both as though the
+sources disagreed about which versions were affected. On the pinned captures
+that was every finding on three of four projects — 173 of 173 on NodeGoat, 51
+of 51 on dvna, 11 of 11 on hackathon-starter. It also meant two findings with an
+identical range could not match as suspected duplicates, which is the one thing
+`possibleDuplicates` exists to do.
+
+**An acceptance dated `9999-99-99` never expired.** The date check accepted
+anything shaped like a date, and a string that sorts above every real one stays
+accepted forever while the file looks like it has a deadline on it — which is
+the exact failure the check's own comment says it was written to prevent. Real
+dates only now, leap years included.
+
+**The baseline records which versions were installed.** Nothing held the
+version actually in the tree: `vulnerableRange` is a range and `fixedIn` is the
+fix. It is the one piece of context a reader cannot recover later, and the one
+a PURL needs. Recorded, not scoped — an acceptance still applies after the tree
+moves, so a bump from one vulnerable version to another does not resurface a
+decision somebody already made.
+
+**Smaller things that were quietly wrong.** The plugin manifest still said
+0.0.1 six releases on, and a check now keeps it in step. The committed baseline
+is pinned to LF, so a Windows checkout no longer turns a one-line diff into a
+whole file. `docs/STABILITY.md` is now linked from the README, from
+`CONTRIBUTING.md` and from the CI skill — it existed since 0.0.8 and nothing a
+reader follows pointed at it. The contract test asserts the last frozen key it
+was not checking. And a CI comment claiming a gap was tracked, by an issue that
+did not exist, now points at #154 and carries the measurement instead.
+
 ## 0.0.8
 
 **The ratchet survives a second scanner.** README says the second source is the

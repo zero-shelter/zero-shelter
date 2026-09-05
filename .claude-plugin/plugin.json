@@ -1,10 +1,19 @@
 {
   "name": "zero-shelter",
   "description": "Judge dependency scanner output locally: what to fix now, and why.",
-  "version": "0.0.8",
-  "author": { "name": "zero-shelter" },
+  "version": "0.0.9",
+  "author": {
+    "name": "zero-shelter"
+  },
   "homepage": "https://github.com/zero-shelter/zero-shelter",
   "repository": "https://github.com/zero-shelter/zero-shelter",
   "license": "Apache-2.0",
-  "keywords": ["security", "dependencies", "sca", "npm-audit", "osv-scanner", "sarif"]
+  "keywords": [
+    "security",
+    "dependencies",
+    "sca",
+    "npm-audit",
+    "osv-scanner",
+    "sarif"
+  ]
 }
