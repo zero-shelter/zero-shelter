@@ -65,7 +65,20 @@ export type Capture = (
   command: string,
   args: readonly string[],
   options: ScanOptions,
-) => Promise<string | undefined>;
+) => Promise<CaptureOutcome>;
+
+/**
+ * Absent, timed out and failed are three different facts about a scanner, and
+ * they were two messages.
+ *
+ * A scanner killed at our own bound reported "produced no report", which reads
+ * as the scanner's fault. On Windows any failure without stdout reported "not
+ * on PATH", which sent someone to install a tool they already had. Both then
+ * left the run with one source and an exit code of 0.
+ */
+export type CaptureOutcome =
+  | { readonly ok: true; readonly stdout: string }
+  | { readonly ok: false; readonly why: "absent" | "timeout" | "failed"; readonly detail?: string };
 
 export interface ScanOptions {
   readonly cwd: string;
@@ -141,8 +154,9 @@ type Attempt =
  */
 async function runNpmAudit(options: ScanOptions): Promise<Attempt> {
   const run = options.capture ?? capture;
-  const stdout = await run("npm", ["audit", "--json"], options);
-  if (stdout === undefined) return { ok: false, reason: "npm is not available" };
+  const outcome = await run("npm", ["audit", "--json"], options);
+  if (!outcome.ok) return { ok: false, reason: whyOf("npm", outcome) };
+  const { stdout } = outcome;
   if (stdout.trim() === "") return { ok: false, reason: "npm produced no report" };
 
   // npm reports its own failures as JSON with an `error` envelope — no
@@ -181,21 +195,40 @@ function npmError(stdout: string): string | undefined {
 }
 
 /**
+ * One sentence for a scanner that did not produce a report.
+ *
+ * "Absent" earns install advice; the other two must not, because telling
+ * someone to install a tool they already have is how a real failure gets
+ * mistaken for a missing dependency.
+ */
+function whyOf(tool: string, outcome: { why: "absent" | "timeout" | "failed"; detail?: string }): string {
+  if (outcome.why === "absent") return `${tool} is not available`;
+  if (outcome.why === "timeout") {
+    return `${tool} timed out — ${outcome.detail ?? "no answer in time"}. It is installed and did not finish`;
+  }
+  return `${tool} failed: ${outcome.detail ?? "no output"}. It is installed and did not produce a report`;
+}
+
+/**
  * pnpm reports in the older `advisories` shape, which the npm parser already
  * reads — so this is a different process to spawn, not a different format to
  * support.
  */
 async function runPnpmAudit(options: ScanOptions): Promise<Attempt> {
   const run = options.capture ?? capture;
-  const stdout = await run("pnpm", ["audit", "--json"], options);
+  const outcome = await run("pnpm", ["audit", "--json"], options);
 
-  if (stdout === undefined) {
+  if (!outcome.ok) {
     return {
       ok: false,
       tool: "pnpm audit",
-      reason: "pnpm-lock.yaml is here but pnpm is not on PATH",
+      reason:
+        outcome.why === "absent"
+          ? "pnpm-lock.yaml is here but pnpm is not on PATH"
+          : whyOf("pnpm", outcome),
     };
   }
+  const { stdout } = outcome;
   if (stdout.trim() === "") {
     return { ok: false, tool: "pnpm audit", reason: "pnpm produced no report" };
   }
@@ -208,13 +241,16 @@ async function runPnpmAudit(options: ScanOptions): Promise<Attempt> {
 
 async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
   const run = options.capture ?? capture;
-  const stdout = await run(
+  const outcome = await run(
     "osv-scanner",
     ["--format", "json", "--recursive", options.cwd],
     options,
   );
 
-  if (stdout === undefined) {
+  if (!outcome.ok && outcome.why !== "absent") {
+    return { ok: false, reason: whyOf("osv-scanner", outcome) };
+  }
+  if (!outcome.ok) {
     // Cross-source reconciliation is where most of the noise reduction comes
     // from, so "optional" undersells it — but telling someone to go install
     // something without saying how is how a suggestion becomes a chore.
@@ -226,10 +262,11 @@ async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
         "https://github.com/google/osv-scanner/releases",
     };
   }
+  const { stdout } = outcome;
   if (stdout.trim() === "") return { ok: false, reason: "produced no report" };
 
   const version = await run("osv-scanner", ["--version"], options);
-  const parsed = version?.match(/\d+\.\d+\.\d+/)?.[0];
+  const parsed = version.ok ? version.stdout.match(/\d+\.\d+\.\d+/)?.[0] : undefined;
 
   return parsed === undefined
     ? { ok: true, stdout }
@@ -247,25 +284,66 @@ export async function capture(
   command: string,
   args: readonly string[],
   options: ScanOptions,
-): Promise<string | undefined> {
+): Promise<CaptureOutcome> {
+  const timeout = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   try {
     const { stdout } = await run(command, [...args], {
       cwd: options.cwd,
-      timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      timeout,
       maxBuffer: MAX_OUTPUT_BYTES,
       // npm and osv-scanner ship as .cmd shims on Windows, which execFile
       // cannot invoke without a shell.
       shell: process.platform === "win32",
     });
-    return stdout;
+    return { ok: true, stdout };
   } catch (error) {
-    const failure = error as NodeJS.ErrnoException & { stdout?: string };
+    const failure = error as NodeJS.ErrnoException & {
+      stdout?: string;
+      killed?: boolean;
+      signal?: string | null;
+    };
 
-    if (failure.code === "ENOENT") return undefined;
-    // A shell reports a missing command through the exit code instead.
-    if (process.platform === "win32" && failure.stdout === undefined) return undefined;
+    if (failure.code === "ENOENT") return { ok: false, why: "absent" };
 
-    // Findings were reported and the process exited non-zero. That is success.
-    return failure.stdout ?? undefined;
+    // `killed` is set when we ended it. Output already written is not a
+    // report — a scanner cut off mid-document yields truncated JSON, and
+    // parsing it would report our own timeout as the scanner's bad output.
+    if (failure.killed === true) {
+      return { ok: false, why: "timeout", detail: `no answer within ${timeout / 1000}s` };
+    }
+
+    // `shell: true` means a missing command surfaces as an exit code rather
+    // than ENOENT. Narrowed to the codes and words that mean exactly that:
+    // the old check treated every stdout-less failure as absence, so a crash
+    // or a permissions error was reported as "install this".
+    if (process.platform === "win32" && notRecognised(failure)) {
+      return { ok: false, why: "absent" };
+    }
+
+    // Findings were reported and the process exited non-zero. That is the
+    // normal case for a scanner and it is success.
+    const stdout = failure.stdout ?? "";
+    if (stdout.trim() !== "") return { ok: true, stdout };
+
+    return { ok: false, why: "failed", detail: describe(failure) };
   }
+}
+
+/** cmd.exe answers 9009 for a command it cannot find; PowerShell says so. */
+function notRecognised(failure: { code?: string | number | undefined; stderr?: unknown }): boolean {
+  if (failure.code === 9009 || failure.code === "9009") return true;
+  const said = typeof failure.stderr === "string" ? failure.stderr : "";
+  return /not recognized as|CommandNotFoundException|is not recognized/i.test(said);
+}
+
+function describe(failure: {
+  code?: string | number | null | undefined;
+  signal?: string | null | undefined;
+}): string {
+  if (typeof failure.signal === "string" && failure.signal !== "") {
+    return `ended by ${failure.signal}`;
+  }
+  return failure.code === undefined || failure.code === null
+    ? "no output and no exit code"
+    : `exited ${failure.code} with no output`;
 }

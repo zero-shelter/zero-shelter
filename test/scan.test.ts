@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Capture, collect } from "../src/scan.js";
+import { type Capture, type CaptureOutcome, collect } from "../src/scan.js";
 
 /**
  * These are the paths a green CI run does not cover.
@@ -53,8 +53,12 @@ const OSV = JSON.stringify({
 });
 
 /** Build a capture that answers per command, defaulting to "not installed". */
+/** A stubbed answer: a string is a report, undefined is a scanner that is not installed. */
+const answer = (stdout: string | undefined): CaptureOutcome =>
+  stdout === undefined ? { ok: false, why: "absent" } : { ok: true, stdout };
+
 function fake(responses: Record<string, string | undefined>): Capture {
-  return async (command) => responses[command];
+  return async (command) => answer(responses[command]);
 }
 
 describe("collect", () => {
@@ -133,9 +137,9 @@ describe("collect", () => {
 
   it("records the scanner version so a run can be reproduced", async () => {
     const capture: Capture = async (command, args) => {
-      if (command === "npm") return NPM_AUDIT;
-      if (args.includes("--version")) return "osv-scanner version 1.9.2\n";
-      return OSV;
+      if (command === "npm") return answer(NPM_AUDIT);
+      if (args.includes("--version")) return answer("osv-scanner version 1.9.2\n");
+      return answer(OSV);
     };
 
     const { findings } = await collect({ cwd: ".", capture });
@@ -145,9 +149,9 @@ describe("collect", () => {
 
   it("omits the version rather than inventing one when it cannot be read", async () => {
     const capture: Capture = async (command, args) => {
-      if (command === "npm") return NPM_AUDIT;
-      if (args.includes("--version")) return "unhelpful banner";
-      return OSV;
+      if (command === "npm") return answer(NPM_AUDIT);
+      if (args.includes("--version")) return answer("unhelpful banner");
+      return answer(OSV);
     };
 
     const { findings } = await collect({ cwd: ".", capture });
@@ -159,7 +163,7 @@ describe("collect", () => {
     const seen: string[][] = [];
     const capture: Capture = async (command, args) => {
       seen.push([command, ...args]);
-      return command === "npm" ? NPM_AUDIT : OSV;
+      return answer(command === "npm" ? NPM_AUDIT : OSV);
     };
 
     await collect({ cwd: "/some/project", capture });
