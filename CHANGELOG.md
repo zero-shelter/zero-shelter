@@ -1,5 +1,62 @@
 # Changelog
 
+## 0.0.10
+
+**Every project that is not npm was told its own dependencies were somebody
+else's.** Declare `lodash` in `package.json`, run this in a yarn project, and
+the report said the finding "arrives through another dependency" and offered a
+`resolutions` block — carrying a warning about breaking whatever pinned it, for
+a package nothing pinned. The one command that fixes it was never printed.
+
+Two sources decline to say whether a finding is direct, and both decline to a
+source that knows: osv-scanner reads a lockfile, which holds what is installed
+and not who asked for it, and pnpm and npm 6 emit the older report shape that
+has no `isDirect`. Merge resolves the group by requiring every member to say
+transitive, so the placeholder stands unless modern `npm audit` is in the room.
+On yarn it never is. On pnpm it never is. In Go, Python, Maven and Cargo it
+never is. `package.json` now answers the part it can answer, read once per run
+and handed to both parsers. yarn and pnpm get `yarn add lodash@4.18.0` and
+`pnpm add lodash@4.18.0`, with the `clears` count still honestly withheld where
+no lockfile reader can verify it.
+
+**One interrupted write turned recording off for good.** A cancelled workflow or
+a reclaimed runner leaves `history.jsonl` without its final newline. The next
+`--record` appended straight onto that broken line and became part of it, and so
+did the one after that. `history` went on reporting two entries and "1 line(s)
+could not be read", exit 0, while nothing had been recorded since. The only
+symptom is a history that stops growing, which looks exactly like a project
+where nobody runs the command. One byte read from the end of the file decides
+whether to write a newline first.
+
+**A misspelled `expires` gave you a deadline that did not exist.** `expires:
+"2020-01-01"` returns five acceptances to the report. `expiress: "2020-01-01"`
+was ignored in silence, exit 0, "nothing new to fix" — while the file looks like
+it has a six-year-old deadline on it. That is the failure 0.0.9's date check was
+written to prevent, arriving through the key instead of the value. Unknown keys
+are now named, with the list of keys we do act on beside them, so `expires` is
+visible next to `expiress`. A warning rather than a refusal: an unknown key is
+also what a newer zero-shelter's baseline looks like to an older one.
+
+**A clean first run opened by saying a scanner had failed.** A new project with
+no dependencies got `osv-scanner failed: exited 128 with no output. It is
+installed and did not produce a report` as its first line, on a project where
+nothing was wrong. 128 is osv-scanner's own code for "no package sources found"
+— it ran, and it had nothing to say. 0.0.9 separated absent, timed out and
+failed; this is the fourth outcome, and it was arriving as the third.
+
+**A yarn user was told to create a `package-lock.json`.** By a tool that had
+just read their `yarn.lock`. npm's own explanation was passed through verbatim,
+and it is correct for npm and wrong here: following it writes a second lockfile
+beside the first. We know which project it is from the lockfile in front of us.
+With no lockfile at all npm is answering the right question, so that case still
+gets npm's words.
+
+**Reviews are required now.** `main` takes one approving review with admins
+included, the seven CI checks, and a branch that is current. `.github/CODEOWNERS`
+asks all three owners without being asked to. This is written down because it
+changed after six pull requests went in on the strength of green CI alone —
+and twice that week a human review caught what seven green checks did not.
+
 ## 0.0.9
 
 **Five people from outside the team fixed something here.** Every contribution
