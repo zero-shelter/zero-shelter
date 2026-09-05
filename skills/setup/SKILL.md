@@ -74,11 +74,12 @@ start with Trivy — one install covers several of them.
 | source with no usable lockfile | first-party code | [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1) |
 | any history at all | secrets | [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT) |
 
-Why Opengrep and not Semgrep: Semgrep's engine was relicensed to LGPL-2.1
-with a separate rules licence restricting commercial and competing use
+Why Opengrep and not Semgrep: Semgrep's engine remains LGPL-2.1, but its
+rules repository moved to a separate licence restricting some commercial,
+SaaS, and competing-product use
 ([background](https://socket.dev/blog/opengrep-forks-semgrep)), so naming
 "semgrep" is itself a licence decision — Opengrep is the consortium-governed
-fork.
+fork created to preserve an open SAST ecosystem.
 
 On secrets: [TruffleHog](https://github.com/trufflesecurity/trufflehog)
 (AGPL-3.0) is also a good scanner, but that licence matters for commercial
@@ -104,10 +105,11 @@ Dockerfile, Terraform/IaC, Actions 워크플로, 시크릿, 직접 작성한 소
 | 쓸 만한 lockfile이 없는 소스 | 직접 작성한 코드 | [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1) |
 | 모든 히스토리 | 시크릿 | [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT) |
 
-Opengrep을 권하는 이유: Semgrep 엔진이 LGPL-2.1로 바뀌면서 상업적·경쟁적
-사용을 제한하는 별도 규칙 라이선스가 붙었고
+Opengrep을 권하는 이유: Semgrep 엔진은 LGPL-2.1 그대로지만, 규칙 저장소가
+일부 상업적·SaaS·경쟁 제품 사용을 제한하는 별도 라이선스로 바뀌었고
 ([배경](https://socket.dev/blog/opengrep-forks-semgrep)), "semgrep"이라
-쓰는 것 자체가 라이선스 결정이 된다 — Opengrep은 컨소시엄 운영 포크다.
+쓰는 것 자체가 라이선스 결정이 된다 — Opengrep은 열린 SAST 생태계를
+지키기 위해 만들어진 컨소시엄 운영 포크다.
 
 시크릿: [TruffleHog](https://github.com/trufflesecurity/trufflehog)
 (AGPL-3.0)도 좋은 스캐너지만 상용 제품에는 라이선스가 부담되므로 기본값은
