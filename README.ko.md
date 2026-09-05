@@ -301,6 +301,7 @@ CI가 Ubuntu·macOS·Windows에서 테스트를 돌리며 고정된 해시값을
 - [벤치마크](./bench/README.md) — 고정 대상, 동결 캡처, 라벨링 프로토콜
 - [서드파티 구성요소](./THIRD_PARTY.ko.md)
 - [기여 가이드](./CONTRIBUTING.ko.md) — 기여 흐름·명세·QA·PR 규칙
+- [기여자](./CONTRIBUTORS.ko.md) — 이 저장소에 작업이 들어간 모든 사람, `main`에서 생성
 - [Governance](./GOVERNANCE.ko.md) — Owner/Maintainer 결정과 release 경계
 - [보안·개인정보](./SECURITY.ko.md) — 신고와 보안 제어 기여 기준
 
@@ -351,6 +352,10 @@ Node 20 이상.
 시작할 곳을 찾는다면 [`good first issue`](https://github.com/zero-shelter/zero-shelter/labels/good%20first%20issue)를
 보세요. 파일과 줄을 지목하고, 결함을 재현하는 명령을 담고, 타이핑이 아니라 판단이
 필요한 부분이 어디인지 적어 둡니다.
+
+팀 밖에서 여섯 명이 변경을 넣었습니다. [CONTRIBUTORS.ko.md](./CONTRIBUTORS.ko.md)에
+있고, 기억해서 적는 것이 아니라 생성합니다 — 커밋 수 없이 알파벳순입니다. 한 줄이든
+백 줄이든 이 프로젝트가 스스로 하지 않아도 됐던 일이기 때문입니다.
 
 써 보고 쓸모가 있었다면 star가 다른 사람이 찾는 데 도움이 됩니다. 쓸모가 없었다면
 왜 그런지 적은 이슈가 더 값어치 있습니다.

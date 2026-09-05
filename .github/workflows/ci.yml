@@ -84,6 +84,29 @@ jobs:
       - name: Fail if either THIRD_PARTY file is stale
         run: git diff --exit-code THIRD_PARTY.md THIRD_PARTY.ko.md
 
+  # Deliberately `push` only, never on a pull request.
+  #
+  # CONTRIBUTORS.md changes when somebody new lands a commit on main — which
+  # means it goes stale the moment a first contribution merges, and a check on
+  # pull requests would fail the *next* person's PR for something they did not
+  # do. Failing here instead puts it in front of whoever merged, which is the
+  # right person and a good moment: the fix is `npm run contributors` and a
+  # one-line pull request welcoming them.
+  contributors:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - run: npm run contributors
+        env:
+          # The public endpoint works unauthenticated and is rate-limited by IP,
+          # which on a shared runner is somebody else's budget.
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Fail if either CONTRIBUTORS file is stale
+        run: git diff --exit-code CONTRIBUTORS.md CONTRIBUTORS.ko.md
+
   # The tool, run on this repository, by this repository. A security tool that
   # its own CI does not run is a claim rather than a product — and this job is
   # the only place the whole path (scanner subprocess, ingest, judgement,

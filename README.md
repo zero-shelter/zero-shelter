@@ -313,6 +313,7 @@ know about, including that the ranking predates the labels.
 - [Agent hook](./docs/AGENT-HOOK.md) — setup, and what it deliberately will not do
 - [Benchmark](./bench/README.md) — pinned targets, frozen captures, labelling protocol
 - [Contributing](./CONTRIBUTING.md) — contributor workflow, specs, QA, and PR rules
+- [Contributors](./CONTRIBUTORS.md) — everyone whose work is in here, generated from `main`
 - [Governance](./GOVERNANCE.md) — Owner/Maintainer decisions and release boundaries
 - [Security and privacy](./SECURITY.md) — reporting and security-control requirements
 
@@ -366,6 +367,11 @@ contributions.
 Looking for somewhere to start? [`good first issue`](https://github.com/zero-shelter/zero-shelter/labels/good%20first%20issue)
 names the file and the line, gives a command that reproduces the defect, and says
 which part needs a judgement rather than typing.
+
+Six people outside the team have landed a change here. They are in
+[CONTRIBUTORS.md](./CONTRIBUTORS.md), which is generated rather than
+remembered — alphabetical, no commit counts, because one line and one hundred
+lines are both work this project did not have to do itself.
 
 If it turned out useful, a star helps other people find it. If it did not, an
 issue saying why is worth more.
