@@ -170,3 +170,40 @@ describe("collect", () => {
     expect(seen.some((call) => call.includes("/some/project"))).toBe(true);
   });
 });
+
+/**
+ * osv-scanner exits 128 when it walks a tree and finds no package source in
+ * it — an empty lockfile, or a directory holding nothing it reads. It ran.
+ *
+ * Reported as a failure, that opened a new project's first run with a line
+ * saying part of the tool was broken, on a project where nothing was wrong.
+ * The three outcomes #159 separated needed a fourth. See #189.
+ */
+describe("a scanner that ran and had nothing to scan", () => {
+  it("is not reported as a failure", async () => {
+    const { skipped, contributed } = await collect({
+      cwd: ".",
+      capture: async (command) =>
+        command === "npm"
+          ? { ok: true, stdout: NPM_AUDIT }
+          : { ok: false, why: "failed", detail: "exited 128 with no output", exitCode: 128 },
+    });
+
+    expect(contributed).toEqual(["npm audit"]);
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]).not.toMatch(/failed|is installed|not on PATH/);
+    expect(skipped[0]).toContain("no package it could scan");
+  });
+
+  it("still reports any other non-zero exit as a failure", async () => {
+    const { skipped } = await collect({
+      cwd: ".",
+      capture: async (command) =>
+        command === "npm"
+          ? { ok: true, stdout: NPM_AUDIT }
+          : { ok: false, why: "failed", detail: "exited 127 with no output", exitCode: 127 },
+    });
+
+    expect(skipped[0]).toContain("failed");
+  });
+});

@@ -78,7 +78,19 @@ export type Capture = (
  */
 export type CaptureOutcome =
   | { readonly ok: true; readonly stdout: string }
-  | { readonly ok: false; readonly why: "absent" | "timeout" | "failed"; readonly detail?: string };
+  | {
+      readonly ok: false;
+      readonly why: "absent" | "timeout" | "failed";
+      readonly detail?: string;
+      /**
+       * The exit code, when the process got far enough to have one.
+       *
+       * Carried rather than interpreted: what a code means is the scanner's
+       * business, not ours. osv-scanner reserves 128 for "no package sources
+       * found", and only `runOsvScanner` knows that.
+       */
+      readonly exitCode?: number;
+    };
 
 export interface ScanOptions {
   readonly cwd: string;
@@ -239,6 +251,9 @@ async function runPnpmAudit(options: ScanOptions): Promise<Attempt> {
   return { ok: true, stdout, tool: "pnpm audit" };
 }
 
+/** osv-scanner's exit code for a tree with no package source in it. */
+const NOTHING_TO_SCAN = 128;
+
 async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
   const run = options.capture ?? capture;
   const outcome = await run(
@@ -247,6 +262,14 @@ async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
     options,
   );
 
+  // 128 is osv-scanner's own code for "no package sources found" — an empty
+  // lockfile, or a tree holding nothing it can read. It ran and it had nothing
+  // to say, which is the fourth outcome after absent, timed out and failed.
+  // Reporting it as a failure opened a new project's first run by telling the
+  // reader their scanner was broken.
+  if (!outcome.ok && outcome.exitCode === NOTHING_TO_SCAN) {
+    return { ok: false, reason: "found no package it could scan in this tree" };
+  }
   if (!outcome.ok && outcome.why !== "absent") {
     return { ok: false, reason: whyOf("osv-scanner", outcome) };
   }
@@ -343,7 +366,12 @@ export function classify(
   const stdout = failure.stdout ?? "";
   if (stdout.trim() !== "") return { ok: true, stdout };
 
-  return { ok: false, why: "failed", detail: describe(failure) };
+  return {
+    ok: false,
+    why: "failed",
+    detail: describe(failure),
+    ...(typeof failure.code === "number" ? { exitCode: failure.code } : {}),
+  };
 }
 
 /** cmd.exe answers 9009 for a command it cannot find; PowerShell says so. */

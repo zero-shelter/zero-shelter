@@ -124,6 +124,25 @@ describe("a command that failed", () => {
     }
   });
 
+  /**
+   * The code itself, not only its rendering. What a non-zero code means is the
+   * scanner's business — osv-scanner reserves 128 for "no package sources
+   * found" — and `classify` has no way to know which scanner it ran. See #189.
+   */
+  it("carries the exit code so the caller can read it", () => {
+    const outcome = classify({ code: 128, killed: false, signal: null, stdout: "" }, TIMEOUT, UNIX);
+
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) expect(outcome.exitCode).toBe(128);
+  });
+
+  it("has no exit code to carry when the process never got one", () => {
+    const outcome = classify({ code: null, killed: false, signal: "SIGKILL", stdout: "" }, TIMEOUT, UNIX);
+
+    expect(outcome.ok).toBe(false);
+    if (!outcome.ok) expect(outcome.exitCode).toBeUndefined();
+  });
+
   it("says so plainly when there is neither a code nor a signal", () => {
     const outcome = classify({ stdout: "" }, TIMEOUT, UNIX);
 
