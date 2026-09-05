@@ -97,7 +97,16 @@ function comparePrerelease(a: string | undefined, b: string | undefined): number
 
     const lNumeric = NUMERIC.test(l);
     const rNumeric = NUMERIC.test(r);
-    if (lNumeric && rNumeric) return Number(l) < Number(r) ? -1 : 1;
+    if (lNumeric && rNumeric) {
+      // BigInt rather than Number. semver puts no ceiling on a numeric
+      // identifier and a double does: 9007199254740992 and ...93 collapse to
+      // the same value, the comparison falls through to "higher", and the
+      // answer then depends on the order the versions arrived in.
+      const left = BigInt(l);
+      const right = BigInt(r);
+      if (left === right) continue;
+      return left < right ? -1 : 1;
+    }
     // "Numeric identifiers always have lower precedence than non-numeric."
     if (lNumeric !== rNumeric) return lNumeric ? -1 : 1;
     return l < r ? -1 : 1;

@@ -78,6 +78,30 @@ describe("prereleases", () => {
     expect(isHigher("1.0.0-1", "1.0.0-alpha")).toBe(false);
   });
 
+  /**
+   * semver puts no ceiling on a numeric identifier, and `Number` does. Two
+   * that differ past 2^53 collapse to the same double, the comparison falls
+   * through to "higher", and `isHigher` answers true in both directions —
+   * which makes `highest` depend on the order it saw them in. That is the bug
+   * this whole module exists to not have.
+   */
+  it("compare numeric identifiers beyond what a double can hold", () => {
+    const low = "1.0.0-9007199254740992";
+    const high = "1.0.0-9007199254740993";
+
+    expect(Number("9007199254740992")).toBe(Number("9007199254740993"));
+
+    expect(isHigher(high, low)).toBe(true);
+    expect(isHigher(low, high)).toBe(false);
+    expect(highest([low, high])).toBe(high);
+    expect(highest([high, low])).toBe(high);
+  });
+
+  it("treats two identical prereleases as neither higher", () => {
+    expect(isHigher("1.0.0-rc.1", "1.0.0-rc.1")).toBe(false);
+    expect(isHigher("1.0.0-alpha.beta", "1.0.0-alpha.beta")).toBe(false);
+  });
+
   it("rank a longer identifier list above its own prefix", () => {
     expect(isHigher("1.0.0-alpha.1", "1.0.0-alpha")).toBe(true);
     expect(isHigher("1.0.0-alpha", "1.0.0-alpha.1")).toBe(false);
