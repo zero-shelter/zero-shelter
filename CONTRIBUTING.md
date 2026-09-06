@@ -54,6 +54,8 @@ large refactor:
    follow the [Beta QA Guide](./docs/qa/README.md). Then open a PR using the template and include
    the evidence.
 
+> **If your pull request comes from a fork and no checks appear:** GitHub may hold the first workflow run from a fork until a maintainer approves it. Seeing no checks at first does not mean your change is broken. Approval timing depends on maintainer availability. If checks still have not started, leave a comment on the pull request saying that the checks have not started.
+
 An agent may help with any of these steps, but the human contributor owns the
 scope, correctness, and review of every changed file. Repository-local agent
 rules are in [`AGENTS.md`](./AGENTS.md).
