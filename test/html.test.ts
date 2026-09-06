@@ -161,6 +161,18 @@ describe("finding the action", () => {
     expect(page).toContain("Each line upgrades one package");
   });
 
+  it("withholds unverified clears counts outside npm", () => {
+    const pnpm = renderHtml(
+      judge(findings, { baseline: emptyBaseline(), packageManager: "pnpm" }),
+      { language: "en" },
+    );
+
+    expect(page).toContain('class="clears"');
+    expect(pnpm).toContain("pnpm add ");
+    expect(pnpm).not.toContain('class="clears"');
+    expect(pnpm).toContain("counts are not shown for pnpm");
+  });
+
   it("offers prompts that end by re-judging", () => {
     // An agent told only to upgrade reports the upgrade. One told to re-judge
     // reports what the tool says, which is the only claim worth making.

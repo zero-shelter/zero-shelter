@@ -44,6 +44,7 @@ export interface Messages {
   readonly glossaryTerms: readonly (readonly [string, string])[];
   readonly actNowEmpty: string;
   readonly clears: (count: number) => string;
+  readonly clearsUnavailable: (manager: string) => string;
   readonly copy: string;
   readonly copied: string;
   readonly selected: string;
@@ -135,6 +136,8 @@ const EN: Messages = {
   ],
   actNowEmpty: "No published fix applies to a direct dependency yet.",
   clears: (count) => `clears ${count}`,
+  clearsUnavailable: (manager) =>
+    `counts are not shown for ${manager}: verifying an upgrade reaches every copy needs a lockfile reader this tool only has for npm`,
   copy: "Copy",
   copied: "Copied",
   selected: "Selected — press ctrl-C",
@@ -237,6 +240,8 @@ const KO: Messages = {
   ],
   actNowEmpty: "직접 의존성에 적용되는 공개된 수정 버전이 아직 없습니다.",
   clears: (count) => `${count}건 해결`,
+  clearsUnavailable: (manager) =>
+    `${manager}에서는 건수를 표시하지 않습니다. 업그레이드가 모든 복사본에 도달하는지 확인하려면 현재 npm에만 있는 lockfile reader가 필요합니다.`,
   copy: "복사",
   copied: "복사됨",
   selected: "선택됨 — ctrl-C를 누르세요",

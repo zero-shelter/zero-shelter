@@ -18,7 +18,12 @@ import {
   transitiveFixes,
   upgradeActions,
 } from "./actions.js";
-import { overrideBlock, overridesField, type PackageManager } from "./package-manager.js";
+import {
+  canPromiseClears,
+  overrideBlock,
+  overridesField,
+  type PackageManager,
+} from "./package-manager.js";
 import type { JudgeResult } from "./report.js";
 import { WEIGHTS } from "./triage.js";
 import { type Language, messagesFor } from "./messages.js";
@@ -76,7 +81,7 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
     outstanding.length === 0
       ? verdict(result, t)
       : [
-          actionBlock(actions, result.workspaceRoot === true, t),
+          actionBlock(actions, result.workspaceRoot === true, t, manager),
           promptBlock(
             actions,
             indirect,
@@ -182,11 +187,13 @@ function actionBlock(
   actions: readonly { command: string; clears: number }[],
   workspaceRoot: boolean,
   t: ReturnType<typeof messagesFor>,
+  manager: PackageManager,
 ): string {
   if (actions.length === 0) {
     return `<section class="act"><h2>${escape(t.actNow)}</h2><p class="quiet">${escape(t.actNowEmpty)}</p></section>`;
   }
 
+  const promises = canPromiseClears(manager);
   const rows = actions.map(
     (action, index) =>
       // Only the first row is filled. Six identical filled bars is a card grid
@@ -194,7 +201,9 @@ function actionBlock(
       // the surface a restrained palette allows.
       `<li class="command${index === 0 ? " command--lead" : ""}">` +
       `<code>${escape(action.command)}</code>` +
-      (action.clears > 1 ? `<span class="clears">${escape(t.clears(action.clears))}</span>` : "") +
+      (action.clears > 1 && promises
+        ? `<span class="clears">${escape(t.clears(action.clears))}</span>`
+        : "") +
       `<button class="copy" type="button" data-copy="${escape(action.command)}" data-copied="${escape(t.copied)}" data-select="${escape(t.selected)}">${escape(t.copy)}</button>` +
       "</li>",
   );
@@ -204,6 +213,7 @@ function actionBlock(
     `<h2>${escape(t.actNow)}</h2>`,
     `<p class="how">${escape(t.actNowHow)}</p>`,
     `<ol class="commands">${rows.join("")}</ol>`,
+    promises ? "" : `<p class="caveat">${escape(t.clearsUnavailable(manager))}</p>`,
     workspaceRoot ? `<p class="caveat">${escape(t.workspaceCaveat)}</p>` : "",
     "</section>",
   ]

@@ -88,6 +88,11 @@ we care most about, because it is the one a schema check does not catch.
 Note that `partialFingerprints.zeroShelter` is stable across machines but not
 across changes to which scanners run — see #86.
 
+`--format html` follows the same package-manager evidence boundary as the
+terminal: it shows `clears N` only for npm, whose lockfile reader can verify
+that an upgrade reaches every installed copy, and explains why the count is
+withheld for pnpm and yarn.
+
 The baseline file format is not frozen. It is ours, it is going to change, and
 `judge` reads whatever version it finds.
 
