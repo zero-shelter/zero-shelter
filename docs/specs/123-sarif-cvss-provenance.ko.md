@@ -4,7 +4,7 @@
 
 - Issue: #123
 - 대상 layer: SARIF output integration
-- 관련 PR: 추가 예정
+- 관련 PR: #226
 
 ## 문제
 
