@@ -66,12 +66,24 @@ describe("stored scanner reports", () => {
 
     expect(recorded.code).toBe(0);
     expect(recorded.output).toContain("recorded");
+    expect(recorded.output).toContain("from npm-audit, osv-scanner");
     expect(rerun.code).toBe(0);
 
     const judgment = JSON.parse(rerun.output);
     expect(judgment.summary.fixNow).toBe(0);
     expect(judgment.summary.accepted).toBeGreaterThan(0);
     expect(judgment.fixNow).toEqual([]);
+  });
+
+  it("reports skipped scanners when updating baseline without extra lines on clean run", async () => {
+    const { cwd, npm } = await reports();
+    const withOne = ["judge", "--cwd", cwd, "--input", npm, "--baseline", "baseline.json"];
+
+    // With single stored report input, no scanners were skipped during collection
+    const single = await run([...withOne, "--update-baseline"]);
+    expect(single.code).toBe(0);
+    expect(single.output).toBe("recorded 4 finding(s) as accepted in baseline.json from npm-audit\n");
+    expect(single.output).not.toContain("skipped");
   });
 
   it("writes a valid SARIF report from stored scanner inputs", async () => {

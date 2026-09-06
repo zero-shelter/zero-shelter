@@ -18,7 +18,7 @@ import { collect, declaredDependencies, isWorkspaceRoot } from "./scan.js";
 import { cwdFromPayload, hookContext, hookOutput, readStdin } from "./hook.js";
 import { readInstalledVersions } from "./lockfile.js";
 import { detectPackageManager } from "./package-manager.js";
-import { colorEnabled, renderExplain, renderHuman, renderJson } from "./report.js";
+import { colorEnabled, renderExplain, renderHuman, renderJson, renderSkipped } from "./report.js";
 import { renderHtml } from "./html.js";
 import { isLanguage } from "./messages.js";
 import { renderSarif } from "./sarif.js";
@@ -230,8 +230,18 @@ export async function main(argv: readonly string[]): Promise<number> {
       process.stderr.write(`cannot write ${baselinePath}: ${reasonFor(error)}\n`);
       return 2;
     }
+    const color =
+      values["no-color"] !== true &&
+      colorEnabled(process.env, process.stdout.isTTY === true);
+    if (result.skipped.length > 0) {
+      process.stdout.write(renderSkipped(result.skipped, color));
+    }
+    const sourceSummary =
+      sources !== undefined && sources.length > 0
+        ? ` from ${sources.join(", ")}`
+        : "";
     process.stdout.write(
-      `recorded ${all.fixNow.length} finding(s) as accepted in ${values.baseline ?? BASELINE_PATH}\n`,
+      `recorded ${all.fixNow.length} finding(s) as accepted in ${values.baseline ?? BASELINE_PATH}${sourceSummary}\n`,
     );
     return 0;
   }

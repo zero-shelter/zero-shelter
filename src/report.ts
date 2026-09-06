@@ -603,3 +603,14 @@ export function renderJson(result: JudgeResult): string {
     2,
   )}\n`;
 }
+
+/**
+ * Format skipped scanner notes matching the human renderer style.
+ */
+export function renderSkipped(skipped: readonly string[], color: boolean): string {
+  if (skipped.length === 0) return "";
+  const paint = (text: string, code: string): string =>
+    color ? `${code}${text}${COLOR.reset}` : text;
+  return skipped.map((note) => paint(`  ${note}`, COLOR.dim)).join("\n") + "\n\n";
+}
+
