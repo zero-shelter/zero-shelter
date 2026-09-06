@@ -324,6 +324,9 @@ function transitiveBlock(
 
 function ledger(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
   let previousPackage = "";
+  const byFingerprint = new Map(
+    result.fixNow.map((entry) => [entry.finding.fingerprint, entry.finding]),
+  );
 
   const rows = result.fixNow.map((entry) => {
     const f = entry.finding;
@@ -352,7 +355,7 @@ function ledger(result: JudgeResult, t: ReturnType<typeof messagesFor>): string 
       `<span class="c-num">${escape(String(entry.score))}</span>`,
       `<span class="c-src">${f.tools.map((tool) => `<code>${escape(tool)}</code>`).join(" ")}</span>`,
       "</summary>",
-      reasons(entry.reasons, f, t),
+      reasons(entry.reasons, f, byFingerprint, t),
       "</details>",
     ].join("");
   });
@@ -378,6 +381,7 @@ function ledger(result: JudgeResult, t: ReturnType<typeof messagesFor>): string 
 function reasons(
   entries: readonly { label: string; points: number }[],
   finding: MergedFinding,
+  byFingerprint: ReadonlyMap<string, MergedFinding>,
   t: ReturnType<typeof messagesFor>,
 ): string {
   const lines = entries.map(
@@ -401,11 +405,21 @@ function reasons(
   }
   if (finding.relatedTo.length > 0) {
     extras.push(
-      `<li><span class="num"></span>${escape(t.maybeDuplicate)}: ${finding.relatedTo.map((fingerprint) => `<code>${escape(fingerprint)}</code>`).join(" ")}</li>`,
+      `<li><span class="num"></span>${escape(t.maybeDuplicate)}: ${finding.relatedTo.map((fingerprint) => `<code>${escape(duplicateName(fingerprint, byFingerprint))}</code>`).join(" ")}</li>`,
     );
   }
 
   return `<ul class="reasons">${lines.join("")}${extras.join("")}</ul>`;
+}
+
+function duplicateName(
+  fingerprint: string,
+  byFingerprint: ReadonlyMap<string, MergedFinding>,
+): string {
+  const other = byFingerprint.get(fingerprint);
+  if (other === undefined) return fingerprint;
+
+  return `${other.advisoryId}${other.fixedIn === undefined ? "" : ` (fixed in ${other.fixedIn})`}`;
 }
 
 /**
