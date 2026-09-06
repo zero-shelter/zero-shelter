@@ -45,7 +45,7 @@ Record what is already there, and from then on you only hear about what is new:
 
 ```console
 $ npx zero-shelter judge --update-baseline
-recorded 13 finding(s) as accepted in .zero-shelter/baseline.json
+recorded 13 finding(s) from npm audit, osv-scanner as accepted in .zero-shelter/baseline.json
 
 $ npx zero-shelter judge
 ✓ nothing new to fix
