@@ -16,6 +16,7 @@ const read = (path: string): string =>
   readFileSync(fileURLToPath(new URL(`../${path}`, import.meta.url)), "utf8");
 
 const cli = read("src/cli.ts");
+const architecture = read("docs/architecture.md");
 const docs = {
   "README.md": read("README.md"),
   "README.ko.md": read("README.ko.md"),
@@ -180,6 +181,18 @@ describe("the docs describe the tool that exists", () => {
       for (const entry of offsets) {
         expect(entry.descIndex, `misaligned or missing desc in ${name}: "${entry.line}"`).toBe(expectedCol);
       }
+    }
+  });
+});
+
+describe("contributor documentation", () => {
+  it("keeps the architecture dispatch snippet aligned with the CLI", () => {
+    for (const dispatch of [
+      'if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw, declared);',
+      'if ("results" in record) return parseOsv(raw, undefined, declared);',
+    ]) {
+      expect(cli, `CLI no longer contains: ${dispatch}`).toContain(dispatch);
+      expect(architecture, `architecture.md is stale: ${dispatch}`).toContain(dispatch);
     }
   });
 });
