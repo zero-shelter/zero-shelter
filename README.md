@@ -162,15 +162,19 @@ worse than saying nothing. See [docs/AGENT-HOOK.md](./docs/AGENT-HOOK.md).
 ```console
 $ npx zero-shelter judge --record     # appends one line to .zero-shelter/history.jsonl
 $ npx zero-shelter history
-  2026-08-20T09:14:02.118Z    9 outstanding  +9
-  2026-08-21T11:02:55.700Z    7 outstanding  -2
-  2026-08-22T08:31:10.042Z   10 outstanding  +3
+  2026-08-20T09:14:02.118Z  16 reported → 7 after merge →    7 outstanding  +7       0 accepted (baseline entries matched)
+  2026-08-21T11:02:55.700Z   4 reported → 2 after merge →    2 outstanding  -5 +2    0 accepted (baseline entries matched)
+  2026-08-22T08:31:10.042Z   4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
 ```
 
 Nothing is recorded unless a run is asked to. The file is JSONL: one line per
 run, readable with `tail`, diffable in a pull request, and holding the
 fingerprints rather than only the counts, because counts cannot tell "two fixed
 and two appeared" from "nothing changed".
+
+History rows show the raw reports, the count after merging, and the findings
+still outstanding. `accepted` is the number of baseline entries matched by that
+run, not the size of the baseline.
 
 It says *no longer reported*, never *fixed*. A finding also leaves the list
 when it is accepted into the baseline, or when the scanner that found it did
