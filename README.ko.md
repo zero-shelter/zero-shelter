@@ -121,7 +121,7 @@ yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습
 
 advisory가 CVSS vector를 제공하면 각 SARIF 결과는 그 값을
 `properties.cvssVector`에 그대로 보존합니다. scanner 출력에는 vector만 있고 숫자
-score는 없으므로 GitHub의 숫자형 `security_severity`는 대략적인 severity band
+score는 없으므로 GitHub의 숫자형 `security-severity`는 대략적인 severity band
 fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 score를 만들지는 않습니다.
 
 여기엔 짚어 둘 만한 아이러니가 있습니다. 이 프로젝트는 서로 다른 도구의 SARIF를
@@ -160,8 +160,8 @@ fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 sco
 $ npx zero-shelter judge --record     # .zero-shelter/history.jsonl에 한 줄 덧붙임
 $ npx zero-shelter history
   2026-08-20T09:14:02.118Z  16 reported → 7 after merge →    7 outstanding  +7       0 accepted (baseline entries matched)
-  2026-08-21T11:02:55.700Z   4 reported → 2 after merge →    2 outstanding  -5 +2    0 accepted (baseline entries matched)
-  2026-08-22T08:31:10.042Z   4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
+  2026-08-21T11:02:55.700Z  4 reported → 2 after merge →    2 outstanding  +2 -7    0 accepted (baseline entries matched)
+  2026-08-22T08:31:10.042Z  4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
 ```
 
 요청한 실행만 기록합니다. 파일은 JSONL이라 `tail`로 읽히고 PR에서 diff가 됩니다.
