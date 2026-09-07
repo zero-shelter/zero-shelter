@@ -1,0 +1,18 @@
+# Who gets asked to review, automatically.
+#
+# Until now reviewers were added by hand on each pull request, which works
+# exactly as long as the person opening it remembers. Six pull requests went in
+# on 2026-09-05 with reviewers requested and nobody waiting for them, so the
+# reminder has to come from the repository rather than from whoever is in a
+# hurry.
+#
+# All three of us, on everything. The project is small enough that any of us may
+# be the only one available, and narrowing this by path would mostly encode who
+# happened to write a file first.
+#
+# GitHub does not request a review from the author of a pull request, so this
+# means "the other two" in practice.
+#
+# Branch protection is what makes it binding: an approval is required and
+# admins are not exempt. Without that this file only suggests.
+* @msnodeve @PresentJay @hadevyi
