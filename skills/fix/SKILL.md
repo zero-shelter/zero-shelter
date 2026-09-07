@@ -1,5 +1,5 @@
 ---
-description: Apply the upgrades zero-shelter asked for and check they worked, including the transitive ones npm i cannot reach. Use when someone wants dependency findings fixed, asks to resolve vulnerabilities, or says to do what the report says. Korean requests look like: 의존성 취약점 고쳐줘, 취약점 해결해줘, 리포트대로 조치해줘.
+description: Apply the upgrades zero-shelter asked for and check they worked, including transitive findings a top-level install cannot reach. Use when someone wants dependency findings fixed, asks to resolve vulnerabilities, or says to do what the report says. Korean requests look like: 의존성 취약점 고쳐줘, 취약점 해결해줘, 리포트대로 조치해줘.
 ---
 
 # Fixing what the judgement found
@@ -28,14 +28,15 @@ from a patch on a leaf dependency. Get agreement before running anything.
 
 ## 3. `transitiveFixes` is not a list of commands
 
-These packages arrive through someone else's dependency. `npm i` on one adds a
-top-level entry nobody asked for and leaves the vulnerable copy exactly where
-it was.
+These packages arrive through someone else's dependency. Installing one as a
+top-level package adds an entry nobody asked for and leaves the vulnerable copy
+exactly where it was.
 
-The mechanism that works is `overrides`, and it carries a real risk: it
-overrides a version a parent package pinned deliberately, which can break that
-parent. Propose it, name the risk, and let the person decide. Never add
-overrides as part of "just fixing it".
+The mechanism that works is the package manager's forced-version feature, and it
+carries a real risk: it can override a version a parent package pinned
+deliberately, which can break that parent. Use the manager-specific form shown
+by the report, name the risk, and let the person decide. Never add a forced
+version as part of "just fixing it".
 
 ## 4. Re-run this tool, and quote what it says
 
@@ -81,7 +82,7 @@ Some findings have no published fix. Say so plainly and stop. Do not:
 
 ## What never happens here
 
-- Editing `package.json` versions by hand instead of installing. The lockfile
-  is what the scanners read.
+- Editing manifest versions by hand instead of installing. The lockfile is what
+  the scanners read.
 - Running `--update-baseline` without being asked, or as a way to finish a task.
 - Reporting success from the plan rather than from a re-run.

@@ -445,6 +445,35 @@ await check("no skill teaches a flag the CLI rejects", "all accepted", async () 
   return `${seen.size} distinct flags, all documented`;
 });
 
+/**
+ * A skill can mention a scanner by name, but it must not hand an agent a
+ * dependency-fix command for one package manager. The report already carries
+ * the command and the manager-specific forced-version form; duplicating either
+ * in a skill is how guidance drifts after a new manager is added.
+ */
+await check("no skill teaches manager-specific dependency remedies", "manager-neutral", async () => {
+  const { readdirSync } = await import("node:fs");
+  const install = /\b(?:npm|pnpm|yarn)\s+(?:i|install|add|update|upgrade|remove|uninstall)\b/i;
+  const forcedVersion = /\b(?:overrides|resolutions)\b/i;
+  const dependencyContext = /dependency|finding|fix|remed|transitive|package|lockfile/i;
+  const violations = [];
+
+  for (const skill of readdirSync(join(ROOT, "skills"))) {
+    const path = join(ROOT, "skills", skill, "SKILL.md");
+    for (const [index, line] of (await readFile(path, "utf8")).split(/\r?\n/).entries()) {
+      if (install.test(line) && !/\bzero-shelter\b/i.test(line)) {
+        violations.push(`${skill}/SKILL.md:${index + 1} install command`);
+      }
+      if (forcedVersion.test(line) && dependencyContext.test(line)) {
+        violations.push(`${skill}/SKILL.md:${index + 1} forced-version key`);
+      }
+    }
+  }
+
+  expect(violations.length === 0, `manager-specific dependency remedies: ${violations.join(", ")}`);
+  return `${readdirSync(join(ROOT, "skills")).length} skills, no manager-specific remedies`;
+});
+
 // ── report ──────────────────────────────────────────────────────────────────
 
 console.log("");
