@@ -99,7 +99,11 @@ A run without `osv-scanner` still works and says so rather than failing. It is
 just the smaller half of the tool.
 
 pnpm projects work the same way: a `pnpm-lock.yaml` makes it run `pnpm audit`
-instead. npm 6's older report shape is read too.
+instead. npm 6's older report shape is read too. That shape carries a patched
+range rather than one version; when it names a stable version as an inclusive
+lower bound, zero-shelter passes that version through to the package-manager
+command. Exclusive, prerelease, and compound ranges remain without a command
+until they can be selected safely; `<0.0.0>` remains "no published fix".
 
 yarn has no second source without `osv-scanner` and no first source either —
 `npm audit` cannot read `yarn.lock`, and yarn v1 writes NDJSON, which this tool

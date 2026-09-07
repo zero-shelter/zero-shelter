@@ -111,6 +111,7 @@ function parseAdvisories(
 
     const advisoryId = pickAdvisoryId(aliases);
     const patched = asString(advisory["patched_versions"]);
+    const hasPatch = patched !== undefined && patched.trim() !== "<0.0.0";
 
     const finding: ScaFinding = {
       kind: "SCA",
@@ -131,14 +132,25 @@ function parseAdvisories(
       // a guess. See isTransitive.
       transitive: isTransitive(normalizeText(packageName), declared),
       // "<0.0.0" is how this format spells "no patch exists".
-      fixAvailable: patched !== undefined && patched !== "<0.0.0",
+      fixAvailable: hasPatch,
       sources: [{ tool: TOOL, ruleId: advisoryId }],
     };
 
-    findings.push(finding);
+    const fixedIn = hasPatch ? fixedVersionFromPatchedRange(patched) : undefined;
+    findings.push(fixedIn === undefined ? finding : { ...finding, fixedIn });
   }
 
   return findings.sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1));
+}
+
+/**
+ * Return a fixed version only when the old report names an inclusive, stable
+ * lower bound by itself. An exclusive bound, a prerelease, or a compound range
+ * needs semver/range-aware selection and must not become an install command by
+ * accident.
+ */
+function fixedVersionFromPatchedRange(range: string): string | undefined {
+  return /^>=\s*(\d+\.\d+\.\d+)\s*$/.exec(range.trim())?.[1];
 }
 
 /**

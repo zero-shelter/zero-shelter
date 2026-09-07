@@ -3,6 +3,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseNpmAudit } from "../src/ingest/npm-audit.js";
 import { normalizeAliases, pickAdvisoryId } from "../src/finding.js";
+import { upgradeActions } from "../src/actions.js";
+import { mergeFindings } from "../src/merge.js";
+import { rank } from "../src/triage.js";
 
 const fixture = readFileSync(
   fileURLToPath(new URL("./fixtures/npm-audit.json", import.meta.url)),
@@ -191,7 +194,65 @@ describe("the advisories shape (pnpm, yarn v1, npm 6)", () => {
 
   it("reads '<0.0.0' as the way this format spells 'no fix yet'", () => {
     expect(pnpm.find((f) => f.packageName === "lodash")?.fixAvailable).toBe(false);
+    expect(pnpm.find((f) => f.packageName === "lodash")?.fixedIn).toBeUndefined();
     expect(pnpm.find((f) => f.packageName === "minimist")?.fixAvailable).toBe(true);
+  });
+
+  it("derives the fixed version from an older advisories report", () => {
+    expect(pnpm.find((f) => f.packageName === "minimist")?.fixedIn).toBe("0.2.1");
+  });
+
+  it("keeps fixed versions from a captured pnpm audit report", () => {
+    // Captured from pnpm 8.15.9 audit --json for lodash@4.17.11.
+    const captured = parseNpmAudit(
+      readFileSync(
+        fileURLToPath(new URL("./fixtures/pnpm-audit-captured.json", import.meta.url)),
+        "utf8",
+      ),
+    );
+
+    expect(captured).toHaveLength(7);
+    expect(captured.every((finding) => finding.fixedIn !== undefined)).toBe(true);
+    expect(new Set(captured.map((finding) => finding.fixedIn))).toEqual(
+      new Set(["4.17.12", "4.17.19", "4.17.21", "4.17.23", "4.18.0"]),
+    );
+  });
+
+  it("does not turn unsupported patched ranges into install versions", () => {
+    const report = (patched_versions: string) =>
+      JSON.stringify({
+        advisories: {
+          "1": {
+            id: 1,
+            module_name: "example",
+            severity: "high",
+            vulnerable_versions: "<2.0.0",
+            patched_versions,
+            cves: ["CVE-2026-0001"],
+          },
+        },
+      });
+
+    expect(parseNpmAudit(report(">1.2.3"))[0]?.fixedIn).toBeUndefined();
+    expect(parseNpmAudit(report(">=2.0.0-beta.1"))[0]?.fixedIn).toBeUndefined();
+    expect(parseNpmAudit(report(">=1.2.3 <2.0.0"))[0]?.fixedIn).toBeUndefined();
+  });
+
+  it("lets a declared older-shape finding reach its package-manager command", () => {
+    const direct = parseNpmAudit(
+      readFileSync(
+        fileURLToPath(new URL("./fixtures/pnpm-audit.json", import.meta.url)),
+        "utf8",
+      ),
+      new Set(["minimist"]),
+    );
+
+    expect(upgradeActions(rank(mergeFindings(direct)), undefined, "pnpm")).toContainEqual({
+      packageName: "minimist",
+      upgradeTo: "0.2.1",
+      clears: 1,
+      command: "pnpm add minimist@0.2.1",
+    });
   });
 
   it("does not claim to know whether a dependency is direct", () => {
