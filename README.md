@@ -123,6 +123,11 @@ or the `overrides` entry that forces a transitive one. Fingerprints are stable
 across machines and runs, so GitHub recognises an alert it has already seen
 instead of reopening it every build.
 
+When an advisory supplies a CVSS vector, each SARIF result preserves it exactly
+as `properties.cvssVector`. GitHub's numeric `security_severity` remains a
+coarse severity-band fallback because the scanner output supplies vectors but
+no numeric score; zero-shelter does not derive one with floating-point math.
+
 There is an irony here worth naming: this project exists because SARIF from
 different tools cannot be reconciled by the tools that consume it. Emitting
 SARIF is not a contradiction — downstream receives one already-judged run

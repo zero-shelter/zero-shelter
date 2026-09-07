@@ -157,6 +157,9 @@ function toResult(
       tools: finding.tools,
       aliases: finding.aliases,
       possibleDuplicates: finding.relatedTo,
+      // Preserve the advisory's evidence without deriving a floating-point
+      // score from it. SARIF consumers can interpret the vector themselves.
+      ...(finding.cvssVector === undefined ? {} : { cvssVector: finding.cvssVector }),
       ...(remedy === undefined ? {} : { remedy }),
     },
   };
@@ -194,9 +197,10 @@ function remedyFor(
 }
 
 /**
- * GitHub renders this as the severity band on an alert. It expects a CVSS-style
- * number, so the mapping is coarse and deliberately conservative — we do not
- * have a CVSS vector and will not invent one.
+ * GitHub renders this as the severity band on an alert. It expects a numeric
+ * CVSS-style value, but the scanner captures publish vectors without numeric
+ * scores. Keep this coarse deterministic fallback while carrying the source
+ * vector losslessly in each result's properties.
  */
 function securitySeverity(severity: string): string {
   switch (severity) {

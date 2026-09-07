@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { parseNpmAudit } from "../src/ingest/npm-audit.js";
+import { parseOsv } from "../src/ingest/osv.js";
 import { emptyBaseline, baselineFrom } from "../src/baseline.js";
 import { judge } from "../src/judge.js";
 import { fromPackages } from "../src/lockfile.js";
@@ -14,6 +15,10 @@ const raw = readFileSync(
 );
 const result = judge(parseNpmAudit(raw), { baseline: emptyBaseline() });
 const sarif = JSON.parse(renderSarif(result));
+const osvRaw = readFileSync(
+  fileURLToPath(new URL("../bench/captures/juice-shop/osv-scanner.json", import.meta.url)),
+  "utf8",
+);
 
 describe("renderSarif", () => {
   it("declares the version consumers check for", () => {
@@ -82,6 +87,34 @@ describe("renderSarif", () => {
         result.fixNow[index]?.reasons.length ?? 0,
       );
     }
+  });
+
+  it("preserves the advisory CVSS vector exactly in result properties", () => {
+    const osvResult = judge(parseOsv(osvRaw), { baseline: emptyBaseline() });
+    const withVector = osvResult.fixNow.find((entry) => entry.finding.cvssVector !== undefined);
+    expect(withVector).toBeDefined();
+
+    const output = JSON.parse(renderSarif(osvResult));
+    const alert = output.runs[0].results.find(
+      (entry: { ruleId: string }) => entry.ruleId === withVector?.finding.advisoryId,
+    );
+
+    expect(alert).toBeDefined();
+    expect(alert.properties.cvssVector).toBe(withVector?.finding.cvssVector);
+  });
+
+  it("omits the CVSS property when the source did not publish a vector", () => {
+    const source = parseOsv(osvRaw).find((finding) => finding.cvssVector !== undefined);
+    expect(source).toBeDefined();
+    if (source === undefined) return;
+
+    const { cvssVector, ...withoutVector } = source;
+    const output = JSON.parse(
+      renderSarif(judge([withoutVector], { baseline: emptyBaseline() })),
+    );
+
+    expect(cvssVector).toMatch(/^CVSS:/);
+    expect(output.runs[0].results[0].properties.cvssVector).toBeUndefined();
   });
 
   it("links each advisory to somewhere the reader can go", () => {

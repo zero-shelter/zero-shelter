@@ -119,6 +119,11 @@ yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습
 강제하는 `overrides` 항목입니다. 지문이 기기와 실행에 걸쳐 안정적이라, GitHub이 이미
 본 알림을 매 빌드마다 다시 여는 대신 알아봅니다.
 
+advisory가 CVSS vector를 제공하면 각 SARIF 결과는 그 값을
+`properties.cvssVector`에 그대로 보존합니다. scanner 출력에는 vector만 있고 숫자
+score는 없으므로 GitHub의 숫자형 `security_severity`는 대략적인 severity band
+fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 score를 만들지는 않습니다.
+
 여기엔 짚어 둘 만한 아이러니가 있습니다. 이 프로젝트는 서로 다른 도구의 SARIF를
 그걸 받는 도구들이 맞대지 못하기 때문에 존재합니다. 그런 우리가 SARIF를 내보내는
 건 모순이 아닙니다. 받는 쪽이 가져가는 것은 맞대는 데 실패할 원시 실행 네 개가 아니라
