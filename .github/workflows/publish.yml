@@ -25,6 +25,9 @@ permissions:
 
 jobs:
   publish:
+    # A stalled publish holds the release open with no way to tell whether the
+    # tarball went out. Bounded for the same reason as the CI jobs — see #158.
+    timeout-minutes: 20
     runs-on: ubuntu-latest
 
     steps:
