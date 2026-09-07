@@ -29,10 +29,16 @@ jobs:
 
       # Optional. Without it only npm audit runs, and the two sources cannot be
       # reconciled — which is where most of the deduplication comes from.
-      - name: Install osv-scanner
+      #
+      # Pinned by version and verified by checksum: a security tool that curls
+      # an unverified binary into its own pipeline has no standing to lecture
+      # anyone about supply chains. Check the checksum for the version you
+      # pin; the one below is v2.5.0 linux/amd64 — see skills/ci/SKILL.md.
+      - name: Install osv-scanner (pinned, checksum-verified)
         run: |
           curl -sSfL -o /usr/local/bin/osv-scanner \
-            https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
+            https://github.com/google/osv-scanner/releases/download/v2.5.0/osv-scanner_linux_amd64
+          echo "edcfc41d257db36148f065055655fe3fcfc434b0b423ea67468a84c207524e0c  /usr/local/bin/osv-scanner" | sha256sum -c -
           chmod +x /usr/local/bin/osv-scanner
 
       # continue-on-error so the SARIF still uploads when findings are present.
