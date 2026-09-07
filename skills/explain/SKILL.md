@@ -14,7 +14,7 @@ Shape:
 {
   "summary": { "raw": 7, "merged": 7, "fixNow": 7, "shown": 7, "accepted": 0, "noLongerReported": 0 },
   "skipped": ["osv-scanner skipped: not on PATH (optional …)"],
-  "upgrades": [{ "packageName": "lodash", "upgradeTo": "4.18.1", "clears": 7, "command": "npm i lodash@4.18.1" }],
+  "upgrades": [{ "packageName": "lodash", "upgradeTo": "4.18.1", "clears": 7, "command": "<manager command from the report>" }],
   "transitiveFixes": [{ "packageName": "tar", "upgradeTo": "7.5.21", "clears": 2 }],
   "noLongerReported": [],
   "fixNow": [
@@ -46,8 +46,8 @@ Shape:
 | `tools` | Two entries means two scanners independently reported it |
 | `possibleDuplicates` | Suspected same-as, **not merged**. Deliberate: hiding a real vulnerability is worse than showing a duplicate |
 | `upgrades` | The commands. Already grouped and version-compared — use these instead of deriving your own from `fixedIn` |
-| `workspaceRoot` | `npm i` here lands in the root package. Say the command needs `-w <workspace>`; nothing can tell you which one, because npm hoists |
-| `transitiveFixes` | Has a fix, but arrives through another dependency. `npm i` does not fix these; `overrides` does, at the risk of breaking the parent |
+| `workspaceRoot` | The command from `upgrades` here lands in the root package. Tell the user which workspace option their manager requires; nothing can tell you which one, because hoisting is manager-specific |
+| `transitiveFixes` | Has a fix, but arrives through another dependency. Do not install it as a top-level dependency; use the manager-specific forced-version action shown by the report, at the risk of breaking the parent |
 | `noLongerReported` | Accepted findings nothing reported this run |
 
 ## How to present it
@@ -56,8 +56,8 @@ Lead with `upgrades` — a command is an action; a paragraph about prototype
 pollution is not.
 
 ```
-npm i lodash@4.18.1        clears 7 of the 9, including both criticals
-2 more have a fix but come in through other packages (overrides can force them)
+the command in `upgrades`     clears 7 of the 9, including both criticals
+2 more have a fix but come in through other packages (the report shows the manager-specific forced-version action)
 The remaining 3 have no published fix; they are listed so you know they exist.
 ```
 

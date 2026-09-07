@@ -16,7 +16,7 @@ Read the exit code — it is the answer, not decoration:
 |---|---|---|
 | 0 | Scanned, nothing new to fix | Say so and stop |
 | 1 | New findings | Walk through them (see `/zero-shelter:explain`) |
-| 2 | **Could not judge** | Never report this as clean. The message says why — usually no lockfile, so `npm i --package-lock-only` first |
+| 2 | **Could not judge** | Never report this as clean. The message says why — usually no usable lockfile, so create one with the project's package manager first |
 
 Requires Node 20+. If it prints a Node version message, that is the whole
 problem; do not try to work around it.
