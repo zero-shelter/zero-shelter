@@ -47,8 +47,8 @@ jobs:
 
   # The declared floor must be exercised explicitly. Runner images move
   # independently, so the OS matrix above does not prove that Node 20 still
-  # works. The hosted tool cache avoids adding an unpinned setup action while
-  # still failing loudly if GitHub stops providing the required runtime.
+  # works. Node 20 is no longer in the hosted tool cache, so install one
+  # release directly with a pinned checksum instead of adding an action.
   node20:
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -56,15 +56,22 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Select Node 20 from the runner tool cache
+      - name: Install Node 20 with a pinned checksum
         shell: bash
         run: |
           set -euo pipefail
-          node20_path="$(find -L "$RUNNER_TOOL_CACHE/node" -type f -name node -path '*/20.*/*' | sort -V | tail -n 1)"
-          test -n "$node20_path"
-          node20_bin="$(dirname "$node20_path")"
-          echo "$node20_bin" >> "$GITHUB_PATH"
-          "$node20_path" --version
+          node_version="20.20.2"
+          archive="node-v${node_version}-linux-x64.tar.xz"
+          archive_path="${RUNNER_TEMP}/${archive}"
+          install_dir="${RUNNER_TEMP}/node20"
+          curl --fail --silent --show-error --location \
+            --output "$archive_path" \
+            "https://nodejs.org/dist/v${node_version}/${archive}"
+          echo "df770b2a6f130ed8627c9782c988fda9669fa23898329a61a871e32f965e007d  $archive_path" | sha256sum --check
+          mkdir -p "$install_dir"
+          tar -xJf "$archive_path" --strip-components=1 --directory "$install_dir"
+          echo "$install_dir/bin" >> "$GITHUB_PATH"
+          "$install_dir/bin/node" --version
 
       - run: node --version
 
