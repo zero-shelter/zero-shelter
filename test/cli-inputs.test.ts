@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
-import { main } from "../src/cli.js";
+import { main, renderSkippedNotes } from "../src/cli.js";
 
 const fixture = (name: string): string =>
   readFileSync(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)), "utf8");
@@ -66,12 +66,21 @@ describe("stored scanner reports", () => {
 
     expect(recorded.code).toBe(0);
     expect(recorded.output).toContain("recorded");
+    expect(recorded.output).toContain("from npm-audit, osv-scanner");
+    expect(recorded.output.trim().split("\n")).toHaveLength(1);
     expect(rerun.code).toBe(0);
 
     const judgment = JSON.parse(rerun.output);
     expect(judgment.summary.fixNow).toBe(0);
     expect(judgment.summary.accepted).toBeGreaterThan(0);
     expect(judgment.fixNow).toEqual([]);
+  });
+
+  it("puts skipped scanner notes before a baseline confirmation", () => {
+    expect(renderSkippedNotes(["osv-scanner skipped: not on PATH"])).toBe(
+      "  osv-scanner skipped: not on PATH\n\n",
+    );
+    expect(renderSkippedNotes([])).toBe("");
   });
 
   it("writes a valid SARIF report from stored scanner inputs", async () => {

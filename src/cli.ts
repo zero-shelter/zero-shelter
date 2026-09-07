@@ -72,6 +72,9 @@ rather than on the backlog it inherited.
   quiet and exits 0. See docs/AGENT-HOOK.md.
 `;
 
+export const renderSkippedNotes = (skipped: readonly string[]): string =>
+  skipped.length === 0 ? "" : skipped.map((note) => `  ${note}\n`).join("") + "\n";
+
 export async function main(argv: readonly string[]): Promise<number> {
   let parsed;
   try {
@@ -230,8 +233,11 @@ export async function main(argv: readonly string[]): Promise<number> {
       process.stderr.write(`cannot write ${baselinePath}: ${reasonFor(error)}\n`);
       return 2;
     }
+    const recordedSources = sources?.join(", ") ?? "unknown sources";
     process.stdout.write(
-      `recorded ${all.fixNow.length} finding(s) as accepted in ${values.baseline ?? BASELINE_PATH}\n`,
+      renderSkippedNotes(skipped) +
+        `recorded ${all.fixNow.length} finding(s) from ${recordedSources} ` +
+        `as accepted in ${values.baseline ?? BASELINE_PATH}\n`,
     );
     return 0;
   }
