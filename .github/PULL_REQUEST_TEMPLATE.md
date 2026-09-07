@@ -4,6 +4,8 @@
 
 Closes #
 
+> **Note for pull requests from forks:** if no checks appear, your first workflow run may be waiting for maintainer approval before CI starts. This does not mean your change is broken. Timing depends on maintainer availability. If checks still have not started, leave a comment saying that the checks have not started.
+
 ## GitHub metadata
 
 - [ ] Linked Issue has exactly one `status:*` label
