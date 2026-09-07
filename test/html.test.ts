@@ -78,6 +78,20 @@ describe("the html report", () => {
     expect(korean).not.toContain("Run this");
   });
 
+  it("translates score reasons and weights with the rest of the Korean ledger", () => {
+    const korean = renderHtml(result, { language: "ko" });
+
+    expect(korean).toContain("심각도: 치명적");
+    expect(korean).toContain("직접 의존성");
+    expect(korean).toContain("수정 버전 있음:");
+    expect(korean).toContain("가중치");
+    expect(korean).toContain("추가로 일치한 스캐너마다");
+    expect(korean).not.toContain("severity: critical");
+    expect(korean).not.toContain("direct dependency");
+    expect(korean).not.toContain("fix available");
+    expect(korean).not.toContain("reported by");
+  });
+
   it("escapes what other people wrote", () => {
     const hostile = {
       ...findings[0]!,

@@ -16,6 +16,7 @@ import {
 } from "../src/baseline.js";
 import { renderExplain, renderHuman, renderJson } from "../src/report.js";
 import type { ScaFinding } from "../src/finding.js";
+import { messagesFor } from "../src/messages.js";
 
 const read = (name: string): string =>
   readFileSync(fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url)), "utf8");
@@ -298,7 +299,9 @@ describe("report", () => {
     const explain = renderExplain(result);
     for (const entry of result.fixNow) {
       expect(explain).toContain(entry.finding.advisoryId);
-      for (const reason of entry.reasons) expect(explain).toContain(reason.label);
+      for (const reason of entry.reasons) {
+        expect(explain).toContain(messagesFor("en").reasonText(reason));
+      }
     }
   });
 

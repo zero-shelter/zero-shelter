@@ -8,6 +8,7 @@ import { emptyBaseline, baselineFrom } from "../src/baseline.js";
 import { judge } from "../src/judge.js";
 import { fromPackages } from "../src/lockfile.js";
 import { renderSarif } from "../src/sarif.js";
+import { messagesFor } from "../src/messages.js";
 
 const raw = readFileSync(
   fileURLToPath(new URL("./fixtures/npm-audit.json", import.meta.url)),
@@ -83,10 +84,25 @@ describe("renderSarif", () => {
   it("keeps the score and its reasons, which SARIF has nowhere else to put", () => {
     for (const [index, entry] of sarif.runs[0].results.entries()) {
       expect(entry.properties.score).toBe(result.fixNow[index]?.score);
-      expect(entry.properties.reasons).toHaveLength(
-        result.fixNow[index]?.reasons.length ?? 0,
+      expect(entry.properties.reasons).toEqual(
+        result.fixNow[index]?.reasons.map(
+          (reason) => `${reason.points} ${messagesFor("en").reasonText(reason)}`,
+        ),
       );
     }
+
+    const directFix = result.fixNow.find(
+      (entry) =>
+        !entry.finding.transitive &&
+        entry.finding.fixedIn !== undefined,
+    );
+    expect(directFix).toBeDefined();
+    const directAlert = sarif.runs[0].results.find(
+      (entry: { ruleId: string }) => entry.ruleId === directFix?.finding.advisoryId,
+    );
+    expect(directAlert?.properties.reasons).toContain("70 severity: high");
+    expect(directAlert?.properties.reasons).toContain("20 direct dependency");
+    expect(directAlert?.properties.reasons).toContain("25 fix available: 5.7.2");
   });
 
   it("preserves the advisory CVSS vector exactly in result properties", () => {

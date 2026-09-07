@@ -25,7 +25,7 @@ import {
   type PackageManager,
 } from "./package-manager.js";
 import type { JudgeResult } from "./report.js";
-import { WEIGHTS } from "./triage.js";
+import { WEIGHTS, type Reason } from "./triage.js";
 import { type Language, messagesFor } from "./messages.js";
 import type { MergedFinding } from "./merge.js";
 import type { Change } from "./history.js";
@@ -387,20 +387,20 @@ function ledger(result: JudgeResult, t: ReturnType<typeof messagesFor>): string 
     `<span>${escape(t.colSources)}</span>`,
     "</div>",
     rows.join(""),
-    weights(),
+    weights(t),
     "</section>",
   ].join("\n");
 }
 
 function reasons(
-  entries: readonly { label: string; points: number }[],
+  entries: readonly Reason[],
   finding: MergedFinding,
   byFingerprint: ReadonlyMap<string, MergedFinding>,
   t: ReturnType<typeof messagesFor>,
 ): string {
   const lines = entries.map(
     (reason) =>
-      `<li><span class="num">${escape(String(reason.points))}</span>${escape(reason.label)}</li>`,
+      `<li><span class="num">${escape(String(reason.points))}</span>${escape(t.reasonText(reason))}</li>`,
   );
 
   const extras: string[] = [
@@ -442,20 +442,23 @@ function duplicateName(
  * The ranking is only arguable if the numbers behind it are visible, and a
  * reader who disagrees should be able to point at a row.
  */
-function weights(): string {
+function weights(t: ReturnType<typeof messagesFor>): string {
   const rows = [
     ...Object.entries(WEIGHTS.severity).map(
-      ([name, points]) => [`severity: ${name}`, points] as [string, number],
+      ([name, points]) => [t.weightSeverity(name as keyof typeof WEIGHTS.severity), points] as [
+        string,
+        number,
+      ],
     ),
-    ["direct dependency", WEIGHTS.directDependency],
-    ["fix available", WEIGHTS.fixAvailable],
-    ["each extra tool that agrees", WEIGHTS.corroboratedPerExtraTool],
-    ["has an unjoined sibling", WEIGHTS.hasUnjoinedSibling],
+    [t.weightDirect, WEIGHTS.directDependency],
+    [t.weightFixAvailable, WEIGHTS.fixAvailable],
+    [t.weightCorroborated, WEIGHTS.corroboratedPerExtraTool],
+    [t.weightUnjoinedSibling, WEIGHTS.hasUnjoinedSibling],
   ] as [string, number][];
 
   return [
     '<details class="weights">',
-    "<summary>weights</summary>",
+    `<summary>${escape(t.weights)}</summary>`,
     "<ul>",
     ...rows.map(
       ([label, points]) =>
