@@ -184,9 +184,12 @@ range reader needed to promise a `clears N` count.
 ## Where to add things
 
 ```
-to add a scanner        → src/ingest/<tool>.ts, then wire both entry points:
-                          one line in scan.ts (runs it) and one branch in
-                          readInput in cli.ts (reads its saved output)
+to add a scanner        → src/ingest/<tool>.ts, then wire both acquisition
+                          paths and the manifest context:
+                          one line in scan.ts (runs it), one branch in
+                          readInput in cli.ts (reads its saved output), and
+                          pass declared when the source cannot say direct vs
+                          transitive
 to change what we judge → src/merge.ts, src/triage.ts
 to change what we print → src/report.ts, src/html.ts, src/sarif.ts
 to change the history   → src/history.ts, src/cli.ts
@@ -203,23 +206,29 @@ repository and an agent just runs it. `npm run qa:agent` covers the hook per
 manager for that reason.
 ```
 
-A new scanner is fairly self-contained, but **there are two entry points and
-missing the second one is the usual mistake.** `scan.ts` runs scanners as
-subprocesses. `--input` reads a report someone already produced, and it
-dispatches separately in `readInput` (`src/cli.ts`) by probing the shape of the
-JSON:
+A new scanner is fairly self-contained, but **there are two acquisition paths
+and a third context to wire.** `scan.ts` runs scanners as subprocesses.
+`--input` reads a report someone already produced, and it dispatches separately
+in `readInput` (`src/cli.ts`) by probing the shape of the JSON. Both paths also
+pass the manifest's declared package names when the source cannot establish
+direct versus transitive; missing that context silently turns declared
+dependencies into override advice (see #186):
 
 ```ts
-if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw);
-if ("results" in record) return parseOsv(raw);
+if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw, declared);
+if ("results" in record) return parseOsv(raw, undefined, declared);
 ```
 
 A parser wired only into `scan.ts` is unreachable from `--input`, which is the
-path CI and offline users take. `readInput`'s error message also names the
-shapes it knows, so a third one means that message is wrong until it is updated.
+path CI and offline users take. A parser that does not receive `declared` can
+also report every finding as transitive when its source lacks directness, so
+the report offers an override for a package the manifest declares itself.
+`readInput`'s error message also names the shapes it knows, so a third one means
+that message is wrong until it is updated.
 
 So: one new file, one line in `scan.ts`, one branch and one message in
-`cli.ts`, one fixture, one snapshot.
+`cli.ts`, the `declared` argument on both parser calls, one fixture, and one
+snapshot.
 
 The hand-maintained `if` chain is the thing that makes this doc easy to get
 wrong — each ingest module could export its own `detect`, and the dispatch could
