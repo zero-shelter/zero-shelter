@@ -154,14 +154,17 @@ yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습
 ```console
 $ npx zero-shelter judge --record     # .zero-shelter/history.jsonl에 한 줄 덧붙임
 $ npx zero-shelter history
-  2026-08-20T09:14:02.118Z    9 outstanding  +9
-  2026-08-21T11:02:55.700Z    7 outstanding  -2
-  2026-08-22T08:31:10.042Z   10 outstanding  +3
+  2026-08-20T09:14:02.118Z  16 reported → 7 after merge →    7 outstanding  +7       0 accepted (baseline entries matched)
+  2026-08-21T11:02:55.700Z   4 reported → 2 after merge →    2 outstanding  -5 +2    0 accepted (baseline entries matched)
+  2026-08-22T08:31:10.042Z   4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
 ```
 
 요청한 실행만 기록합니다. 파일은 JSONL이라 `tail`로 읽히고 PR에서 diff가 됩니다.
 담기는 건 **지문**입니다. 개수만으로는 "2건 고치고 2건 생김"과 "아무 일도
 없음"을 구분할 수 없기 때문입니다.
+
+history 행에는 원시 보고 수, merge 후 수, 아직 outstanding인 건수가 나옵니다.
+`accepted`는 baseline의 크기가 아니라 이번 실행에서 일치한 baseline 항목 수입니다.
 
 이 도구는 **"고쳐졌다"가 아니라 "더 이상 보고되지 않음"**이라고 말합니다. baseline에
 수용됐을 때도, 그걸 찾아낸 스캐너가 안 돌았을 때도 목록에서 빠지니까요.

@@ -451,6 +451,8 @@ async function history(cwd: string, asJson: boolean, last: string | undefined): 
           staleSchema: stale(entries),
           runs: shown.map((change) => ({
             at: change.entry.at,
+            raw: change.entry.raw,
+            merged: change.entry.merged,
             outstanding: change.entry.outstanding.length,
             accepted: change.entry.accepted,
             appeared: change.appeared.length,
@@ -475,9 +477,10 @@ async function history(cwd: string, asJson: boolean, last: string | undefined): 
 
     return (
       `  ${change.entry.at}  ` +
+      `${change.entry.raw} reported → ${change.entry.merged} after merge → ` +
       `${String(change.entry.outstanding.length).padStart(4)} outstanding  ` +
       `${deltas.padEnd(9)}` +
-      `${change.entry.accepted > 0 ? `${change.entry.accepted} accepted` : ""}`
+      `${change.entry.accepted} accepted (baseline entries matched)`
     ).trimEnd();
   });
 
