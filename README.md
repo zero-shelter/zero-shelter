@@ -124,7 +124,7 @@ across machines and runs, so GitHub recognises an alert it has already seen
 instead of reopening it every build.
 
 When an advisory supplies a CVSS vector, each SARIF result preserves it exactly
-as `properties.cvssVector`. GitHub's numeric `security_severity` remains a
+as `properties.cvssVector`. GitHub's numeric `security-severity` remains a
 coarse severity-band fallback because the scanner output supplies vectors but
 no numeric score; zero-shelter does not derive one with floating-point math.
 
@@ -163,8 +163,8 @@ worse than saying nothing. See [docs/AGENT-HOOK.md](./docs/AGENT-HOOK.md).
 $ npx zero-shelter judge --record     # appends one line to .zero-shelter/history.jsonl
 $ npx zero-shelter history
   2026-08-20T09:14:02.118Z  16 reported → 7 after merge →    7 outstanding  +7       0 accepted (baseline entries matched)
-  2026-08-21T11:02:55.700Z   4 reported → 2 after merge →    2 outstanding  -5 +2    0 accepted (baseline entries matched)
-  2026-08-22T08:31:10.042Z   4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
+  2026-08-21T11:02:55.700Z  4 reported → 2 after merge →    2 outstanding  +2 -7    0 accepted (baseline entries matched)
+  2026-08-22T08:31:10.042Z  4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
 ```
 
 Nothing is recorded unless a run is asked to. The file is JSONL: one line per

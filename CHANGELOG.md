@@ -2,60 +2,75 @@
 
 ## 0.0.10
 
-**Every project that is not npm was told its own dependencies were somebody
-else's.** Declare `lodash` in `package.json`, run this in a yarn project, and
-the report said the finding "arrives through another dependency" and offered a
-`resolutions` block — carrying a warning about breaking whatever pinned it, for
-a package nothing pinned. The one command that fixes it was never printed.
+[Korean release notes](./docs/releases/0.0.10.ko.md)
 
-Two sources decline to say whether a finding is direct, and both decline to a
-source that knows: osv-scanner reads a lockfile, which holds what is installed
-and not who asked for it, and pnpm and npm 6 emit the older report shape that
-has no `isDirect`. Merge resolves the group by requiring every member to say
-transitive, so the placeholder stands unless modern `npm audit` is in the room.
-On yarn it never is. On pnpm it never is. In Go, Python, Maven and Cargo it
-never is. `package.json` now answers the part it can answer, read once per run
-and handed to both parsers. yarn and pnpm get `yarn add lodash@4.18.0` and
-`pnpm add lodash@4.18.0`, with the `clears` count still honestly withheld where
-no lockfile reader can verify it.
+**More of the evidence behind a judgement is visible.** History now shows the
+raw report count and the count after merging alongside outstanding findings.
+It explains that `accepted` counts baseline entries matched by that run, so a
+falling accepted count is not mistaken for a shrinking baseline. Both text and
+JSON expose the stored counts (#232).
 
-**One interrupted write turned recording off for good.** A cancelled workflow or
-a reclaimed runner leaves `history.jsonl` without its final newline. The next
-`--record` appended straight onto that broken line and became part of it, and so
-did the one after that. `history` went on reporting two entries and "1 line(s)
-could not be read", exit 0, while nothing had been recorded since. The only
-symptom is a history that stops growing, which looks exactly like a project
-where nobody runs the command. One byte read from the end of the file decides
-whether to write a newline first.
+SARIF results preserve the advisory's exact CVSS vector when present, in
+`properties.cvssVector`. The numeric `security-severity` remains the existing
+coarse severity-band fallback; zero-shelter does not calculate a CVSS score from
+the vector (#226). HTML duplicate references show advisory names when the
+sibling is displayed, with the fingerprint retained when it is absent (#211).
 
-**A misspelled `expires` gave you a deadline that did not exist.** `expires:
-"2020-01-01"` returns five acceptances to the report. `expiress: "2020-01-01"`
-was ignored in silence, exit 0, "nothing new to fix" — while the file looks like
-it has a six-year-old deadline on it. That is the failure 0.0.9's date check was
-written to prevent, arriving through the key instead of the value. Unknown keys
-are now named, with the list of keys we do act on beside them, so `expires` is
-visible next to `expiress`. A warning rather than a refusal: an unknown key is
-also what a newer zero-shelter's baseline looks like to an older one.
+**The source of a baseline is visible when it is written.** `--update-baseline`
+prints skipped-scanner notes before its confirmation and names the sources
+recorded in the file. A supported one-scanner run still succeeds; it no longer
+writes the permanent record without disclosing the missing scanner (#227).
 
-**A clean first run opened by saying a scanner had failed.** A new project with
-no dependencies got `osv-scanner failed: exited 128 with no output. It is
-installed and did not produce a report` as its first line, on a project where
-nothing was wrong. 128 is osv-scanner's own code for "no package sources found"
-— it ran, and it had nothing to say. 0.0.9 separated absent, timed out and
-failed; this is the fourth outcome, and it was arriving as the third.
+**Advice follows the project's package manager.** Declared packages are now
+recognized as direct dependencies when the scanner does not supply that fact,
+including the older npm/pnpm shape and OSV. Direct upgrade commands can then
+appear when a source also supplies a fixed version (#195). A yarn project is
+no longer told to create an npm lockfile (#201). The HTML report withholds both
+unverified `clears N` badges and the paragraph promising those counts outside
+npm (#229). Agent skills use the report's commands and manager-specific forced
+versions, with a QA check to catch guidance drifting back to npm-only remedies
+(#234).
 
-**A yarn user was told to create a `package-lock.json`.** By a tool that had
-just read their `yarn.lock`. npm's own explanation was passed through verbatim,
-and it is correct for npm and wrong here: following it writes a second lockfile
-beside the first. We know which project it is from the lockfile in front of us.
-With no lockfile at all npm is answering the right question, so that case still
-gets npm's words.
+**Recording and version selection survive their edge cases.** An interrupted
+history write no longer swallows every subsequent entry (#199). Unknown
+baseline entry keys are named as warnings, including misspellings such as
+`expiress`; judging continues for forward compatibility (#200). Prerelease
+versions are ordered against one another, including numeric identifiers beyond
+JavaScript's safe integer range, and a leading `v` no longer makes a release
+compare below older versions (#170). An osv-scanner exit indicating no package
+sources is distinguished from a scanner failure (#190).
 
-**Reviews are required now.** `main` takes one approving review with admins
-included, the seven CI checks, and a branch that is current. `.github/CODEOWNERS`
-asks all three owners without being asked to. This is written down because it
-changed after six pull requests went in on the strength of green CI alone —
-and twice that week a human review caught what seven green checks did not.
+**Contributing and checking an install are easier to follow.** The contributor
+guides and PR templates explain when fork CI is waiting for maintainer approval
+(#220). The CI example pins osv-scanner and verifies its checksum (#221).
+Installation QA bounds its subprocesses, gives the CLI headroom above scanner
+timeouts, and reports why a failing check could not judge; CI jobs also have
+explicit time limits (#160). The README points contributors at focused first
+issues (#164). CODEOWNERS requests owner reviews, with approvals and required
+CI enforced through branch protection (#202).
+
+**Compatibility and limits.** Existing judge exit codes, fingerprint recipes,
+ranking weights and baseline acceptance semantics are unchanged. The history
+JSON fields and optional SARIF vector are additive; human-readable output has
+changed. A finding is still described as *no longer reported*, not necessarily
+fixed. Package, lockfile and plugin versions agree on 0.0.10 (#203).
+
+The older pnpm/npm 6 report can still omit an actionable fixed version; #204
+and the unmerged #233 track that gap. The Korean HTML duplicate suffix still
+has the English `fixed in` wording tracked by #218. This release does not add a
+new scanner, and does not include the proposed `scanners` command (#163).
+
+**Contributors to this release.** These are merged contributions since v0.0.9;
+review and discussion are also appreciated.
+
+| Contributor | Contributions |
+|---|---|
+| [@Akimbo92i](https://github.com/Akimbo92i) | [Duplicate advisory names #211](https://github.com/zero-shelter/zero-shelter/pull/211) |
+| [@be-student](https://github.com/be-student) | [SARIF CVSS evidence #226](https://github.com/zero-shelter/zero-shelter/pull/226), [baseline sources #227](https://github.com/zero-shelter/zero-shelter/pull/227) |
+| [@chrisriv10](https://github.com/chrisriv10) | [Fork CI guidance #220](https://github.com/zero-shelter/zero-shelter/pull/220) |
+| [@kshivam4781](https://github.com/kshivam4781) | [Verified scanner download #221](https://github.com/zero-shelter/zero-shelter/pull/221), [HTML count boundary #229](https://github.com/zero-shelter/zero-shelter/pull/229) |
+| [@msnodeve](https://github.com/msnodeve) | [History counts #232](https://github.com/zero-shelter/zero-shelter/pull/232), [manager-neutral skills #234](https://github.com/zero-shelter/zero-shelter/pull/234) |
+| [@PresentJay](https://github.com/PresentJay) | [QA bounds #160](https://github.com/zero-shelter/zero-shelter/pull/160), [contributor entry point #164](https://github.com/zero-shelter/zero-shelter/pull/164), [version ordering #170](https://github.com/zero-shelter/zero-shelter/pull/170), [scanner outcome #190](https://github.com/zero-shelter/zero-shelter/pull/190), [direct dependencies #195](https://github.com/zero-shelter/zero-shelter/pull/195), [history writes #199](https://github.com/zero-shelter/zero-shelter/pull/199), [baseline warnings #200](https://github.com/zero-shelter/zero-shelter/pull/200), [yarn guidance #201](https://github.com/zero-shelter/zero-shelter/pull/201), [review routing #202](https://github.com/zero-shelter/zero-shelter/pull/202), [release preparation #203](https://github.com/zero-shelter/zero-shelter/pull/203) |
 
 ## 0.0.9
 
