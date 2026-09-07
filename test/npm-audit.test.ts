@@ -3,6 +3,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseNpmAudit } from "../src/ingest/npm-audit.js";
 import { normalizeAliases, pickAdvisoryId } from "../src/finding.js";
+import { upgradeActions } from "../src/actions.js";
+import { mergeFindings } from "../src/merge.js";
+import { rank } from "../src/triage.js";
 
 const fixture = readFileSync(
   fileURLToPath(new URL("./fixtures/npm-audit.json", import.meta.url)),
@@ -191,7 +194,29 @@ describe("the advisories shape (pnpm, yarn v1, npm 6)", () => {
 
   it("reads '<0.0.0' as the way this format spells 'no fix yet'", () => {
     expect(pnpm.find((f) => f.packageName === "lodash")?.fixAvailable).toBe(false);
+    expect(pnpm.find((f) => f.packageName === "lodash")?.fixedIn).toBeUndefined();
     expect(pnpm.find((f) => f.packageName === "minimist")?.fixAvailable).toBe(true);
+  });
+
+  it("derives the fixed version from an older advisories report", () => {
+    expect(pnpm.find((f) => f.packageName === "minimist")?.fixedIn).toBe("0.2.1");
+  });
+
+  it("lets a declared older-shape finding reach its package-manager command", () => {
+    const direct = parseNpmAudit(
+      readFileSync(
+        fileURLToPath(new URL("./fixtures/pnpm-audit.json", import.meta.url)),
+        "utf8",
+      ),
+      new Set(["minimist"]),
+    );
+
+    expect(upgradeActions(rank(mergeFindings(direct)), undefined, "pnpm")).toContainEqual({
+      packageName: "minimist",
+      upgradeTo: "0.2.1",
+      clears: 1,
+      command: "pnpm add minimist@0.2.1",
+    });
   });
 
   it("does not claim to know whether a dependency is direct", () => {

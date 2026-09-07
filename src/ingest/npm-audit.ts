@@ -14,6 +14,7 @@ import {
   pickAdvisoryId,
 } from "../finding.js";
 import { normalizeText, normalizeRange } from "../normalize.js";
+import { lowestMentioned } from "../version-range.js";
 
 const TOOL = "npm-audit";
 const ECOSYSTEM = "npm";
@@ -111,6 +112,7 @@ function parseAdvisories(
 
     const advisoryId = pickAdvisoryId(aliases);
     const patched = asString(advisory["patched_versions"]);
+    const hasPatch = patched !== undefined && patched !== "<0.0.0";
 
     const finding: ScaFinding = {
       kind: "SCA",
@@ -131,11 +133,12 @@ function parseAdvisories(
       // a guess. See isTransitive.
       transitive: isTransitive(normalizeText(packageName), declared),
       // "<0.0.0" is how this format spells "no patch exists".
-      fixAvailable: patched !== undefined && patched !== "<0.0.0",
+      fixAvailable: hasPatch,
       sources: [{ tool: TOOL, ruleId: advisoryId }],
     };
 
-    findings.push(finding);
+    const fixedIn = hasPatch ? lowestMentioned(patched) : undefined;
+    findings.push(fixedIn === undefined ? finding : { ...finding, fixedIn });
   }
 
   return findings.sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1));
