@@ -96,6 +96,22 @@ describe("the html report", () => {
     expect(rendered).toContain("&quot;quotes&quot; &amp; &lt;b&gt;markup&lt;/b&gt;");
   });
 
+  it("names duplicate siblings that are shown in the ledger", () => {
+    expect(page).toContain(
+      "May duplicate: <code>GHSA-C2QF-RXJJ-QQGW (fixed in 5.7.2)</code>",
+    );
+    expect(page).toContain("May duplicate: <code>CVE-2022-25883 (fixed in 5.7.2)</code>");
+    expect(page).not.toContain("May duplicate: <code>0b15264267dde1bf</code>");
+    expect(page).not.toContain("May duplicate: <code>49ea30e3fc8de394</code>");
+  });
+
+  it("keeps a duplicate fingerprint when the sibling is not shown", () => {
+    const duplicate = result.fixNow.find((entry) => entry.finding.relatedTo.length > 0)!;
+    const topOnly = renderHtml({ ...result, fixNow: [duplicate] }, { language: "en" });
+
+    expect(topOnly).toContain(`May duplicate: <code>${duplicate.finding.relatedTo[0]}</code>`);
+  });
+
   it("stays quiet when there is nothing outstanding", () => {
     const accepted = judge(findings, { baseline: baselineFrom(result.fixNow) });
     const rendered = renderHtml(accepted, { language: "en" });
