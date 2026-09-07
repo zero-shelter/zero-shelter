@@ -14,7 +14,6 @@ import {
   pickAdvisoryId,
 } from "../finding.js";
 import { normalizeText, normalizeRange } from "../normalize.js";
-import { lowestMentioned } from "../version-range.js";
 
 const TOOL = "npm-audit";
 const ECOSYSTEM = "npm";
@@ -112,7 +111,7 @@ function parseAdvisories(
 
     const advisoryId = pickAdvisoryId(aliases);
     const patched = asString(advisory["patched_versions"]);
-    const hasPatch = patched !== undefined && patched !== "<0.0.0";
+    const hasPatch = patched !== undefined && patched.trim() !== "<0.0.0";
 
     const finding: ScaFinding = {
       kind: "SCA",
@@ -137,11 +136,21 @@ function parseAdvisories(
       sources: [{ tool: TOOL, ruleId: advisoryId }],
     };
 
-    const fixedIn = hasPatch ? lowestMentioned(patched) : undefined;
+    const fixedIn = hasPatch ? fixedVersionFromPatchedRange(patched) : undefined;
     findings.push(fixedIn === undefined ? finding : { ...finding, fixedIn });
   }
 
   return findings.sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : 1));
+}
+
+/**
+ * Return a fixed version only when the old report names an inclusive, stable
+ * lower bound by itself. An exclusive bound, a prerelease, or a compound range
+ * needs semver/range-aware selection and must not become an install command by
+ * accident.
+ */
+function fixedVersionFromPatchedRange(range: string): string | undefined {
+  return /^>=\s*(\d+\.\d+\.\d+)\s*$/.exec(range.trim())?.[1];
 }
 
 /**

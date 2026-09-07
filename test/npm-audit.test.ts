@@ -202,6 +202,42 @@ describe("the advisories shape (pnpm, yarn v1, npm 6)", () => {
     expect(pnpm.find((f) => f.packageName === "minimist")?.fixedIn).toBe("0.2.1");
   });
 
+  it("keeps fixed versions from a captured pnpm audit report", () => {
+    // Captured from pnpm 8.15.9 audit --json for lodash@4.17.11.
+    const captured = parseNpmAudit(
+      readFileSync(
+        fileURLToPath(new URL("./fixtures/pnpm-audit-captured.json", import.meta.url)),
+        "utf8",
+      ),
+    );
+
+    expect(captured).toHaveLength(7);
+    expect(captured.every((finding) => finding.fixedIn !== undefined)).toBe(true);
+    expect(new Set(captured.map((finding) => finding.fixedIn))).toEqual(
+      new Set(["4.17.12", "4.17.19", "4.17.21", "4.17.23", "4.18.0"]),
+    );
+  });
+
+  it("does not turn unsupported patched ranges into install versions", () => {
+    const report = (patched_versions: string) =>
+      JSON.stringify({
+        advisories: {
+          "1": {
+            id: 1,
+            module_name: "example",
+            severity: "high",
+            vulnerable_versions: "<2.0.0",
+            patched_versions,
+            cves: ["CVE-2026-0001"],
+          },
+        },
+      });
+
+    expect(parseNpmAudit(report(">1.2.3"))[0]?.fixedIn).toBeUndefined();
+    expect(parseNpmAudit(report(">=2.0.0-beta.1"))[0]?.fixedIn).toBeUndefined();
+    expect(parseNpmAudit(report(">=1.2.3 <2.0.0"))[0]?.fixedIn).toBeUndefined();
+  });
+
   it("lets a declared older-shape finding reach its package-manager command", () => {
     const direct = parseNpmAudit(
       readFileSync(
