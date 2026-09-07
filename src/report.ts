@@ -12,6 +12,7 @@ import {
 } from "./package-manager.js";
 import type { RankedFinding } from "./triage.js";
 import { WEIGHTS } from "./triage.js";
+import { messagesFor } from "./messages.js";
 
 export interface JudgeResult {
   readonly raw: number;
@@ -441,6 +442,7 @@ function summary(
 
 export function renderExplain(result: JudgeResult): string {
   const lines: string[] = [];
+  const t = messagesFor("en");
 
   // Fingerprints identify a finding but say nothing about it. When a possible
   // duplicate is named, the reader needs to know which advisory to go compare.
@@ -454,7 +456,7 @@ export function renderExplain(result: JudgeResult): string {
     lines.push(`  ${finding.title}`);
 
     for (const reason of entry.reasons) {
-      lines.push(`  ${String(reason.points).padStart(5)}  ${reason.label}`);
+      lines.push(`  ${String(reason.points).padStart(5)}  ${t.reasonText(reason)}`);
     }
 
     lines.push(`  ${"".padStart(5)}  range ${finding.vulnerableRange}`);
@@ -526,14 +528,18 @@ export function renderExplain(result: JudgeResult): string {
  * `label  points` so a disagreement can point at a row.
  */
 function weightsTable(): string[] {
+  const t = messagesFor("en");
   const rows: [string, number][] = [
     ...Object.entries(WEIGHTS.severity).map(
-      ([name, points]) => [`severity: ${name}`, points] as [string, number],
+      ([name, points]) => [t.weightSeverity(name as keyof typeof WEIGHTS.severity), points] as [
+        string,
+        number,
+      ],
     ),
-    ["direct dependency", WEIGHTS.directDependency],
-    ["fix available", WEIGHTS.fixAvailable],
-    ["each extra tool that agrees", WEIGHTS.corroboratedPerExtraTool],
-    ["has an unjoined sibling", WEIGHTS.hasUnjoinedSibling],
+    [t.weightDirect, WEIGHTS.directDependency],
+    [t.weightFixAvailable, WEIGHTS.fixAvailable],
+    [t.weightCorroborated, WEIGHTS.corroboratedPerExtraTool],
+    [t.weightUnjoinedSibling, WEIGHTS.hasUnjoinedSibling],
   ];
 
   const width = Math.max(...rows.map(([label]) => label.length));

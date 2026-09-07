@@ -11,6 +11,9 @@
  * page.
  */
 
+import type { Severity } from "./finding.js";
+import type { Reason } from "./triage.js";
+
 export interface Messages {
   readonly documentTitle: string;
   readonly heading: string;
@@ -75,6 +78,13 @@ export interface Messages {
   readonly alsoKnownAs: string;
   readonly maybeDuplicate: string;
   readonly disagreedFix: (versions: string, chosen: string) => string;
+  readonly reasonText: (reason: Reason) => string;
+  readonly weights: string;
+  readonly weightSeverity: (severity: Severity) => string;
+  readonly weightDirect: string;
+  readonly weightFixAvailable: string;
+  readonly weightCorroborated: string;
+  readonly weightUnjoinedSibling: string;
 
   readonly accepted: string;
   readonly acceptedBody: (count: number) => string;
@@ -172,6 +182,13 @@ const EN: Messages = {
   maybeDuplicate: "May duplicate",
   disagreedFix: (versions, chosen) =>
     `Sources named different fixes (${versions}). ${chosen} satisfies all of them.`,
+  reasonText: englishReason,
+  weights: "weights",
+  weightSeverity: (severity) => `severity: ${severity}`,
+  weightDirect: "direct dependency",
+  weightFixAvailable: "fix available",
+  weightCorroborated: "each extra tool that agrees",
+  weightUnjoinedSibling: "has an unjoined sibling",
 
   accepted: "Already accepted",
   acceptedBody: (count) =>
@@ -276,6 +293,13 @@ const KO: Messages = {
   maybeDuplicate: "중복 가능성",
   disagreedFix: (versions, chosen) =>
     `소스마다 다른 수정 버전을 말했습니다(${versions}). ${chosen}이 전부를 충족합니다.`,
+  reasonText: koreanReason,
+  weights: "가중치",
+  weightSeverity: (severity) => `심각도: ${koreanSeverity[severity]}`,
+  weightDirect: "직접 의존성",
+  weightFixAvailable: "수정 버전 있음",
+  weightCorroborated: "추가로 일치한 스캐너마다",
+  weightUnjoinedSibling: "병합하지 않은 형제 항목 있음",
 
   accepted: "이미 수용한 것",
   acceptedBody: (count) => `${count}건이 baseline에 기록되어 위 목록에서 의도적으로 빠졌습니다.`,
@@ -315,4 +339,44 @@ export function isLanguage(value: string): value is Language {
 
 export function messagesFor(language: Language): Messages {
   return LANGUAGES[language];
+}
+
+function englishReason(reason: Reason): string {
+  switch (reason.kind) {
+    case "severity":
+      return `severity: ${reason.severity}`;
+    case "direct":
+      return "direct dependency";
+    case "fixAvailable":
+      return reason.fixedIn === undefined ? "fix available" : `fix available: ${reason.fixedIn}`;
+    case "corroborated":
+      return `reported by ${reason.tools} tools`;
+    case "unjoinedSibling":
+      return `${reason.count} unjoined finding(s) for the same package`;
+  }
+}
+
+const koreanSeverity: Record<Severity, string> = {
+  critical: "치명적",
+  high: "높음",
+  moderate: "중간",
+  low: "낮음",
+  info: "정보",
+};
+
+function koreanReason(reason: Reason): string {
+  switch (reason.kind) {
+    case "severity":
+      return `심각도: ${koreanSeverity[reason.severity]}`;
+    case "direct":
+      return "직접 의존성";
+    case "fixAvailable":
+      return reason.fixedIn === undefined
+        ? "수정 버전 있음"
+        : `수정 버전 있음: ${reason.fixedIn}`;
+    case "corroborated":
+      return `${reason.tools}개 스캐너가 보고`;
+    case "unjoinedSibling":
+      return `같은 패키지에 병합하지 않은 항목 ${reason.count}개`;
+  }
 }
