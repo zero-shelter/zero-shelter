@@ -60,10 +60,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node20_bin="$(find "$RUNNER_TOOL_CACHE/node" -mindepth 3 -maxdepth 3 -type d -path '*/20.*/*/bin' | sort -V | tail -n 1)"
-          test -n "$node20_bin"
+          node20_path="$(find -L "$RUNNER_TOOL_CACHE/node" -type f -name node -path '*/20.*/*' | sort -V | tail -n 1)"
+          test -n "$node20_path"
+          node20_bin="$(dirname "$node20_path")"
           echo "$node20_bin" >> "$GITHUB_PATH"
-          "$node20_bin/node" --version
+          "$node20_path" --version
 
       - run: node --version
 
