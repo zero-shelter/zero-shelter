@@ -18,7 +18,12 @@ import {
   transitiveFixes,
   upgradeActions,
 } from "./actions.js";
-import { overrideBlock, overridesField, type PackageManager } from "./package-manager.js";
+import {
+  canPromiseClears,
+  overrideBlock,
+  overridesField,
+  type PackageManager,
+} from "./package-manager.js";
 import type { JudgeResult } from "./report.js";
 import { WEIGHTS } from "./triage.js";
 import { type Language, messagesFor } from "./messages.js";
@@ -62,6 +67,11 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   const manager = result.packageManager ?? "npm";
   const actions = upgradeActions(outstanding, result.installed, manager);
   const indirect = transitiveFixes(outstanding, result.installed);
+  // `clears N` rests on reading dependents' ranges out of package-lock.json.
+  // There is no reader for pnpm-lock.yaml or yarn.lock, so on those managers
+  // the count and the sentence that promises it must both stay quiet — see
+  // the terminal and the agent hook, which already follow this rule.
+  const promises = canPromiseClears(manager);
 
   const body = [
     header(result, options, t),
@@ -76,7 +86,7 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
     outstanding.length === 0
       ? verdict(result, t)
       : [
-          actionBlock(actions, result.workspaceRoot === true, t),
+          actionBlock(actions, result.workspaceRoot === true, t, promises, manager),
           promptBlock(
             actions,
             indirect,
@@ -182,6 +192,8 @@ function actionBlock(
   actions: readonly { command: string; clears: number }[],
   workspaceRoot: boolean,
   t: ReturnType<typeof messagesFor>,
+  promises: boolean,
+  manager: PackageManager,
 ): string {
   if (actions.length === 0) {
     return `<section class="act"><h2>${escape(t.actNow)}</h2><p class="quiet">${escape(t.actNowEmpty)}</p></section>`;
@@ -194,7 +206,9 @@ function actionBlock(
       // the surface a restrained palette allows.
       `<li class="command${index === 0 ? " command--lead" : ""}">` +
       `<code>${escape(action.command)}</code>` +
-      (action.clears > 1 ? `<span class="clears">${escape(t.clears(action.clears))}</span>` : "") +
+      (promises && action.clears > 1
+        ? `<span class="clears">${escape(t.clears(action.clears))}</span>`
+        : "") +
       `<button class="copy" type="button" data-copy="${escape(action.command)}" data-copied="${escape(t.copied)}" data-select="${escape(t.selected)}">${escape(t.copy)}</button>` +
       "</li>",
   );
@@ -202,7 +216,7 @@ function actionBlock(
   return [
     '<section class="act">',
     `<h2>${escape(t.actNow)}</h2>`,
-    `<p class="how">${escape(t.actNowHow)}</p>`,
+    `<p class="how">${escape(promises ? t.actNowHow : t.actNowHowNoCounts(manager))}</p>`,
     `<ol class="commands">${rows.join("")}</ol>`,
     workspaceRoot ? `<p class="caveat">${escape(t.workspaceCaveat)}</p>` : "",
     "</section>",

@@ -28,6 +28,12 @@ export interface Messages {
 
   readonly actNow: string;
   readonly actNowHow: string;
+  /**
+   * Same section, for a manager `clears` cannot be verified for. No count is
+   * shown beside any line, so the sentence above them must not promise one —
+   * see the Issue this fixes for why the guard alone is not enough.
+   */
+  readonly actNowHowNoCounts: (manager: string) => string;
   readonly promptsHeading: string;
   readonly promptsHow: string;
   readonly promptFix: (commands: string) => string;
@@ -110,6 +116,8 @@ const EN: Messages = {
   actNow: "Run this",
   actNowHow:
     "Each line upgrades one package and clears the findings counted beside it. Run them in this order; the first clears the most.",
+  actNowHowNoCounts: (manager) =>
+    `Each line upgrades one package. Counts are not shown for ${manager}: verifying an upgrade reaches every copy needs a lockfile reader this tool only has for npm.`,
   promptsHeading: "Or hand it to an agent",
   promptsHow: "Copy one of these into a coding agent. Each ends by re-judging, so the claim gets checked rather than assumed.",
   promptFix: (commands) =>
@@ -212,6 +220,8 @@ const KO: Messages = {
   actNow: "이걸 실행하세요",
   actNowHow:
     "각 줄은 패키지 하나를 올리고, 옆에 적힌 수만큼 항목이 사라집니다. 위에서부터 실행하세요. 첫 줄이 가장 많이 해결합니다.",
+  actNowHowNoCounts: (manager) =>
+    `각 줄은 패키지 하나를 올립니다. ${manager}에서는 수를 표시하지 않습니다: 업그레이드가 모든 사본에 적용되는지 확인하려면 이 도구가 npm에만 가지고 있는 락파일 리더가 필요합니다.`,
   promptsHeading: "에이전트에게 시키려면",
   promptsHow: "코딩 에이전트에 그대로 붙여 넣으세요. 전부 마지막에 재판정으로 끝나므로, 됐다고 가정하지 않고 확인합니다.",
   promptFix: (commands) =>
