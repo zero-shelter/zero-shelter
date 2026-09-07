@@ -45,6 +45,36 @@ jobs:
 
       - run: npm test
 
+  # The declared floor must be exercised explicitly. Runner images move
+  # independently, so the OS matrix above does not prove that Node 20 still
+  # works. The hosted tool cache avoids adding an unpinned setup action while
+  # still failing loudly if GitHub stops providing the required runtime.
+  node20:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Node 20 from the runner tool cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          node20_bin="$(find "$RUNNER_TOOL_CACHE/node" -mindepth 3 -maxdepth 3 -type d -path '*/20.*/*/bin' | sort -V | tail -n 1)"
+          test -n "$node20_bin"
+          echo "$node20_bin" >> "$GITHUB_PATH"
+          "$node20_bin/node" --version
+
+      - run: node --version
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm run build
+
+      - run: npm test
+
   # The install experience, checked against the packaged tarball on the two
   # platforms most people install on. This script has caught more real problems
   # than any other check here — a deleted feature, a claim about pnpm that was
