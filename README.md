@@ -84,7 +84,21 @@ is one source. **This tool reconciles sources, so with one of them there is
 nothing to reconcile** — you get ranking and a baseline, and the count comes out
 the same as it went in.
 
-The difference is not subtle. On uptime-kuma:
+The difference is not just a shorter list. On the pinned captures, the second
+source supplies fixed versions and advice for vulnerable transitive packages:
+
+| project | fixed versions: npm audit → both | direct commands: npm audit → both | transitive advice: npm audit → both |
+|---|---:|---:|---:|
+| juice-shop | 15/73 → 50/82 | 6 → 6 | 0 → 11 |
+| nodegoat | 7/177 → 109/173 | 2 → 5 | 0 → 49 |
+| dvna | 20/51 → 40/51 | 7 → 7 | 0 → 6 |
+| hackathon-starter | 0/11 → 4/11 | 0 → 0 | 0 → 2 |
+
+The transitive block is empty with one source on every pinned capture, and
+populated when the second source contributes. That is the difference between a
+report that says a version exists and one that can explain what to do about it.
+
+The noise reduction still matters for readability. On uptime-kuma:
 
 ```console
 npm audit alone      71 reported → 71 to fix   (0% less noise)

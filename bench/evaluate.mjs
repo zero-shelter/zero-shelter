@@ -58,6 +58,8 @@ for (const name of (await readdir(join(benchDir, "captures"))).sort()) {
   rows.push({
     name,
     sha: meta.sha.slice(0, 12),
+    auditOnly,
+    both: result,
     raw: result.summary.raw,
     merged: result.summary.merged,
     // How many raw reports disappeared into a cross-checked finding once the
@@ -83,7 +85,24 @@ for (const r of rows) {
   );
 }
 
+const actionability = (result) => ({
+  fixed: result.fixNow.filter((finding) => finding.fixedIn !== undefined).length,
+  total: result.fixNow.length,
+  direct: result.upgrades.length,
+  transitive: result.transitiveFixes.length,
+});
+
 console.log(
   "\nMeasured without labels: volume only. Precision and dropped-finding rate " +
     "require bench/labels/ (two humans, independent) and are absent until then.",
 );
+
+console.log("\n| repo | fixed versions: npm audit → both | direct commands: npm audit → both | transitive advice: npm audit → both |");
+console.log("|---|---:|---:|---:|");
+for (const r of rows) {
+  const one = actionability(r.auditOnly);
+  const both = actionability(r.both);
+  console.log(
+    `| ${r.name} | ${one.fixed}/${one.total} → ${both.fixed}/${both.total} | ${one.direct} → ${both.direct} | ${one.transitive} → ${both.transitive} |`,
+  );
+}
