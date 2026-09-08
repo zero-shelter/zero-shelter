@@ -28,10 +28,12 @@ the project as a whole is clean.
 
 ## The second scanner
 
-This tool reconciles what two scanners each called by a different name. With one
-source there is nothing to reconcile, so **install `osv-scanner` before judging
-the result of a first run.** The pinned captures show what the second source
-buys beyond a shorter list:
+A supported single-source run can provide ranking, baseline comparison and
+remediation advice. Explain which evidence contributed and which did not.
+Offer OSV-Scanner for additional dependency evidence where applicable; yarn
+requires it for live collection through this tool. Cross-source reconciliation
+requires multiple contributing sources. The pinned captures show the additional
+evidence OSV-Scanner supplies alongside npm audit:
 
 | project | fixed versions: npm audit → both | transitive advice: npm audit → both |
 |---|---:|---:|
@@ -55,7 +57,9 @@ go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
 ```
 
 Neither works everywhere. If both fail, the releases page has prebuilt binaries,
-and that is a better answer than proceeding with one source and explaining a 0%.
+and may be appropriate for that host. If installation is unavailable, describe
+the limitations of the supported input that did contribute; do not claim that
+a valid single-source judgement has no value.
 
 **Then check it actually ran**, rather than assuming the install worked:
 
@@ -72,10 +76,9 @@ scanner is **missing**, so the count is non-zero in exactly the case the check
 is supposed to catch — an earlier version of this skill said to do that and had
 it backwards.
 
-Do not describe a one-source run as a normal result. It is a valid way to run
-this and the ranking and baseline still work, but the deduplication this tool
-exists for is switched off, and a reader who is not told that will conclude the
-tool does nothing.
+Describe a supported one-source run as a judgement from that source, with no
+cross-source corroboration. Ranking, baseline and supported remedies remain
+useful. Do not equate a source count or an installed scanner with project safety.
 
 ## What else to look for
 
