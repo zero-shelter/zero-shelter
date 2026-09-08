@@ -2,25 +2,19 @@
 
 How `npx zero-shelter judge` is put together, and where to add things.
 
-The shape is deliberately boring: judgement data moves in one direction
-through five core layers, while the CLI adds history and presentation adapters
-around the result. That is what makes it possible for several people to work
-on different layers at once without stepping on each other.
-
-A small package-manager adapter keeps remediation commands in the same
-dialect as the project's lockfile.
+Judgement data moves through five core layers. The CLI adds history and presentation adapters around the result, and a package-manager adapter selects remediation commands from the project's lockfile.
 
 ## Layers
 
 ```mermaid
 flowchart TD
     subgraph entry["Entry — the only place with side effects"]
-        bin["bin.ts<br/>14 lines"]
+        bin["bin.ts<br/>entry point"]
         cli["cli.ts<br/>argv, files, exit code"]
     end
 
     subgraph acq["Acquisition — subprocesses"]
-        scan["scan.ts<br/>runs npm audit, optionally osv-scanner"]
+        scan["scan.ts<br/>runs npm/pnpm audit and optional osv-scanner"]
     end
 
     subgraph ingest["Ingest — one file per scanner"]
@@ -73,14 +67,11 @@ flowchart TD
     hook --> cli
 ```
 
-**Project I/O and subprocesses stay at the boundary.** `cli.ts` owns files,
+Project I/O and subprocesses stay at the boundary. `cli.ts` owns files,
 stdin, stdout, and exit codes; `scan.ts` owns scanner subprocesses; and
 `version.ts` reads only the installed package metadata. The judgement,
 normalization, history model, and presentation modules remain data-to-data
-functions. That is not architectural taste — it is what lets the tests drive
-the judgement path from fixtures without ever spawning a scanner, so a test
-failure means the logic is wrong rather than that someone's machine lacks a
-binary.
+functions. This lets tests exercise judgement with fixtures independently of installed scanners.
 
 The package-manager adapter is also data-to-data: it selects the install
 command, override key, and whether a `clears N` promise is supported from the
@@ -107,8 +98,8 @@ sequenceDiagram
     note over cli,base: missing is a normal first run;<br/>malformed is a hard error
 
     cli->>scan: collect({ cwd })
-    scan->>scan: npm audit --json
-    note over scan: exits non-zero when it finds<br/>things — that is success
+    scan->>scan: npm or pnpm audit --json
+    note over scan: exits non-zero when it finds<br/>findings; parse the report
     scan->>scan: osv-scanner (skipped if absent)
     scan->>ing: parseNpmAudit / parseOsv
     ing-->>scan: ScaFinding[]
@@ -148,11 +139,10 @@ Core types, each produced by exactly one layer:
 | `ScaFinding` | `ingest/*` | One advisory, one source, normalized |
 | `MergedFinding` | `merge.ts` | One advisory, all sources that saw it |
 | `RankedFinding` | `triage.ts` | A merged finding plus its score and reasons |
-| `JudgeResult` | `judge.ts` | Everything the report needs, and nothing more |
+| `JudgeResult` | `judge.ts` | Judgement results and report context |
 | `Change` | `history.ts` | The difference between recorded runs |
 
-Adding a field means deciding which layer owns it. If no layer can fill it, it
-does not go in — we removed `devOnly` for exactly that reason.
+Assign each new field to the layer that can supply it. `devOnly` was previously removed because no layer could populate it.
 
 ## Rules per layer
 
@@ -160,14 +150,9 @@ These are what reviews check.
 
 **Ingest** — every string passes through `normalize.ts`. Never build a
 fingerprint by hand; call `fingerprint()`. Preserve `aliases` even when they
-look redundant, because that is the only thing the merge can join on. Secrets
-are hashed at parse time and the original is dropped.
+look redundant, because merging relies on shared advisory identifiers. Secret scanning is outside v1; do not infer secret-handling coverage from dependency normalization.
 
-**Judgment** — no I/O, no `Date`, no randomness. Integer arithmetic only:
-floating point rounds differently per platform, and a ranking that moves by host
-makes every number we publish true only on the machine that produced it. Output
-must not depend on input order — every stage sorts by fingerprint, and there are
-tests that reverse the input and compare.
+**Judgment** — no I/O, no `Date`, no randomness. Use integer arithmetic and preserve deterministic ordering. Output must not depend on input order; tests reverse the input and compare results.
 
 **Presentation** — reads, never computes. If one view shows something the JSON
 cannot, that is a bug: text, JSON, SARIF, HTML, and hook context are views of
@@ -197,17 +182,11 @@ to add a command        → src/cli.ts
 to change remediation dialect → src/package-manager.ts, src/actions.ts,
                               src/report.ts, src/hook.ts
 
-Two callers build a judgement: `judge` and `hook`, and they assemble the
-options separately. Every field added to `JudgeOptions` has to be wired into
-both, and the hook has been left behind three times — the lockfile it was not
-reading, the package manager dialect, and the withheld `clears` count. It is
-the worst place to be wrong, because a person would notice `npm i` in a pnpm
-repository and an agent just runs it. `npm run qa:agent` covers the hook per
-manager for that reason.
 ```
 
-A new scanner is fairly self-contained, but **there are two acquisition paths
-and a third context to wire.** `scan.ts` runs scanners as subprocesses.
+Both `judge` and `hook` build judgements and assemble their options separately. Wire new `JudgeOptions` fields into both. Previous hook omissions involved the lockfile, package-manager commands, and the withheld `clears` count. `npm run qa:agent` checks package-manager advice in the hook.
+
+A scanner adapter must support both acquisition paths and receive manifest context. `scan.ts` runs scanners as subprocesses.
 `--input` reads a report someone already produced, and it dispatches separately
 in `readInput` (`src/cli.ts`) by probing the shape of the JSON. Both paths also
 pass the manifest's declared package names when the source cannot establish
@@ -226,19 +205,13 @@ the report offers an override for a package the manifest declares itself.
 `readInput`'s error message also names the shapes it knows, so a third one means
 that message is wrong until it is updated.
 
-So: one new file, one line in `scan.ts`, one branch and one message in
-`cli.ts`, the `declared` argument on both parser calls, one fixture, and one
-snapshot.
+Update the parser, scanner invocation, saved-input dispatch and format error message together. Pass `declared` on both parser calls and add the fixture and regression coverage required by the spec.
 
-The hand-maintained `if` chain is the thing that makes this doc easy to get
-wrong — each ingest module could export its own `detect`, and the dispatch could
-iterate. That would make this section true instead of merely accurate. It is
-open as a design question rather than done.
+Parser detection is currently maintained in `readInput`. Having ingest modules export a `detect` function remains a design proposal, not an implemented interface.
 
 ## npm CLI packaging
 
-The parts specific to shipping this as a CLI, since they are easy to get subtly
-wrong:
+The package declares its CLI entry point and supported Node version:
 
 ```jsonc
 {
@@ -247,25 +220,22 @@ wrong:
   "bin": {
     "zero-shelter": "./dist/bin.js"   // what npx resolves
   },
-  "files": ["dist"],          // only built output is published
+  "files": ["dist"],          // built output, plus npm's standard metadata/docs
   "engines": { "node": ">=20" }
 }
 ```
 
 - `bin.ts` exists solely so `cli.ts` can be imported by tests without running.
-  A module that executes on import cannot be tested.
+  Tests can import the command handler without invoking the entry point.
 - `dist/` is built by `npm run build` and is not committed. `npx zero-shelter`
-  runs the published build, so **anything outside `files` does not exist** to a
-  user.
+  runs the published build. Inspect `npm pack --dry-run` for the actual files shipped.
 - `bin.js` needs its `#!/usr/bin/env node` line. TypeScript preserves it because
   it is the first line of `bin.ts`.
 - The preview package is published through the GitHub Release workflow with
   npm trusted publishing (OIDC). The current package metadata and release
   status live in [`package.json`](../package.json) and the [npm package](https://www.npmjs.com/package/zero-shelter).
 
-## What is not covered by tests
-
-Said plainly so nobody mistakes a green CI for more than it is.
+## Test boundaries
 
 Scanner subprocess failure modes are driven through the injectable `Capture`
 boundary in `scan.ts`, and package/install behavior is checked by

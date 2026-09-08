@@ -1,132 +1,34 @@
 # v1 scope
 
-What v1 does, what it deliberately leaves out, and why the line is drawn there.
+v1 collects dependency findings, combines reports with shared advisory identifiers, ranks them, and compares them with an accepted baseline. Current usage is documented in the [README](../README.md); the [product description](../PRODUCT.md) explains the intended users and limits.
 
-## The pain we are removing
+## Dependency judgement
 
-Run the scanners and you get hundreds of warnings. Perhaps five deserve
-attention today, and identifying those five costs more than fixing them. So the
-report stops being opened.
-
-There is no shortage of things that find problems. What is missing is the part
-that decides.
-
-## What v1 does
-
-```
-npm audit --json         ─┐
-                          ├─→ normalize ─→ merge ─→ rank ─→ ratchet ─→ "fix these N"
-osv-scanner (if present) ─┘
+```text
+scanner reports → normalize → merge → rank → compare with baseline → findings and actions
 ```
 
-One command, `npx zero-shelter judge`, behaving the same locally and in CI.
+`npx zero-shelter judge` can run supported scanners or read saved reports with `--input`. The lockfile selects the package-manager path. Optional scanners are skipped with an explanation when unavailable; if no scanner produces a readable report, judgement exits with code `2`.
 
-## What v1 does not do
+One source provides ranking, remediation guidance, and baseline comparison. Multiple sources can also identify the same advisory under shared GHSA, CVE, or OSV aliases. Fewer report entries after merging do not demonstrate that the remaining findings are actionable or that security has improved. The [benchmark](../bench/README.md) records the measured counts and their limitations.
 
-No SAST, no secret scanning, no prompt intent detection, prompt rewriting, or
-natural-language rule packs. v1 does include a non-blocking Agent Hook that
-injects dependency judgement context; it does not decide whether a prompt is
-allowed or replace what the user typed. The broader controls are sequenced
-later rather than dropped, for the reason below.
+## Scope and design choices
 
----
+Dependency findings were the initial focus because npm audit and OSV can report the same advisory using different identifiers. Findings from different analysis domains, such as dependency analysis and source-code analysis, generally require separate interpretation. Combining those reports would need a broader contract than dependency deduplication.
 
-## Why dependencies first
+The baseline records findings that a user has chosen to accept. Later judgements distinguish those accepted findings from new ones. Acceptance is a risk decision; it is not remediation and is not required for installation or first use.
 
-The original framing was "ingest output from several scanners and merge it."
-Checking which pairs actually overlap showed that most of the combinations we
-had in mind have nothing to merge.
+The non-blocking agent hook adds dependency judgement context to a coding session. It does not inspect intent, block prompts, or rewrite user input. v1 does not provide SAST, secret scanning, prompt policy, or natural-language rule packs.
 
-| Pair | Overlaps? |
-|---|---|
-| semgrep (SAST) + npm audit (SCA) | No. They look for different things and never report the same finding. |
-| semgrep + gitleaks | No, same reason. |
-| **npm audit + osv-scanner** | **Yes. The same advisory under GHSA, CVE and OSV names.** |
-| gitleaks + trufflehog | Yes. The same secret found by both. |
-| semgrep + opengrep | Technically, but opengrep is a semgrep fork, so the outputs are near-identical and deduplicating them proves nothing. |
+## Implementation constraints
 
-Duplication happens **within a layer**, when two tools cover the same ground. In
-practice that means dependencies and secrets. Very few teams run two SAST
-engines.
+- Use integer ranking arithmetic and deterministic ordering.
+- Normalize all fingerprint inputs through `src/normalize.ts`.
+- Add no network requests of our own. Invoked scanners may contact their registries or advisory services; document that boundary.
+- Preserve the [exit-code and JSON contracts](./STABILITY.md).
 
-So v1 starts where the overlap provably exists. Once the judgment works there and
-we have numbers to show it, the layers widen. Doing it in the other order
-produces something that says "merged" while in fact placing results side by side.
+## Evaluation and future work
 
-`npm audit` earns its place for a second reason: if a project has a lockfile it
-has npm. Zero setup, so the first run never fails for want of a dependency.
+Ranking accuracy and dropped-finding rates require independently labeled ground truth. The current benchmark reports volume reduction; it does not establish better precision than sorting scanner output by severity. Publish the comparison even if ranking only matches that baseline.
 
-## Why we invoke scanners instead of only reading their output
-
-Reading only from files means `npx zero-shelter` does nothing on its own. The
-first run is the only one most people give a tool, and one that produces nothing
-does not get a second.
-
-Running everything is not an option either. **semgrep cannot be installed from
-npm** — it ships via PyPI and prebuilt binaries. An npm tool that asks you to
-install Python has already lost the setup it was supposed to save.
-
-So:
-
-- `npm audit` always runs. No preconditions.
-- Anything else runs **if it is on `PATH`**, and is skipped otherwise, saying so.
-- Pre-existing output can be supplied with `--input`, which is what CI usually
-  wants.
-
-Nothing is a prerequisite for the tool to *run*. A second source is a
-prerequisite for it to be *useful*, and that is a different sentence: with one
-source there is nothing to reconcile and the count comes out as it went in.
-Measured on uptime-kuma, npm audit alone reports 71 and leaves 71. See the
-install section of the README.
-
-## Why CI and pull requests come first
-
-That is where the noise costs the most, and the only context where the ratchet
-has an unambiguous meaning. "Only what this change introduced" is vague locally
-and precise on a pull request.
-
-## Why the ratchet ships in v1
-
-The difference between a tool people try and a tool people keep is whether there
-is a reason to run it a second time.
-
-A legacy repository produces hundreds of findings on the first run. Demanding
-all of them be fixed is equivalent to being ignored. "Do not let it get worse
-from today" is the achievable version, and it requires that yesterday's
-dismissals stay dismissed.
-
-Without it, the second run is identical to the first, which is merely annoying.
-So it is not a later feature. It is part of what makes v1 a product.
-
-## Constraints this places on the implementation
-
-From the invariants in the [README](../README.md#design-invariants), the ones
-that bite hardest in v1:
-
-- **Integer arithmetic only in ranking.** Platform-dependent rounding would make
-  the ordering host-specific, and every published number with it.
-- **Everything fingerprinted goes through `src/normalize.ts`.** No exceptions.
-- **No network calls of our own.** `npm audit` contacts the registry; that is npm
-  doing its job. We describe our guarantee precisely — that *we* add no traffic —
-  rather than claiming to be offline in a way we are not.
-
-## What we will say about accuracy
-
-If the benchmark shows our ranking is about as accurate as sorting by severity,
-we publish that.
-
-What we are claiming is not better precision. It is a large reduction in noise at
-comparable precision, which is both easier to defend and closer to what actually
-helps. Claiming precision we cannot demonstrate invites exactly the check that
-disproves it.
-
-## Order of expansion
-
-After v1 works end to end:
-
-1. **Secrets** (gitleaks + trufflehog) — the second layer where overlap is real.
-2. **SAST ingest** (SARIF) — here the goal is one ordered list rather than
-   deduplication, since the overlap is thin.
-3. **Developer-intent rules and prompt policy controls.**
-
-Each step begins only after the previous one has been measured on the benchmark.
+The original expansion proposal placed secret-scanner reconciliation first, SAST ingestion second, and developer-intent or prompt-policy controls third, with benchmark evidence required before each step. This sequence records the v1 proposal, not a commitment that those features are shipped or approved. New controls require their own specification, security review, and Owner approval.

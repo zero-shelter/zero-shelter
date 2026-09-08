@@ -1,4 +1,6 @@
-# Beta QA Report — YYYY-MM-DD
+# Beta QA Report: YYYY-MM-DD
+
+<!-- Replace example choices with observed results. Identify automated execution, agent inspection, and human decisions separately; do not mark unexecuted work as passed. -->
 
 ## Candidate
 
