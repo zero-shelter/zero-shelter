@@ -2,16 +2,19 @@
 
 [English](./README.md) · [한국어](./README.ko.md)
 
-Turns dependency scanner output into a short, deterministic list of what to fix
-now — and stops telling you about the rest.
+**Know what to fix. Know what remains unknown.**
 
-Local-first. No LLM at runtime, no network calls of its own, no telemetry.
+Explainable next actions from dependency scanner reports, with a record of
+accepted decisions. [Product](./PRODUCT.md) · [Roadmap and current state](./docs/ROADMAP.md)
+
+Local-first. No LLM at runtime or telemetry. Invoked scanners may use the network
+and repository configuration; local execution is not a sandbox.
 
 > **Status: early.** [`zero-shelter`](https://www.npmjs.com/package/zero-shelter)
 > is published as a preview. The pipeline runs end to end, and CI covers it on
 > Linux, macOS and Windows — including installing the packaged tarball and
-> running the tool on this repository itself. The interface may still change
-> before 0.1.0.
+> running the tool on this repository itself. The feature set is evolving; the
+> [published exit-code and JSON contracts](./docs/STABILITY.md) still apply.
 
 ## The problem
 
@@ -73,17 +76,19 @@ When they all ran again, it does not manufacture doubt.
 
 ## Install
 
-Two things, and the second one is not optional.
+Install zero-shelter, then choose scanner inputs that fit the project. OSV-Scanner
+can add evidence alongside npm/pnpm audit; yarn requires OSV-Scanner for live
+collection through this tool.
 
 ```console
 $ npm i -g zero-shelter          # or npx zero-shelter judge
 $ brew install osv-scanner       # or a release from google/osv-scanner
 ```
 
-`npm audit` always runs, because a project with a lockfile already has npm. It
-is one source. **This tool reconciles sources, so with one of them there is
-nothing to reconcile** — you get ranking and a baseline, and the count comes out
-the same as it went in.
+For supported npm projects the built-in audit path uses `npm audit`; pnpm and
+yarn differ as described below. One readable source can provide ranking, a
+baseline and supported remediation advice. Cross-source reconciliation needs
+multiple contributing sources, but a single-source run still has value.
 
 The difference is not just a shorter list. On the pinned captures, the second
 source supplies fixed versions and advice for vulnerable transitive packages:
@@ -110,8 +115,8 @@ Both numbers are real. The second scanner does not find 71 new problems — it
 describes the same ones again, under identifiers the first one did not use, and
 reconciling that is the job.
 
-A run without `osv-scanner` still works and says so rather than failing. It is
-just the smaller half of the tool.
+A supported npm/pnpm run without `osv-scanner` can still produce a judgement
+and names the skipped scanner. Assess the evidence that actually contributed.
 
 pnpm projects work the same way: a `pnpm-lock.yaml` makes it run `pnpm audit`
 instead. npm 6's older report shape is read too. That shape carries a patched

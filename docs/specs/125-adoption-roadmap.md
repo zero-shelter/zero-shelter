@@ -1,5 +1,9 @@
 # Feature specification: something on run one, and a reason to come back
 
+> **Current sequencing:** see [the product roadmap](../ROADMAP.md). This document
+> preserves detailed proposals and rejected designs; its start order is historical.
+> Delivery evidence and now/next/later priorities are maintained in the current roadmap.
+
 ## Issue and lifecycle metadata
 
 - Issue: [#125](https://github.com/zero-shelter/zero-shelter/issues/125)

@@ -1,5 +1,9 @@
 # 기능 명세: 첫 실행에서 줄 것, 그리고 돌아올 이유
 
+> **현재 실행 순서:** [제품 로드맵](../ROADMAP.ko.md)을 따릅니다. 이 문서는 상세 제안과
+> 거절한 설계를 보존하며, 시작 순서는 과거 기준입니다. 실제 전달 상태와 우선순위는
+> 현재 로드맵에서 관리합니다.
+
 ## Issue와 lifecycle metadata
 
 - Issue: [#125](https://github.com/zero-shelter/zero-shelter/issues/125)
