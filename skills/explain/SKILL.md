@@ -14,6 +14,7 @@ Shape:
 {
   "summary": { "raw": 7, "merged": 7, "fixNow": 7, "shown": 7, "accepted": 0, "noLongerReported": 0 },
   "skipped": ["osv-scanner skipped: not on PATH (optional …)"],
+  "unscanned": { "secrets": true, "containers": false, "workflows": 0, "infrastructure": false },
   "upgrades": [{ "packageName": "lodash", "upgradeTo": "4.18.1", "clears": 7, "command": "<manager command from the report>" }],
   "transitiveFixes": [{ "packageName": "tar", "upgradeTo": "7.5.21", "clears": 2 }],
   "noLongerReported": [],

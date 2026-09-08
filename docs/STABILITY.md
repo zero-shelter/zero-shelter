@@ -49,6 +49,7 @@ These top-level keys are frozen. They will keep their names and their types:
 | `noLongerReported` | array | Previously accepted, absent this run |
 | `skipped` | array of string | Scanners that did not produce a report |
 | `workspaceRoot` | boolean | Whether install commands would land in the wrong package.json |
+| `unscanned` | object | Local artifacts outside the dependency-only judgement |
 
 `summary` keeps `raw`, `merged`, `fixNow`, `shown`, `accepted` and
 `noLongerReported`, all integers.
@@ -60,6 +61,12 @@ Each entry in `fixNow` keeps `fingerprint`, `score`, `severity`, `ecosystem`,
 `fixedIn` is **frozen if present**. It is absent when no source named a version
 that fixes the finding, which is common — 32 of 82 on the juice-shop captures.
 Treat its absence as "no published fix", never as a key you can rely on.
+
+`unscanned` is supplied by normal CLI runs and contains `secrets: true`,
+`containers: boolean`, `workflows: integer`, and `infrastructure: boolean`.
+It names only local artifacts that exist; an absent file does not become a
+finding. The dependency-only boundary is a statement about what zero-shelter
+did not inspect, not a claim that those domains are clean or dirty.
 
 **`warning` is frozen if present.** It is absent on a clean run. When it is
 there it is a string, and it means the whole judgement is qualified: the
