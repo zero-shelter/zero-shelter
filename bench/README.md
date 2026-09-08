@@ -19,6 +19,12 @@ Captured 2026-08-07 with npm 11.4.2 and osv-scanner 2.5.0, frozen under
 Reproduce with `npm run build && node bench/evaluate.mjs`. Reads only the
 committed captures — no network, no scanners.
 
+The same command also prints an actionability table: findings with a named fix
+version, direct upgrade commands, and transitive advice for npm audit alone
+versus both sources. Those counts describe what this repository can recommend
+from the captures; they are not precision or a claim that every finding is
+worth fixing.
+
 ## Labelling: what a human is actually asked to do
 
 The per-finding sheets (`<repo>.template.tsv`, 645 rows) ask whether each raw
