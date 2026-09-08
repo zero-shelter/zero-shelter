@@ -31,6 +31,12 @@ npm (#229). Agent skills use the report's commands and manager-specific forced
 versions, with a QA check to catch guidance drifting back to npm-only remedies
 (#234).
 
+The older pnpm/npm 6 advisories shape now supplies a fixed version for a
+standalone inclusive stable lower bound such as `>=1.2.3`. Exclusive,
+prerelease and compound ranges intentionally do not produce an install target
+(#233). Korean HTML score reasons and the weights table are translated while
+English terminal and SARIF reason strings are preserved (#240).
+
 **Recording and version selection survive their edge cases.** An interrupted
 history write no longer swallows every subsequent entry (#199). Unknown
 baseline entry keys are named as warnings, including misspellings such as
@@ -47,7 +53,10 @@ Installation QA bounds its subprocesses, gives the CLI headroom above scanner
 timeouts, and reports why a failing check could not judge; CI jobs also have
 explicit time limits (#160). The README points contributors at focused first
 issues (#164). CODEOWNERS requests owner reviews, with approvals and required
-CI enforced through branch protection (#202).
+CI enforced through branch protection (#202). Contributor architecture guidance
+now includes manifest context in both acquisition paths (#238). A dedicated
+Node 20 job tests the declared support floor using a checksum-pinned runtime
+(#241).
 
 **Compatibility and limits.** Existing judge exit codes, fingerprint recipes,
 ranking weights and baseline acceptance semantics are unchanged. The history
@@ -55,8 +64,8 @@ JSON fields and optional SARIF vector are additive; human-readable output has
 changed. A finding is still described as *no longer reported*, not necessarily
 fixed. Package, lockfile and plugin versions agree on 0.0.10 (#203).
 
-The older pnpm/npm 6 report can still omit an actionable fixed version; #204
-and the unmerged #233 track that gap. The Korean HTML duplicate suffix still
+Unsupported older-shape patched ranges still omit an actionable fixed version.
+The Korean HTML duplicate suffix still
 has the English `fixed in` wording tracked by #218. This release does not add a
 new scanner, and does not include the proposed `scanners` command (#163).
 
@@ -69,7 +78,7 @@ review and discussion are also appreciated.
 | [@be-student](https://github.com/be-student) | [SARIF CVSS evidence #226](https://github.com/zero-shelter/zero-shelter/pull/226), [baseline sources #227](https://github.com/zero-shelter/zero-shelter/pull/227) |
 | [@chrisriv10](https://github.com/chrisriv10) | [Fork CI guidance #220](https://github.com/zero-shelter/zero-shelter/pull/220) |
 | [@kshivam4781](https://github.com/kshivam4781) | [Verified scanner download #221](https://github.com/zero-shelter/zero-shelter/pull/221), [HTML count boundary #229](https://github.com/zero-shelter/zero-shelter/pull/229) |
-| [@msnodeve](https://github.com/msnodeve) | [History counts #232](https://github.com/zero-shelter/zero-shelter/pull/232), [manager-neutral skills #234](https://github.com/zero-shelter/zero-shelter/pull/234) |
+| [@msnodeve](https://github.com/msnodeve) | [History counts #232](https://github.com/zero-shelter/zero-shelter/pull/232), [manager-neutral skills #234](https://github.com/zero-shelter/zero-shelter/pull/234), [pnpm fixes #233](https://github.com/zero-shelter/zero-shelter/pull/233), [architecture guidance #238](https://github.com/zero-shelter/zero-shelter/pull/238), [Korean score reasons #240](https://github.com/zero-shelter/zero-shelter/pull/240), [Node 20 CI #241](https://github.com/zero-shelter/zero-shelter/pull/241) |
 | [@PresentJay](https://github.com/PresentJay) | [QA bounds #160](https://github.com/zero-shelter/zero-shelter/pull/160), [contributor entry point #164](https://github.com/zero-shelter/zero-shelter/pull/164), [version ordering #170](https://github.com/zero-shelter/zero-shelter/pull/170), [scanner outcome #190](https://github.com/zero-shelter/zero-shelter/pull/190), [direct dependencies #195](https://github.com/zero-shelter/zero-shelter/pull/195), [history writes #199](https://github.com/zero-shelter/zero-shelter/pull/199), [baseline warnings #200](https://github.com/zero-shelter/zero-shelter/pull/200), [yarn guidance #201](https://github.com/zero-shelter/zero-shelter/pull/201), [review routing #202](https://github.com/zero-shelter/zero-shelter/pull/202), [release preparation #203](https://github.com/zero-shelter/zero-shelter/pull/203) |
 
 ## 0.0.9

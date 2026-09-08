@@ -91,8 +91,13 @@ we care most about, because it is the one a schema check does not catch.
 ### Not frozen
 
 `--format sarif` follows the SARIF 2.1.0 schema, which is the contract there.
-Note that `partialFingerprints.zeroShelter` is stable across machines but not
-across changes to which scanners run — see #86.
+`tool.driver.version` and `tool.driver.semanticVersion` identify the
+zero-shelter package that wrote the file. A result may also carry
+`properties.toolVersions`, an array of `{ tool, version }` objects for scanner
+versions the source supplied; missing versions stay absent rather than guessed.
+`partialFingerprints.zeroShelter` is stable across machines but not across
+changes to which scanners run — see #86. The JSON output intentionally keeps
+its action-oriented `tools` names and does not add provenance versions there.
 
 The baseline file format is not frozen. It is ours, it is going to change, and
 `judge` reads whatever version it finds.

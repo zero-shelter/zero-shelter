@@ -85,7 +85,21 @@ $ brew install osv-scanner       # 또는 google/osv-scanner 릴리스
 그건 소스 하나입니다. **이 도구가 하는 일이 소스를 맞추는 것이라, 소스가 하나면
 맞출 것이 없습니다** — 순위와 baseline은 그대로 얻지만 건수는 들어간 그대로 나옵니다.
 
-차이가 미묘하지 않습니다. uptime-kuma 실측:
+차이는 목록이 짧아지는 데 그치지 않습니다. 고정 버전과 간접 의존성 조치가
+실제로 생깁니다. 고정된 capture에서 두 번째 소스를 더했을 때의 수치입니다.
+
+| 프로젝트 | 수정 버전을 아는 항목: npm audit → 둘 다 | 직접 명령: npm audit → 둘 다 | 간접 조언: npm audit → 둘 다 |
+|---|---:|---:|---:|
+| juice-shop | 15/73 → 50/82 | 6 → 6 | 0 → 11 |
+| nodegoat | 7/177 → 109/173 | 2 → 5 | 0 → 49 |
+| dvna | 20/51 → 40/51 | 7 → 7 | 0 → 6 |
+| hackathon-starter | 0/11 → 4/11 | 0 → 0 | 0 → 2 |
+
+고정된 네 capture 모두 `npm audit` 단독에서는 간접 조언이 비어 있고,
+`osv-scanner`까지 참여하면 생깁니다. 버전이 어딘가에 존재한다고 말하는 것과
+무엇을 해야 하는지 설명하는 것의 차이입니다.
+
+목록을 읽기 쉽게 만드는 noise 감소도 여전히 중요합니다. uptime-kuma 실측:
 
 ```console
 npm audit 단독       71건 보고 → 71건 조치   (0% 감소)
@@ -128,6 +142,8 @@ advisory가 CVSS vector를 제공하면 각 SARIF 결과는 그 값을
 `properties.cvssVector`에 그대로 보존합니다. scanner 출력에는 vector만 있고 숫자
 score는 없으므로 GitHub의 숫자형 `security-severity`는 대략적인 severity band
 fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 score를 만들지는 않습니다.
+SARIF에는 이 파일을 쓴 zero-shelter 패키지 버전도 표시하고, scanner가 제공한 경우
+scanner 버전도 보존합니다.
 
 여기엔 짚어 둘 만한 아이러니가 있습니다. 이 프로젝트는 서로 다른 도구의 SARIF를
 그걸 받는 도구들이 맞대지 못하기 때문에 존재합니다. 그런 우리가 SARIF를 내보내는
