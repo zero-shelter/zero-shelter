@@ -40,8 +40,9 @@ buys beyond a shorter list:
 | dvna | 20/51 → 40/51 | 0 → 6 |
 | hackathon-starter | 0/11 → 4/11 | 0 → 2 |
 
-The transitive advice block is empty with one source in every pinned capture.
-The benchmark is reproducible from `bench/captures/` with
+The npm-audit-only transitive advice block is empty in every pinned capture; the
+table's both-sources column shows what changes when osv-scanner contributes. The
+benchmark is reproducible from `bench/captures/` with
 `npm run build && node bench/evaluate.mjs`; these figures are evidence about
 this project's output, not a promise that every repository has the same ratio.
 

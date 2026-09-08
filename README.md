@@ -94,9 +94,9 @@ source supplies fixed versions and advice for vulnerable transitive packages:
 | dvna | 20/51 → 40/51 | 7 → 7 | 0 → 6 |
 | hackathon-starter | 0/11 → 4/11 | 0 → 0 | 0 → 2 |
 
-The transitive block is empty with one source on every pinned capture, and
-populated when the second source contributes. That is the difference between a
-report that says a version exists and one that can explain what to do about it.
+The transitive block is empty with `npm audit` alone on every pinned capture,
+and populated when `osv-scanner` contributes too. That is the difference between
+a report that says a version exists and one that can explain what to do about it.
 
 The noise reduction still matters for readability. On uptime-kuma:
 
