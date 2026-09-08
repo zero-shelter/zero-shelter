@@ -63,7 +63,7 @@ const VULNERABLE = { lodash: "4.17.11" };
 const results = [];
 const check = async (name, expectation, fn) => {
   // Scoped to this check on purpose. Some checks exit 2 because that is what
-  // they are asserting — "nothing scanned is not a pass" runs in an empty
+  // they are asserting — "no readable scanner report returns exit 2" runs in an empty
   // directory and a lockfile complaint there is the expected answer, not a
   // symptom. Only a check that actually failed gets to explain itself.
   couldNotJudge = undefined;
@@ -222,20 +222,20 @@ await check("9. no subcommand behaves like judge", "same exit code", async () =>
   return `exit ${bare.code}`;
 });
 
-await check("findings are reported at all", "exit 1 with a known-vulnerable dep", async () => {
+await check("new findings return exit 1", "exit 1 with a known-vulnerable dep", async () => {
   const { code, stdout } = await cli(project, ["judge"]);
   expect(code === 1, `exit ${code}`);
   expect(/findings to review:/.test(stdout), "no findings reported");
   return `exit 1, ${(stdout.match(/findings to review: (\d+)/) ?? [])[1]} finding(s)`;
 });
 
-await check("the report says what to run", "an npm i command appears", async () => {
+await check("report includes the expected upgrade command", "an npm i command appears", async () => {
   const { stdout } = await cli(project, ["judge"]);
   expect(/npm i lodash@/.test(stdout), "no upgrade command in the report");
   return (stdout.match(/npm i \S+/) ?? [])[0];
 });
 
-await check("1. nothing scanned is not a pass", "exit 2, never 0", async () => {
+await check("1. no readable scanner report returns exit 2", "exit 2, never 0", async () => {
   const { code, stderr } = await cli(empty, ["judge"]);
   expect(code === 2, `exit ${code} — a directory with no lockfile must not pass`);
   expect(/lockfile/i.test(stderr), "the message does not mention the lockfile");
@@ -259,7 +259,7 @@ await check("3. an old Node is explained", "exit 2 with both versions named", as
   return "exit 2";
 });
 
-await check("10. baseline silences, then the loop closes", "exit 0, then credit for a fix", async () => {
+await check("10. baseline acceptance and subsequent comparison", "exit 0, then credit for a fix", async () => {
   const recorded = await cli(project, ["judge", "--update-baseline"]);
   expect(recorded.code === 0, `--update-baseline exited ${recorded.code}`);
 
@@ -315,7 +315,7 @@ await check("both sources reconcile when osv-scanner is present", "cross-source 
   return "npm audit + osv-scanner";
 });
 
-await check("the html report is one openable file", "self-contained, escaped, no network", async () => {
+await check("HTML is self-contained and deterministic", "self-contained, escaped, no network", async () => {
   const fresh = await freshProject("html-project");
   const { stdout } = await cli(fresh, ["judge", "--format", "html"]);
 
@@ -348,7 +348,7 @@ await check("history records only when asked", "no file until --record", async (
   return "silent until asked, then two runs with a delta";
 });
 
-await check("7. nothing but dist ships", "no runtime dependencies", async () => {
+await check("7. package contains only intended published files", "no runtime dependencies", async () => {
   const manifest = JSON.parse(
     await readFile(join(project, "node_modules", "zero-shelter", "package.json"), "utf8"),
   );
