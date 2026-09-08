@@ -9,6 +9,7 @@ import { judge } from "../src/judge.js";
 import { fromPackages } from "../src/lockfile.js";
 import { renderSarif } from "../src/sarif.js";
 import { messagesFor } from "../src/messages.js";
+import { PACKAGE_VERSION } from "../src/version.js";
 
 const raw = readFileSync(
   fileURLToPath(new URL("./fixtures/npm-audit.json", import.meta.url)),
@@ -32,6 +33,11 @@ describe("renderSarif", () => {
     expect(sarif.runs[0].tool.driver.name).toBe("zero-shelter");
     expect(sarif.runs[0].tool.driver.rules).toHaveLength(result.fixNow.length);
     expect(sarif.runs[0].results).toHaveLength(result.fixNow.length);
+  });
+
+  it("identifies the zero-shelter version in the SARIF tool component", () => {
+    expect(sarif.runs[0].tool.driver.version).toBe(PACKAGE_VERSION);
+    expect(sarif.runs[0].tool.driver.semanticVersion).toBe(PACKAGE_VERSION);
   });
 
   it("points every result at the rule it came from", () => {
@@ -117,6 +123,24 @@ describe("renderSarif", () => {
 
     expect(alert).toBeDefined();
     expect(alert.properties.cvssVector).toBe(withVector?.finding.cvssVector);
+  });
+
+  it("preserves scanner versions when a source supplied one", () => {
+    const osvResult = judge(parseOsv(osvRaw, "1.9.2"), { baseline: emptyBaseline() });
+    const output = JSON.parse(renderSarif(osvResult));
+    const withVersion = output.runs[0].results.find(
+      (entry: { properties: { toolVersions?: unknown } }) => entry.properties.toolVersions !== undefined,
+    );
+
+    expect(withVersion?.properties.toolVersions).toEqual([
+      { tool: "osv-scanner", version: "1.9.2" },
+    ]);
+  });
+
+  it("does not invent a scanner version when the source did not supply one", () => {
+    for (const entry of sarif.runs[0].results) {
+      expect(entry.properties.toolVersions).toBeUndefined();
+    }
   });
 
   it("omits the CVSS property when the source did not publish a vector", () => {

@@ -13,11 +13,13 @@
  */
 
 import type { JudgeResult } from "./report.js";
+import type { MergedFinding } from "./merge.js";
 import type { RankedFinding } from "./triage.js";
 import { messagesFor } from "./messages.js";
 import { upgradeActions } from "./actions.js";
 import { reachesEveryCopy, type InstalledVersions } from "./lockfile.js";
 import { overrideSnippet, type PackageManager } from "./package-manager.js";
+import { PACKAGE_VERSION } from "./version.js";
 
 const TOOL_URI = "https://github.com/zero-shelter/zero-shelter";
 const ENGLISH_MESSAGES = messagesFor("en");
@@ -57,6 +59,8 @@ export function renderSarif(result: JudgeResult): string {
             driver: {
               name: "zero-shelter",
               informationUri: TOOL_URI,
+              version: PACKAGE_VERSION,
+              semanticVersion: PACKAGE_VERSION,
               rules,
             },
           },
@@ -125,6 +129,7 @@ function toResult(
   // tab is one click from a page of prose about the advisory and nowhere near
   // the one line that resolves it.
   const remedy = remedyFor(entry, installed, manager);
+  const toolVersions = toolVersionsOf(finding);
 
   return {
     ruleId: finding.advisoryId,
@@ -159,6 +164,9 @@ function toResult(
         (reason) => `${reason.points} ${ENGLISH_MESSAGES.reasonText(reason)}`,
       ),
       tools: finding.tools,
+      ...(toolVersions.length === 0
+        ? {}
+        : { toolVersions }),
       aliases: finding.aliases,
       possibleDuplicates: finding.relatedTo,
       // Preserve the advisory's evidence without deriving a floating-point
@@ -167,6 +175,24 @@ function toResult(
       ...(remedy === undefined ? {} : { remedy }),
     },
   };
+}
+
+/** Preserve scanner versions when a source supplied one, without guessing. */
+function toolVersionsOf(finding: MergedFinding): { tool: string; version: string }[] {
+  const byTool = new Map<string, Set<string>>();
+
+  for (const member of finding.members) {
+    for (const source of member.sources) {
+      if (source.toolVersion === undefined) continue;
+      const versions = byTool.get(source.tool);
+      if (versions === undefined) byTool.set(source.tool, new Set([source.toolVersion]));
+      else versions.add(source.toolVersion);
+    }
+  }
+
+  return [...byTool.entries()]
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .flatMap(([tool, versions]) => [...versions].sort().map((version) => ({ tool, version })));
 }
 
 /**

@@ -131,6 +131,8 @@ When an advisory supplies a CVSS vector, each SARIF result preserves it exactly
 as `properties.cvssVector`. GitHub's numeric `security-severity` remains a
 coarse severity-band fallback because the scanner output supplies vectors but
 no numeric score; zero-shelter does not derive one with floating-point math.
+SARIF also identifies the zero-shelter package version and preserves scanner
+versions when a source provides them.
 
 There is an irony here worth naming: this project exists because SARIF from
 different tools cannot be reconciled by the tools that consume it. Emitting
