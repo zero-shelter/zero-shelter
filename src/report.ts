@@ -573,6 +573,7 @@ export function renderJson(result: JudgeResult): string {
       noLongerReported: result.applied.noLongerReported,
       warning: result.applied.warning,
       skipped: result.skipped,
+      missingSources: result.applied.missingSources,
       // The commands, so a caller does not have to re-derive them from the
       // findings and get the version comparison subtly wrong.
       workspaceRoot: result.workspaceRoot === true,

@@ -68,7 +68,8 @@ $ npx zero-shelter judge
 "No longer reported" rather than "fixed", because a finding also disappears
 when the scanner that found it did not run. The baseline records which scanners
 contributed, so when one of them is missing this run, the line says which —
-and when they all ran again, it does not manufacture doubt.
+and when JSON is the surface, `missingSources` carries the same qualification.
+When they all ran again, it does not manufacture doubt.
 
 ## Install
 
