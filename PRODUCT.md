@@ -1,110 +1,89 @@
 # Product
 
-[한국어](./PRODUCT.ko.md) · [Roadmap and delivery evidence](./docs/ROADMAP.md)
+[한국어](./PRODUCT.ko.md) · [Roadmap](./docs/ROADMAP.md)
 
-## Promise
+zero-shelter turns dependency scanner reports into a ranked review list,
+upgrade commands where supported, and a record of accepted findings. Developers
+can act on the report directly or pass its commands and evidence to a coding agent.
 
-**Know what to fix. Know what remains unknown.**
+## Users and workflow
 
-zero-shelter turns dependency scanner reports into explainable next actions and
-keeps accepted decisions visible over time. It must also say where the evidence
-ends. Fewer reports, an accepted baseline, or an installed scanner cannot prove
-that a project is safe.
+The product is intended for developers responsible for a repository's dependency
+security, including those without a dedicated security team. Maintainers use
+the same evidence to review proposed dependency changes.
 
-The broader ambition is to help a developer take responsibility for security:
-understand what needs checking, choose an action with evidence, verify the next
-run, and revisit decisions before they expire. The shipped product currently
-addresses dependency findings. Project-specific guidance and a decision work
-queue are roadmap work, not capabilities this sentence claims are available.
+The workflow is to collect supported scanner reports, review the findings and
+available remedies, apply an agreed change, then compare the next run. A
+baseline records decisions to accept findings; history records changes between
+runs. Neither substitutes for checking that the application still works.
 
-## Who and what job
+The [README](./README.md) covers installation, direct use, AI integration and CI.
 
-The primary user is a developer responsible for a repository's security who
-needs a practical next step, including a developer without a dedicated security
-team. They may arrive with one scanner, several scanners, or no setup yet.
-The first-run experience must help them reach usable evidence without requiring
-that they already understand the scanner landscape.
+## Current capabilities
 
-The job is: **help me decide what to do next, explain why, and preserve what I
-need to reconsider later.** The same developer returning next week is a core
-user, not a separate reporting audience.
+- Read supported npm/pnpm audit and OSV reports, merge shared identifiers, and
+  rank findings using the weights printed by `--explain`.
+- Provide direct upgrade commands and separate indirect dependency advice where
+  supported. Package-manager, workspace and ecosystem limits apply.
+- Record accepted findings and compare later runs. Entries support decision
+  metadata and expiry. [#247](https://github.com/zero-shelter/zero-shelter/issues/247)
+  records a known issue: rewriting an acceptance matched through an advisory
+  alias can lose its metadata and expiry.
+- Produce terminal, JSON, HTML and SARIF reports, and optionally record history.
+  The [current-state table](./docs/ROADMAP.md#current-state) separates the npm
+  release from changes merged later.
 
-Maintainers reviewing a proposed dependency change and agents acting on the
-user's behalf are secondary users of the same evidence. An agent consumes the
-provided commands; it does not invent rankings or accept risk to quiet output.
+One supported source provides ranking, available remediation advice and
+baseline comparison. Additional sources may contribute findings or fixed
+versions, corroborate findings, and allow reconciliation of overlapping
+identifiers. The [benchmark](./bench/README.md) measures these effects on pinned
+captures; it does not establish ranking precision or a preferred scanner set
+for every project.
 
-## Value we can defend today
+## Limits
 
-- Ingest supported npm/pnpm audit and OSV reports, reconcile identifiers, and
-  rank findings with an inspectable weights table.
-- Provide direct upgrade commands and separate transitive advice where the
-  evidence supports them. Package-manager and ecosystem limits still apply.
-- Record accepted findings and compare subsequent runs. Baseline metadata and
-  expiry exist, but [#247](https://github.com/zero-shelter/zero-shelter/issues/247)
-  shows that rewriting an alias-rematched acceptance can lose its decision data.
-- Present evidence in terminal, JSON, HTML and SARIF, and retain run history.
-  [The roadmap](./docs/ROADMAP.md#current-state) distinguishes released behavior
-  from changes merged after the latest release.
+The current judgement domain is dependency vulnerabilities. The tool does not
+provide complete SAST, secret, container, infrastructure or workflow inspection,
+or determine whether a vulnerable path is reachable. It cannot infer a VEX
+justification or decide whether the user should accept a risk.
 
-One scanner can already yield ranking, supported remediation advice and a
-baseline. A second source can supply additional findings or fixed versions and
-can corroborate shared findings. Reconciliation is useful when sources overlap;
-it is not the only source of value and does not imply greater precision.
-The committed-capture comparison in [the benchmark](./bench/README.md) is
-specific to those inputs. It is not evidence that every project needs the same
-scanner combination or that every retained finding deserves action.
+A shorter report, an accepted baseline or an installed scanner does not prove
+that a project is safe. “No longer reported” must retain any qualification about
+missing sources. There are no measured adoption, time-to-action or retention
+results yet; proposed usability work is in the [roadmap](./docs/ROADMAP.md).
 
-## Intended outcome and evidence
+Judgement is local, with no runtime LLM or telemetry. Invoked scanners may use
+the network and repository configuration. See [Security](./SECURITY.md) for the
+trust boundary and [#217](https://github.com/zero-shelter/zero-shelter/issues/217)
+for the related documentation work.
 
-The outcome is a developer making and revisiting an informed action with less
-manual interpretation. We do not currently have measured adoption or
-user-outcome results. These are proposed validation gates, not achieved metrics:
+## Presentation
 
-| Question | Evidence to collect |
-|---|---|
-| Can a first-time user find the next step? | Five consented maintainer sessions; at least four identify a supported next action or a concrete evidence gap without coaching within five minutes. Report failures and sample size. |
-| Is the action faithful to the evidence? | Fixture and package smoke tests for supported commands; no unsupported install target or claim that all copies are cleared. |
-| Does the user understand the limit? | In the same sessions, at least four distinguish dependency judgement from whole-project security, and tool presence from a completed scan. |
-| Do decisions survive another run? | Regression tests preserve identity, author, rationale and expiry across supported baseline transitions; missing sources qualify comparisons. |
-| Is returning useful? | An expiry/changed-findings pilot produces a traceable review queue; observe whether maintainers can explain each item. No retention claim until measured. |
+Show what ran, which findings need review, the supported actions, and the reason
+for each action. Keep warnings visible. Direct commands and agent prompts must
+use the same remediation advice. Renderers must preserve the judgement's order
+and unresolved possible duplicates.
 
-Collect pilot observations with consent. Do not add product telemetry or runtime
-network behavior to obtain these measurements. Lower finding counts, stars and
-a clean baseline are not success metrics on their own.
+Use concrete descriptions and reproducible examples. Distinguish completed
+checks, estimates and missing evidence. Do not add a composite security score,
+alarm decoration or celebration effects. Use severity labels as well as color,
+keyboard controls, readable contrast, reduced-motion support and layouts that
+accommodate translations.
 
-## Boundaries
+Human-readable wording can change within the [compatibility contract](./docs/STABILITY.md).
+Ranking, fingerprints, baseline semantics and security boundaries follow the
+review requirements in [Governance](./GOVERNANCE.md).
 
-- Dependency findings are the current judgement domain. No claim of complete
-  SAST, secret, container, infrastructure or workflow inspection.
-- No proof that a vulnerable path is reachable or unreachable; no inferred VEX
-  justification, autonomous acceptance, or automatic deadline renewal.
-- No composite posture score or public project leaderboard. Preserve the
-  [recorded rejected designs](./docs/specs/adoption-roadmap.md#rejected-designs).
-  [#134](https://github.com/zero-shelter/zero-shelter/issues/134), a scoped badge,
-  remains a separate deferred proposal, not a rejected score.
-- Local judgement, no runtime LLM or telemetry. Invoked scanners may use the
-  network and repository configuration; local execution is not a sandbox.
-  [#217](https://github.com/zero-shelter/zero-shelter/issues/217) tracks that
-  documentation/trust boundary.
-- Terminal/HTML wording may evolve; preserve the published
-  [compatibility contract](./docs/STABILITY.md). A roadmap is not permission to
-  change ranking, fingerprints, baseline semantics or security boundaries.
+## Product decisions
 
-## Voice and presentation
+The Owner is responsible for positioning and roadmap order. Maintainers manage
+issue triage and release readiness. GitHub issues track status and assignees;
+[the roadmap](./docs/ROADMAP.md) records delivery order, and individual specs
+define interfaces.
 
-Exact, quiet, and open to inspection. Lead with the next action and put the
-reason beside it. Say **no longer reported**, not fixed, unless verified.
-Say what ran and what did not. Do not turn absence of evidence into reassurance.
-
-Terminal, agent JSON, HTML and SARIF are views of one judgement. Renderers do not
-re-rank it. Use no alarm decoration, invented gauges, confetti or vendor upsell.
-Severity must not depend on color alone; retain keyboard access, readable
-contrast, reduced-motion support and layouts that accommodate translations.
-
-## Ownership and change control
-
-The Owner owns positioning and roadmap order; maintainers own issue triage and
-release readiness. GitHub issue status and assignees remain the workflow source
-of truth. [The current roadmap](./docs/ROADMAP.md) owns sequencing; detailed
-specs own interfaces. Issue [#249](https://github.com/zero-shelter/zero-shelter/issues/249)
-records this alignment and the review of the replacement for PR #219.
+The project does not adopt a composite posture score or public project
+leaderboard. The [historical design](./docs/specs/adoption-roadmap.md#rejected-designs)
+records the reasons. The scoped badge proposal
+[#134](https://github.com/zero-shelter/zero-shelter/issues/134) remains deferred
+and is distinct from those rejected designs. [#249](https://github.com/zero-shelter/zero-shelter/issues/249)
+records the product and roadmap review.
