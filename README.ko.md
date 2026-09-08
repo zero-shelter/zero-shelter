@@ -155,7 +155,7 @@ npx zero-shelter judge
 `security-events: write` 권한이 필요합니다.
 
 SARIF는 안정적인 지문을 사용합니다. 권고에 `cvssVector`가 있으면 그대로 보존하고,
-`security-severity`에는 직접 계산한 CVSS 점수 대신 심각도 구간별 값을 사용합니다.
+`security_severity`에는 직접 계산한 CVSS 점수 대신 심각도 구간별 값을 사용합니다.
 패키지 버전과 제공되는 스캐너 버전도 포함합니다.
 
 ## Baseline과 실행 이력
