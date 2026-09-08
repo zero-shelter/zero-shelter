@@ -1,13 +1,7 @@
 /**
- * Walk the paths we tell agents to walk.
+ * Check the hook, shipped skills, HTML prompts and plugin manifest.
  *
- * The install QA covers a human at a terminal. This covers the other four
- * surfaces — the prompt hook, the five skills, the copy-paste prompts embedded
- * in the html report, and the plugin manifest — because those are the ones
- * nobody notices breaking. An agent does not complain that the advice was in
- * the wrong dialect; it pastes it, gets no error, and reports success.
- *
- *   node scripts/qa-agent.mjs [--keep]
+ * Usage: node scripts/qa-agent.mjs [--keep]
  */
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -74,11 +68,8 @@ async function project(manager) {
 const INPUTS = ["--input", NPM_REPORT, "--input", OSV_REPORT];
 
 /**
- * Only what a reader would actually type.
- *
- * Prose mentions the tool by name constantly — "wire zero-shelter into a
- * project's CI" is not an instruction to run `zero-shelter into`. Fenced shell
- * blocks are the part a skill promises will work.
+ * Extract commands only from shell fences; prose can mention command names
+ * without being executable guidance.
  */
 function shellLines(markdown) {
   const lines = [];
@@ -147,10 +138,7 @@ await check("hook survives junk on stdin", "exit 0", async () => {
 });
 
 /**
- * The hook has been left behind by three separate changes now — the package
- * manager dialect, the withheld clears count, and before that the lockfile it
- * was not reading. It is the surface where being wrong costs most: a person
- * would notice `npm i` in a pnpm repository, an agent runs it.
+ * Check package-manager commands and count guards in hook context.
  */
 await check("hook speaks the project's dialect", "one dialect per manager", async () => {
   const expected = { npm: "npm i ", pnpm: "pnpm add ", yarn: "yarn add " };
@@ -181,11 +169,8 @@ await check("hook speaks the project's dialect", "one dialect per manager", asyn
 // ── what the setup skill tells an agent to check ────────────────────────────
 
 /**
- * This check used to enshrine the wrong semantics, which is worse than not
- * having it: it asserted that grepping the JSON for "osv-scanner" returns
- * non-zero when the scanner ran — and it does, but it *also* returns non-zero
- * when the scanner is missing, because `skipped` names it. The gate was green
- * on a happy path that could never see the failing case.
+ * Verify both present and absent scanner states. A skipped scanner name in
+ * JSON is not evidence that the scanner contributed.
  */
 await check(
   "the setup skill's verification command answers both ways",
@@ -213,7 +198,7 @@ await check("a one-source run says so where the skill looks", "phrase present", 
   const dir = await project("npm");
   const { stdout } = await cli(dir, ["judge", "--input", NPM_REPORT]);
   expect(
-    stdout.includes("one source, nothing to reconcile"),
+    stdout.includes("one source; no cross-scanner comparison"),
     "the setup skill tells the agent to look for this phrase and it is not there",
   );
   return "phrase present";
@@ -285,9 +270,7 @@ await check("clears is only promised where it can be checked", "withheld off npm
 });
 
 /**
- * Recording is bookkeeping. A history file we cannot append to is worth saying
- * out loud and is not worth throwing a finished judgement away over — exit 2
- * means "could not judge", and the judgement was fine.
+ * A history write failure must preserve the judgement and report the warning.
  */
 await check("a history that cannot be written does not sink the run", "verdict survives", async () => {
   const dir = await project("npm");
@@ -297,7 +280,7 @@ await check("a history that cannot be written does not sink the run", "verdict s
   const { code, stdout, stderr } = await cli(dir, ["judge", ...INPUTS, "--record"]);
 
   expect(code === 1, `the judgement earned exit 1, --record turned it into ${code}`);
-  expect(stdout.includes("to fix"), "the report never reached the reader");
+  expect(stdout.includes("to review"), "the report never reached the reader");
   expect(stderr.includes("history.jsonl"), "the write failure was swallowed silently");
   return "exit 1, report printed, failure named on stderr";
 });
@@ -311,7 +294,7 @@ await check("accept, then re-run, and it is quiet", "ratchet closes", async () =
 
   const again = await cli(dir, ["judge", ...INPUTS]);
   expect(again.code === 0, `a re-run after accepting everything must exit 0, got ${again.code}`);
-  expect(again.stdout.includes("nothing new to fix"), "the loop did not close");
+  expect(again.stdout.includes("no new findings"), "the loop did not close");
   return "exit 0, nothing new";
 });
 
@@ -320,7 +303,7 @@ await check("a scanner joining later does not reopen the backlog", "ratchet hold
   await cli(dir, ["judge", "--input", NPM_REPORT, "--update-baseline"]);
   const { stdout } = await cli(dir, ["judge", ...INPUTS]);
 
-  const outstanding = Number(/→ (\d+) to fix/.exec(stdout)?.[1] ?? "-1");
+  const outstanding = Number(/→ (\d+) to review/.exec(stdout)?.[1] ?? "-1");
   expect(outstanding >= 0, "could not read the outstanding count");
   expect(outstanding < 20, `adding a scanner reopened ${outstanding} findings`);
   expect(

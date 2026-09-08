@@ -15,11 +15,12 @@ Transitive dependencies and GitHub Actions are intentionally excluded.
 
 ## External executables
 
-Called as separate processes. No code from either is bundled or vendored here.
+Called as separate processes. None of their code is bundled or vendored here.
 
-| Tool | Required | How it is used |
+| Tool | Used for | How it is used |
 |---|---|---|
-| npm CLI (`npm audit`) | yes | Already present wherever there is a lockfile. Run as `npm audit --json`; only its output is read. |
-| [osv-scanner](https://github.com/google/osv-scanner) | no | Used when found on `PATH`, skipped quietly otherwise. |
+| npm CLI (`npm audit`) | npm / Yarn projects | Run as `npm audit --json` for npm and Yarn projects; only its output is read. |
+| pnpm CLI (`pnpm audit`) | pnpm projects | Run as `pnpm audit --json` when a pnpm lockfile is detected. |
+| [osv-scanner](https://github.com/google/osv-scanner) | Installed on `PATH` | Used when found on `PATH`, reported as skipped otherwise. |
 
 This project itself is licensed under Apache-2.0. See `LICENSE`.

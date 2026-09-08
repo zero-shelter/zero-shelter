@@ -1,9 +1,6 @@
 /**
- * Picking the highest published fix.
- *
- * This module decides which version reaches the reader as a command, so a
- * wrong answer here is an upgrade that does not fix what `clears N` says it
- * clears. It had no test of its own until #169, and two cases were wrong.
+ * Regression coverage for fixed-version ordering, including leading v,
+ * prerelease identifiers and build metadata. See #169.
  */
 import { describe, expect, it } from "vitest";
 

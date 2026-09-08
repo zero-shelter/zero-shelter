@@ -1,9 +1,6 @@
 /**
- * The pipeline, with no I/O of its own.
- *
- * Keeping this pure is what lets the tests drive the whole path from fixtures
- * without spawning scanners, which is the difference between covering the
- * judgement and covering the subprocess plumbing.
+ * Pure merge, ranking and baseline pipeline. Callers provide scanner results
+ * and run metadata; tests can exercise it without subprocesses.
  */
 
 import { type Baseline, applyBaseline } from "./baseline.js";
@@ -23,11 +20,8 @@ export interface JudgeOptions {
   /** Cap on how many findings the report asks anyone to act on at once. */
   readonly top?: number;
   /**
-   * Today, as an ISO date, for deciding whether an acceptance has expired.
-   *
-   * Supplied by the caller so that judging never reads a clock. Omit it and
-   * nothing expires, which is the safe direction: an acceptance that quietly
-   * stops expiring is worse than one that never did.
+   * Caller-supplied ISO date for expiry comparisons. When omitted, no
+   * acceptance expires; judgement never reads a clock.
    */
   readonly today?: string;
   /** How this project spells a remedy. Read off whichever lockfile is present. */

@@ -18,10 +18,8 @@ const findings = parseNpmAudit(
   readFileSync(fileURLToPath(new URL("./fixtures/npm-audit.json", import.meta.url)), "utf8"),
 );
 
-// The fixture's `semver` finding clears 2 -- the case the guard has to catch.
-// A finding that clears exactly 1 would hide this bug by accident (the
-// original code already omitted the span for `clears === 1`), so this test
-// deliberately does not rely on that case.
+// The semver fixture clears two findings, so the count span must be rendered
+// for npm and withheld for other managers. A count of one omits the span already.
 const pnpmResult = judge(findings, { baseline: emptyBaseline(), packageManager: "pnpm" });
 const npmResult = judge(findings, { baseline: emptyBaseline(), packageManager: "npm" });
 
@@ -39,9 +37,9 @@ describe("the html report's clears guard", () => {
 
     // The sentence above the command list must not promise what the rows
     // beside it do not deliver.
-    expect(page).not.toContain("clears the findings counted beside it");
+    expect(page).not.toContain("Counts estimate how many findings the update addresses");
     expect(page).toContain(
-      "Counts are not shown for pnpm: verifying an upgrade reaches every copy needs a lockfile reader this tool only has for npm.",
+      "Counts are not shown for pnpm; only npm lockfiles are checked for whether the update reaches every installed copy.",
     );
   });
 
@@ -50,13 +48,13 @@ describe("the html report's clears guard", () => {
 
     expect(page).toContain('class="clears"');
     expect(page).toContain("clears 2");
-    expect(page).toContain("clears the findings counted beside it");
+    expect(page).toContain("Counts estimate how many findings the update addresses");
   });
 
   it("translates the no-counts sentence rather than leaving it in English", () => {
     const page = renderHtml(pnpmResult, { language: "ko" });
 
     expect(page).not.toContain("Counts are not shown for pnpm");
-    expect(page).toContain("pnpm에서는 수를 표시하지 않습니다");
+    expect(page).toContain("pnpm에서는 항목 수를 표시하지 않습니다");
   });
 });

@@ -1,10 +1,5 @@
 /**
- * The baseline is a record someone has to defend later.
- *
- * `reason`, `acceptedBy` and `expires` are written by a person — that is the
- * only reason those fields exist. And the skills prescribe `--update-baseline`
- * as the way to prune the file once a fix lands, so the command we tell people
- * to run was quietly destroying the audit trail on every prune.
+ * Preserve user-authored acceptance metadata when rebuilding a baseline.
  */
 import { describe, expect, it } from "vitest";
 

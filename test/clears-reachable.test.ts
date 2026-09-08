@@ -1,12 +1,6 @@
 /**
- * `clears N` is a promise about what a command does, and it used to count
- * findings the command cannot reach.
- *
- * uptime-kuma depends on `tar@~6.2.1` and `cacache`, `node-gyp` and
- * `@louislam/sqlite3` each require `tar@^6` of their own. The lockfile holds a
- * single copy, so counting copies says the upgrade is safe — but the fix is
- * 7.5.22, no `^6` range will take it, and `npm i tar@7.5.22` left all twelve
- * findings in place. The report had promised twelve.
+ * Check upgrades against parent version ranges, including a single hoisted
+ * tar copy whose dependents reject the fixed major version.
  */
 import { describe, expect, it } from "vitest";
 
@@ -76,7 +70,7 @@ describe("an upgrade the tree will not accept", () => {
     ]);
   });
 
-  it("names only the dependents that block it, for the reader to argue with", () => {
+  it("names only dependents whose ranges block the upgrade", () => {
     const stuck = lockfile(
       ["6.2.1"],
       [

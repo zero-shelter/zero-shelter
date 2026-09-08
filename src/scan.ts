@@ -1,10 +1,6 @@
 /**
- * Collecting scanner output.
- *
- * `npm audit` always runs, because a project with a lockfile already has npm
- * and demanding an install before the first result is how a tool loses its only
- * chance. Everything else is used when it happens to be present and skipped
- * with a note when it is not.
+ * Collect dependency reports from the package-manager audit command and
+ * osv-scanner. Record skipped or failed sources for the caller to display.
  */
 
 import { execFile } from "node:child_process";
@@ -42,25 +38,11 @@ export function isWorkspaceRoot(cwd: string): boolean {
 }
 
 /**
- * The package names this project asks for by name.
- *
- * A scanner that reads a lockfile knows what is installed and not who asked
- * for it, so `osv-scanner` and pnpm's older report shape both decline to say
- * whether a finding is direct — correctly, since guessing would be worse. But
- * they decline to a source that knows, and on every project that is not npm
- * with a `package-lock.json` no such source runs. The placeholder then becomes
- * the answer, and a package the project declared itself is described as
- * arriving through another dependency. See #186.
- *
- * Being named here is not a promise that an upgrade reaches the vulnerable
- * copy — `reachesEveryCopy` is the gate for that and still runs afterwards.
- * This answers only the question `package.json` can answer.
- *
- * `peerDependencies` is deliberately out. A peer is a compatibility statement
- * about something someone else installs, not something this project pulls in.
- *
- * Undefined when there is no readable manifest, which keeps the old behaviour
- * exactly where we cannot do better.
+ * Dependencies declared in package.json. Used when a scanner does not report
+ * directness. This does not establish whether an upgrade reaches every copy;
+ * reachesEveryCopy checks that separately. Peers are excluded because the
+ * project does not install them. Return undefined without a readable manifest.
+ * See #186.
  */
 export function declaredDependencies(cwd: string): ReadonlySet<string> | undefined {
   let manifest: unknown;
@@ -98,13 +80,8 @@ export interface Collected {
 }
 
 /**
- * Runs a command and resolves to its stdout, or `undefined` when the command
- * does not exist.
- *
- * Injectable so the failure modes — absent tool, non-zero exit, empty output —
- * can be driven in tests without installing scanners or depending on what a CI
- * image happens to have. These paths are the ones most likely to differ between
- * platforms and least likely to be exercised by accident.
+ * Injectable scanner subprocess function. Tests supply report, absence,
+ * timeout and failure outcomes without invoking installed scanners.
  */
 export type Capture = (
   command: string,
@@ -113,13 +90,8 @@ export type Capture = (
 ) => Promise<CaptureOutcome>;
 
 /**
- * Absent, timed out and failed are three different facts about a scanner, and
- * they were two messages.
- *
- * A scanner killed at our own bound reported "produced no report", which reads
- * as the scanner's fault. On Windows any failure without stdout reported "not
- * on PATH", which sent someone to install a tool they already had. Both then
- * left the run with one source and an exit code of 0.
+ * Distinguish missing executables, timeouts and other failures in scanner
+ * notes. Only absence should suggest installing a tool.
  */
 export type CaptureOutcome =
   | { readonly ok: true; readonly stdout: string }
@@ -164,17 +136,12 @@ export async function collect(options: ScanOptions): Promise<Collected> {
   // Read once, before either scanner runs, and hand the same answer to both.
   const declared = declaredDependencies(options.cwd);
 
-  // Which audit to run is decided by the lockfile in front of us. `npm audit`
-  // needs a package-lock.json and fails with ENOLOCK in a pnpm project, which
-  // used to leave a pnpm user with "nothing was scanned" and a tool that claims
-  // in its README to read their reports.
+  // Select the audit executable from the lockfile.
   const audit = existsSync(join(options.cwd, "pnpm-lock.yaml"))
     ? await runPnpmAudit(options)
     : await runNpmAudit(options);
   if (audit.ok) {
-    // A scanner that produced output we cannot read is worth saying out loud.
-    // Swallowing it would silently drop a whole source and still look like a
-    // clean run.
+    // Preserve an unreadable report as a skipped-source note.
     try {
       findings.push(...parseNpmAudit(audit.stdout, declared));
       contributed.push(audit.tool ?? "npm audit");
@@ -197,9 +164,7 @@ export async function collect(options: ScanOptions): Promise<Collected> {
     skipped.push(`osv-scanner skipped: ${osv.reason}`);
   }
 
-  // Decided after both scanners have run, not before: osv-scanner reads
-  // yarn.lock perfectly well, and this note used to print underneath a
-  // successful scan telling the reader we could not read their project.
+  // Decide whether any report was readable after both scanners complete.
   if (contributed.length === 0 && existsSync(join(options.cwd, "yarn.lock"))) {
     skipped.push(
       "yarn.lock found and nothing could read it. yarn v1 writes NDJSON, which " +
@@ -227,11 +192,7 @@ async function runNpmAudit(options: ScanOptions): Promise<Attempt> {
   const { stdout } = outcome;
   if (stdout.trim() === "") return { ok: false, reason: "npm produced no report" };
 
-  // npm reports its own failures as JSON with an `error` envelope — no
-  // lockfile, a private registry it cannot reach, a workspace it cannot
-  // resolve. Passing that to the parser turns npm's clear explanation into
-  // "output has neither vulnerabilities nor advisories", which sends people
-  // looking for a bug in us.
+  // Read npm error envelopes before passing reports to the finding parser.
   const explained = npmError(stdout);
   if (explained !== undefined) {
     return { ok: false, reason: notForThisProject(options.cwd) ?? explained };
@@ -241,20 +202,9 @@ async function runNpmAudit(options: ScanOptions): Promise<Attempt> {
 }
 
 /**
- * npm's own explanation, and when it is the wrong one to pass on.
- *
- * `npm audit` answers the question it was asked — *how do I get a lockfile* —
- * without knowing it is standing in a yarn project, where following it writes a
- * `package-lock.json` beside the `yarn.lock` and leaves two files that can
- * disagree. A security tool suggesting that is worse than saying nothing.
- *
- * We do know which project this is, from the lockfile that is present. Only
- * when a lockfile we recognise says this is not an npm project: with no
- * lockfile at all, npm's advice is the right advice and is passed through
- * unchanged. See #187.
- *
- * yarn is the only case that reaches here. `collect` sends a project with a
- * `pnpm-lock.yaml` to `pnpm audit` before this runs, so pnpm never arrives.
+ * For detected Yarn projects, replace npm lockfile-creation advice so it
+ * does not suggest a second lockfile. With no detected lockfile, preserve
+ * npm guidance. pnpm projects use pnpm audit before reaching this path. See #187.
  */
 function notForThisProject(cwd: string): string | undefined {
   const manager = detectPackageManager(cwd);
@@ -288,11 +238,7 @@ function npmError(stdout: string): string | undefined {
 }
 
 /**
- * One sentence for a scanner that did not produce a report.
- *
- * "Absent" earns install advice; the other two must not, because telling
- * someone to install a tool they already have is how a real failure gets
- * mistaken for a missing dependency.
+ * Describe a scanner failure. Offer installation advice only for absence.
  */
 function whyOf(tool: string, outcome: { why: "absent" | "timeout" | "failed"; detail?: string }): string {
   if (outcome.why === "absent") return `${tool} is not available`;
@@ -343,11 +289,7 @@ async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
     options,
   );
 
-  // 128 is osv-scanner's own code for "no package sources found" — an empty
-  // lockfile, or a tree holding nothing it can read. It ran and it had nothing
-  // to say, which is the fourth outcome after absent, timed out and failed.
-  // Reporting it as a failure opened a new project's first run by telling the
-  // reader their scanner was broken.
+  // osv-scanner uses 128 for no package sources found; preserve that outcome.
   if (!outcome.ok && outcome.exitCode === NOTHING_TO_SCAN) {
     return { ok: false, reason: "found no package it could scan in this tree" };
   }
@@ -355,9 +297,7 @@ async function runOsvScanner(options: ScanOptions): Promise<Attempt> {
     return { ok: false, reason: whyOf("osv-scanner", outcome) };
   }
   if (!outcome.ok) {
-    // Cross-source reconciliation is where most of the noise reduction comes
-    // from, so "optional" undersells it — but telling someone to go install
-    // something without saying how is how a suggestion becomes a chore.
+    // Include installation guidance for an absent optional scanner.
     return {
       ok: false,
       reason:

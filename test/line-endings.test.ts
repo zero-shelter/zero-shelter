@@ -1,11 +1,6 @@
 /**
- * The baseline is a review artifact before it is a data file.
- *
- * `serializeBaseline` writes LF explicitly. Nothing told git to keep it that
- * way, so on a checkout with `core.autocrlf=true` the file came back as CRLF
- * and the next `--update-baseline` rewrote every line — turning a one-line
- * change into a whole-file diff on the one platform where nobody would think
- * to look. See #153.
+ * Keep baseline files on LF across Git checkouts to avoid whole-file diffs
+ * when recording on Windows. See #153.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

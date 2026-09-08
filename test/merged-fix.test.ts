@@ -1,11 +1,6 @@
 /**
- * Adding a second scanner must not make the report less actionable.
- *
- * It used to. npm audit says lodash is fixed in 4.18.1 (the version it would
- * install), osv-scanner names the release that patched the specific advisory,
- * 4.17.21. The merge saw two different answers and withheld both — so the
- * upgrade command disappeared from a project the moment someone installed the
- * second source we tell everyone to install.
+ * Preserve the highest reported fix when scanners report different fixed
+ * versions for the same advisory.
  */
 
 import { describe, expect, it } from "vitest";

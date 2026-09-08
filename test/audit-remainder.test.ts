@@ -1,8 +1,5 @@
 /**
- * Small things that were quietly wrong, from the same audit.
- *
- * Each is cheap on its own. What they share is a shape: something answered
- * confidently while being unable to see the case that mattered.
+ * Regression coverage for duplicate baseline entries and malformed aliases.
  */
 import { describe, expect, it } from "vitest";
 

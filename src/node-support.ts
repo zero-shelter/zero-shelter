@@ -1,10 +1,5 @@
 /**
- * The Node version check that runs before anything else.
- *
- * `engines` only makes npm warn at install time, and nobody reads install
- * warnings. What people see is whatever the runtime throws when it hits syntax
- * or an API it does not have — a stack trace pointing into our files, which
- * reads as our bug.
+ * Check Node support before importing modules that require newer runtime APIs.
  */
 
 export const MINIMUM_NODE_MAJOR = 20;

@@ -1,10 +1,6 @@
 /**
- * Stored reports are the repeatable way to inspect a scanner judgment.
- *
- * Unit tests already cover parsing, merging, ranking, and individual output
- * renderers. These cases keep the public `--input` path honest: it must join
- * real reports, record the same result as a baseline, and write a usable
- * machine-readable report.
+ * Exercise stored scanner reports through the public CLI input, baseline
+ * and output paths without live scanners.
  */
 
 import { readFileSync } from "node:fs";

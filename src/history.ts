@@ -1,18 +1,7 @@
 /**
- * What happened to this project's findings over time.
+ * Optional append-only JSONL records of scan results.
  *
- * The baseline answers "what did we accept"; it cannot answer "when did this
- * appear", "did we fix anything this month", or "is the backlog growing". Those
- * are the questions someone asks when deciding whether the tool is worth
- * keeping, and until now nothing here could answer them.
- *
- * One JSONL file, appended to, readable with `tail`. Not a database, not a
- * server: a project that has to run a service to see its own history will not
- * see its own history.
- *
- * This is the one place a clock is allowed. The judgement stays deterministic —
- * history is a side file, written only when asked, and the timestamp is passed
- * in rather than read here so tests and reproducible builds keep control of it.
+ * Callers supply timestamps; rendering and judgement do not read a clock.
  */
 
 import { appendFile, open } from "node:fs/promises";
@@ -31,10 +20,8 @@ export interface HistoryEntry {
   readonly merged: number;
   readonly accepted: number;
   /**
-   * Fingerprints outstanding at that moment, sorted.
-   *
-   * Counts alone cannot tell "two fixed, two appeared" from "nothing changed",
-   * and that difference is the entire point of keeping a history.
+   * Sorted outstanding fingerprints. Identity allows a comparison to detect
+   * changed findings even when the total count is unchanged.
    */
   readonly outstanding: readonly string[];
 }
@@ -43,9 +30,7 @@ export function entryFrom(result: JudgeResult, at: string): HistoryEntry {
   return {
     v: SCHEMA_VERSION,
     at,
-    // Not derived from the findings. Deriving it answers "no scanners ran" on
-    // exactly the runs that went well, because a run with everything accepted
-    // has no fresh findings to read tools off.
+    // Use run metadata because accepted or empty reports still have sources.
     sources:
       result.sources === undefined
         ? [...new Set(result.applied.fresh.flatMap((entry) => entry.finding.tools))].sort()
@@ -79,19 +64,10 @@ export function serializeEntry(entry: HistoryEntry): string {
  * recorded correctly.
  */
 /**
- * Append one entry, without joining it to a line that was cut short.
- *
- * `--record` used to append straight onto whatever the file held. A write that
- * stopped part-way — a cancelled workflow, a reclaimed runner, a container
- * killed mid-step — leaves no final newline, and the next entry was welded into
- * the broken one and became unreadable with it. So was the one after that.
- * `history` went on reporting "1 line(s) could not be read" while recording had
- * silently stopped, which looks exactly like nobody running the command.
+ * Append one entry, adding a separator if an interrupted write left no final
+ * newline. Preserve the partial line so it remains counted as unreadable.
+ * Reading and rewriting the whole file would weaken append-only behavior.
  * See #196.
- *
- * The torn line stays torn and stays counted. Reading the file to repair it
- * would turn a one-line append into a read-modify-write on an append-only file,
- * which gives the next interruption more to destroy.
  */
 export async function appendEntry(path: string, entry: HistoryEntry): Promise<void> {
   const separator = (await endsMidLine(path)) ? "\n" : "";
