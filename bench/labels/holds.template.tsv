@@ -1,6 +1,6 @@
 # These two share no advisory id, so they were NOT joined and were flagged instead.
-# label: same (they were one advisory — the caution cost a duplicate) | different (leaving them apart was right) | unsure
-# Every hold is here. This is the census, and it is the most argued line in the design.
+# label: same (one advisory shown twice) | different (distinct advisories) | unsure
+# All suspected duplicate pairs from the saved captures are included.
 repo	package	advisories	title_a	title_b	range	label	notes
 dvna	mathjs	CVE-2017-1001002  vs  CVE-2017-1001003	Arbitrary Code Execution in mathjs	Arbitrary Code Execution in mathjs	same		
 dvna	sequelize	CVE-2023-22580  vs  CVE-2023-22579	Sequelize information disclosure vulnerability	Unsafe fall-through in getWhereConditions	same		

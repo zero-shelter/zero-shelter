@@ -1,6 +1,6 @@
 # Did these reports describe ONE advisory?
 # label: same (one advisory, joining was right) | different (two advisories, joining hid one) | unsure
-# A false join is the expensive mistake: the second finding disappears and nobody learns it existed.
+# A false join combines distinct advisories and hides a separate finding.
 # Sampled, not a census — see the sheet count in bench/README.md.
 repo	fingerprint	package	reported_as	members	title	label	notes
 dvna	001cacac42248bcd	mathjs	npm-audit:GHSA-VX5C-87QX-CV6C + osv-scanner:CVE-2017-1001002	2	Arbitrary Code Execution in mathjs		

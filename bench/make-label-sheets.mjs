@@ -1,16 +1,9 @@
 #!/usr/bin/env node
 /**
- * Generate blind labelling sheets from the frozen captures.
- *
- * Blind means: rows come from the RAW per-source findings, in fingerprint
- * order, with no trace of what our merge or ranking did with them. A labeller
- * who can see the tool's answer is grading it on a curve.
- *
- * Labelling itself is human-only. Two people fill copies of these sheets
- * independently, commit them from their own accounts, and disagreement is
- * settled in a recorded session — see bench/README.md. A model must not fill
- * them in: proving our tool works against ground truth a model produced is
- * circular, and it is also the kind of thing a judge checks first.
+ * Generate labelling sheets from raw source findings in fingerprint order,
+ * omitting the tool's merge and ranking results. Two people fill separate copies
+ * without consulting each other, then record disagreement resolution.
+ * Models must not supply labels. See bench/README.md for the protocol.
  */
 
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";

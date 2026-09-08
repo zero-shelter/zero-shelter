@@ -1,14 +1,9 @@
 #!/usr/bin/env node
 /**
- * Run the judge over the frozen captures and report what can be measured
- * without ground-truth labels: volume reduction and cross-source joins.
- *
- * What this deliberately does NOT claim: precision, or "no real vulnerability
- * was dropped". Both need human labels (bench/labels/), and until those exist
- * the honest sentence is "fewer items", not "the right items".
- *
- * Reads committed captures only — no network, no scanners. `npm run build`
- * first.
+ * Measure report counts and cross-source joins from committed captures.
+ * These measurements do not establish precision or the absence of false merges;
+ * those require independently labelled data.
+ * Run npm run build first. This script does not invoke scanners or the network.
  */
 
 import { execFile } from "node:child_process";
@@ -62,8 +57,7 @@ for (const name of (await readdir(join(benchDir, "captures"))).sort()) {
     both: result,
     raw: result.summary.raw,
     merged: result.summary.merged,
-    // How many raw reports disappeared into a cross-checked finding once the
-    // second source arrived. This is the part alias-joining actually buys.
+    // Count raw reports contributing to findings corroborated across sources.
     crossJoins: both === undefined ? "-" : String(both.summary.raw - both.summary.merged),
     corroborated:
       both === undefined
