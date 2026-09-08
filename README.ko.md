@@ -141,6 +141,8 @@ advisory가 CVSS vector를 제공하면 각 SARIF 결과는 그 값을
 `properties.cvssVector`에 그대로 보존합니다. scanner 출력에는 vector만 있고 숫자
 score는 없으므로 GitHub의 숫자형 `security-severity`는 대략적인 severity band
 fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 score를 만들지는 않습니다.
+SARIF에는 이 파일을 쓴 zero-shelter 패키지 버전도 표시하고, scanner가 제공한 경우
+scanner 버전도 보존합니다.
 
 여기엔 짚어 둘 만한 아이러니가 있습니다. 이 프로젝트는 서로 다른 도구의 SARIF를
 그걸 받는 도구들이 맞대지 못하기 때문에 존재합니다. 그런 우리가 SARIF를 내보내는
