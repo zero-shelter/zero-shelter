@@ -45,8 +45,12 @@ prerelease and compound ranges intentionally do not produce an install target
 English terminal and SARIF reason strings are preserved (#240).
 
 ### History and version handling
- An interrupted
-history write no longer swallows every subsequent entry (#199). Unknown
+
+Correction, 2026-09-09: the earlier text overstated this as loss of every later
+record. The fix protects the record appended after an incomplete line.
+
+After an interrupted history write, the next appended record is separated from
+the incomplete line so it remains readable (#199). Unknown
 baseline entry keys are named as warnings, including misspellings such as
 `expiress`; judging continues for forward compatibility (#200). Prerelease
 versions are ordered against one another, including numeric identifiers beyond
@@ -55,7 +59,8 @@ compare below older versions (#170). An osv-scanner exit indicating no package
 sources is distinguished from a scanner failure (#190).
 
 ### Contribution and install checks
- The contributor
+
+The contributor
 guides and PR templates explain when fork CI is waiting for maintainer approval
 (#220). The CI example pins osv-scanner and verifies its checksum (#221).
 Installation QA bounds its subprocesses, gives the CLI headroom above scanner
