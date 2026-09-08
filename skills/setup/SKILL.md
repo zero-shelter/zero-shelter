@@ -1,197 +1,133 @@
 ---
-description: Run zero-shelter on this project for the first time and wire it in. Use when someone asks to check dependency vulnerabilities, cut down scanner noise, or install zero-shelter. Korean requests look like: 의존성 취약점 점검해줘, 보안 스캔 돌려줘, zero-shelter 설치.
+description: Run the first dependency judgement and configure requested zero-shelter integrations. Use when someone asks to check dependency vulnerabilities, review scanner reports, or install zero-shelter. Korean requests look like: 의존성 취약점 점검해줘, 보안 스캔 돌려줘, zero-shelter 설치.
 ---
 
 # First run
 
-Two things, and the second one is not optional.
+Run the dependency judgement and read its exit code:
 
 ```bash
-npx --yes zero-shelter judge          # no install needed for this one
+npx --yes zero-shelter judge
 ```
 
-Read the exit code — it is the answer, not decoration:
-
-| Exit | Meaning | What to do |
+| Exit | Meaning | Response |
 |---|---|---|
-| 0 | Scanned, nothing new to fix | Say so and stop |
-| 1 | New findings | Walk through them (see `/zero-shelter:explain`) |
-| 2 | **Could not judge** | Never report this as clean. The message says why — usually no usable lockfile, so create one with the project's package manager first |
+| 0 | Scanned, no new findings | Report the result and any accepted findings or missing sources. |
+| 1 | New findings | Review them with `/zero-shelter:explain`. |
+| 2 | Could not judge | Report the reason. Do not call this clean or passing. |
 
-Requires Node 20+. If it prints a Node version message, that is the whole
-problem; do not try to work around it.
+Requires Node.js 20 or later. If no scanner can read the project, check for a
+supported lockfile and explain how to generate one with its package manager.
+Do not create or replace a lockfile without authorization.
 
-Scope: this skill covers dependency vulnerabilities only (`npm audit` and
-`osv-scanner`). Dockerfiles, Terraform/IaC, Actions workflows, secrets, and
-first-party source are out of scope — a clean dependency run does not mean
-the project as a whole is clean.
+The scan covers dependency vulnerabilities. Dockerfiles, Terraform/IaC,
+Actions workflows, secrets and first-party source are outside this judgement.
 
-## The second scanner
+## Scanner inputs
 
-This tool reconciles what two scanners each called by a different name. With one
-source there is nothing to reconcile, so **install `osv-scanner` before judging
-the result of a first run.** The pinned captures show what the second source
-buys beyond a shorter list:
+The lockfile selects npm audit, pnpm audit or yarn. npm/pnpm audit can provide a
+supported single-source judgement. yarn requires OSV-Scanner for live collection
+because this tool does not read yarn v1's NDJSON. Stored supported JSON reports
+can be passed with `--input`.
 
-| project | fixed versions: npm audit → both | transitive advice: npm audit → both |
-|---|---:|---:|
-| juice-shop | 15/73 → 50/82 | 0 → 11 |
-| nodegoat | 7/177 → 109/173 | 0 → 49 |
-| dvna | 20/51 → 40/51 | 0 → 6 |
-| hackathon-starter | 0/11 → 4/11 | 0 → 2 |
-
-The npm-audit-only transitive advice block is empty in every pinned capture; the
-table's both-sources column shows what changes when osv-scanner contributes. The
-benchmark is reproducible from `bench/captures/` with
-`npm run build && node bench/evaluate.mjs`; these figures are evidence about
-this project's output, not a promise that every repository has the same ratio.
-
-The noise reduction still helps readability. On uptime-kuma, npm audit alone
-reports 71 and leaves 71; add osv-scanner and it is 142 in, 71 out.
+Offer OSV-Scanner for additional dependency evidence when appropriate:
 
 ```bash
-brew install osv-scanner        # macOS / Linuxbrew
+brew install osv-scanner
 go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
 ```
 
-Neither works everywhere. If both fail, the releases page has prebuilt binaries,
-and that is a better answer than proceeding with one source and explaining a 0%.
+Choose an installation method that works on the host, or use
+[the official releases](https://github.com/google/osv-scanner/releases).
+Do not install both methods. Follow the user's authorization for installation.
 
-**Then check it actually ran**, rather than assuming the install worked:
+After installation, re-run `judge`, preserve its exit code, and inspect the
+source and skipped-source notes. The single-source note means that only one
+scanner contributed. An installation success message does not confirm that
+the scanner ran.
 
-```bash
-npx --yes zero-shelter judge | grep -q "one source" && echo "STILL ONE SOURCE"
-```
+Do not search the JSON for the string `osv-scanner` as a success test:
+`skipped` also names missing scanners. A reduction of 0% does not establish the
+number of sources; sources may contribute disjoint findings.
 
-A run with one source ends its summary with `one source, nothing to reconcile`.
-If that phrase is on screen the second scanner is not contributing, whatever
-`brew` printed.
+One supported source provides ranking, baseline comparison and available
+remedies. Multiple sources can add findings or fixed versions and reconcile
+shared identifiers. Do not turn source count, reduction percentage or scanner
+installation into a claim about project safety. The [benchmark](../../bench/README.md)
+uses pinned captures and does not predict every project's result.
 
-Do not grep the JSON for `osv-scanner`. It appears in `skipped` when the
-scanner is **missing**, so the count is non-zero in exactly the case the check
-is supposed to catch — an earlier version of this skill said to do that and had
-it backwards.
+## Other inspection needs
 
-Do not describe a one-source run as a normal result. It is a valid way to run
-this and the ranking and baseline still work, but the deduplication this tool
-exists for is switched off, and a reader who is not told that will conclude the
-tool does nothing.
+Inspect the project tree when suggesting checks beyond dependencies. Confirm
+actual file types and do not follow unexpected symlinks or treat a filename as
+proof of coverage. Existing tool configuration is not proof a scan ran.
 
-## What else to look for
-
-`ls` the tree before concluding anything. When several of these are present,
-start with Trivy — one install covers several of them.
-
-| You see | Domain | Install |
+| Project content | Inspection to discuss | Example tools |
 |---|---|---|
-| `Dockerfile` | container | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0) — `brew install trivy` |
-| `*.tf` | IaC | [Trivy](https://github.com/aquasecurity/trivy) (Apache-2.0); [Checkov](https://github.com/bridgecrewio/checkov) (Apache-2.0) also reads Terraform |
-| `.github/workflows/` | CI/CD | [zizmor](https://github.com/zizmorcore/zizmor) (MIT) |
-| source with no usable lockfile | first-party code | [Opengrep](https://github.com/opengrep/opengrep) (LGPL-2.1) |
-| any history at all | secrets | [Gitleaks](https://github.com/gitleaks/gitleaks) (MIT) |
+| Dockerfile or container configuration | Containers | [Trivy](https://github.com/aquasecurity/trivy) |
+| Terraform files | Infrastructure as code | [Trivy](https://github.com/aquasecurity/trivy), [Checkov](https://github.com/bridgecrewio/checkov) |
+| GitHub Actions workflows | CI configuration | [zizmor](https://github.com/zizmorcore/zizmor) |
+| First-party source | Static analysis | [Opengrep](https://github.com/opengrep/opengrep) |
+| Repository history | Exposed credentials | [Gitleaks](https://github.com/gitleaks/gitleaks), [TruffleHog](https://github.com/trufflesecurity/trufflehog) |
 
-Why Opengrep and not Semgrep: Semgrep's engine remains LGPL-2.1, but its
-rules repository moved to a separate licence restricting some commercial,
-SaaS, and competing-product use
-([background](https://socket.dev/blog/opengrep-forks-semgrep)), so naming
-"semgrep" is itself a licence decision — Opengrep is the consortium-governed
-fork created to preserve an open SAST ecosystem.
+These are separate tools, not inputs to zero-shelter. Check their supported
+languages, licenses and execution requirements before recommending an
+installation. Do not install them or run new scans as an implicit setup step.
 
-On secrets: [TruffleHog](https://github.com/trufflesecurity/trufflehog)
-(AGPL-3.0) is also a good scanner, but that licence matters for commercial
-products, so the default here is Gitleaks (MIT). This skill names tools only;
-it does not read their output — ingesting a new scanner's report is separate
-work, not part of a first run.
+## Baseline decisions
 
-## Recording the backlog
-
-A project that has never run this has a backlog it inherited. Fixing all of it
-today is not the goal, and failing CI on it teaches people to switch the gate
-off.
+A baseline is optional. Show the findings and available fixes before discussing
+acceptance. Use `/zero-shelter:baseline` when the user wants to review that choice.
+Only run this after the user has authorized accepting the current findings:
 
 ```bash
 npx --yes zero-shelter judge --update-baseline
 ```
 
-From then on only new findings are reported and CI fails on the regression this
-change introduced. Explain that trade before running it: **anything recorded is
-no longer shown**, so run it when the current list has actually been looked at,
-not to make output disappear.
+It records current findings as accepted, including newly outstanding findings.
+It does not fix them. Rewriting to prune old entries is also an acceptance
+operation; show what else would be accepted and get the user's decision.
+Never use it to finish setup or silence a failing check.
 
-## After someone fixes something
-
-Re-run `judge`. Findings that were accepted and are no longer reported get their
-own line, so the work that was just done is visible instead of showing up as a
-number quietly getting smaller. If a scanner that contributed to the baseline
-did not run this time, that line says so — do not upgrade "no longer reported"
-into "fixed" when the CLI itself is hedging.
-
-Prune the baseline afterwards with `--update-baseline` so it stops listing
-fingerprints nothing produces.
-
-## A page for a human
+## Reports and history
 
 ```bash
 npx --yes zero-shelter judge --format html --output zero-shelter.html
+npx --yes zero-shelter judge --format html --lang ko --output zero-shelter.ko.html
 ```
 
-One self-contained file: the commands first, then every finding with the score
-that put it there. Offer it when someone wants to look for themselves, share a
-state with a teammate, or read it in Korean (`--lang ko`). It needs no network
-and no server; opening the file is enough.
+The self-contained report can be opened offline. It includes direct commands,
+agent prompts, findings, ranking explanations and baseline comparisons.
 
-## Keeping a history
+For repeated runs, offer history recording:
 
 ```bash
 npx --yes zero-shelter judge --record
 npx --yes zero-shelter history
 ```
 
-`--record` appends one line per run to `.zero-shelter/history.jsonl`; nothing is
-recorded unless asked. `history` shows what appeared and what stopped being
-reported between runs, and the html report grows a section once two runs exist.
+`--record` writes `.zero-shelter/history.jsonl`; use it only when requested or
+already configured. HTML includes history when at least two runs exist.
 
-Suggest `--record` when a project is going to be judged repeatedly — in CI, or
-alongside a baseline. Do not turn it on silently: it writes a file into their
-repository, and that is their decision.
+After a dependency change, re-run `judge`. Preserve missing-source caveats and
+say “no longer reported” unless the re-run supports a remediation claim.
 
-## Wiring it in
+## Integrations
 
-Offer these; do not add them unasked.
+When requested, use `/zero-shelter:ci` and the
+[complete workflow](../../examples/github-action.yml) for CI setup. Preserve the
+pinned action revisions and final exit-code check.
 
-**CI** — append to an existing workflow:
+For coding agent context, follow the [hook guide](../../docs/AGENT-HOOK.md).
+`zero-shelter hook` is non-blocking: on errors it emits no context and exits 0.
+It provides evidence; it does not guarantee the agent will avoid a vulnerability.
 
-```yaml
-- run: npx zero-shelter judge --format sarif --output zero-shelter.sarif
-  continue-on-error: true
+## Required boundaries
 
-- uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
-  with:
-    sarif_file: zero-shelter.sarif
-```
-
-**Coding agent context** — `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      { "hooks": [{ "type": "command", "command": "npx zero-shelter hook" }] }
-    ]
-  }
-}
-```
-
-The hook puts the current findings into the session so an agent does not add a
-dependency this project already has an unfixed advisory for. It never blocks a
-prompt and never fails.
-
-## What this skill must not do
-
-- **Do not re-rank, re-judge, or filter the findings.** The ordering is
-  computed by the CLI and is reproducible; anything you add on top is not, and
-  the entire point of this tool is that its judgement can be checked.
-- **Do not report a 0% reduction as a result.** It means one source ran. Say
-  which one is missing and offer to install it.
-- Do not run `--update-baseline` without saying what it hides.
-- Do not describe a run that exited 2 as passing.
+- Preserve the CLI's findings and order. Do not re-rank, filter, or merge
+  possible duplicates in the response.
+- Use the report's `upgrades` and separate `transitiveFixes`; do not derive
+  install commands from version strings.
+- Baseline acceptance and forced indirect dependency versions require the
+  user's decision. Explain the risk before applying either.
+- Do not describe exit 2, a missing source or an unexamined domain as passing.
