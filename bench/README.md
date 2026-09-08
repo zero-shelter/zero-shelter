@@ -4,10 +4,13 @@ This benchmark measures judgement results on external projects pinned to commits
 
 ## Captured report counts (no human labels yet)
 
+Column label corrected 2026-09-09: `raw - merged` includes merges within a single
+source. The recorded counts are unchanged.
+
 Captured 2026-08-07 with npm 11.4.2 and osv-scanner 2.5.0, frozen under
 `captures/`:
 
-| repo | pinned | raw reports | after judge | reduction | cross-source joins |
+| repo | pinned | raw reports | after judge | reduction | reports combined (raw - merged) |
 |---|---|---|---|---|---|
 | juice-shop | `a520e158cb65` | 155 | 82 | 47% | 73 |
 | NodeGoat | `c5cb68a7084e` | 360 | 173 | 52% | 187 |

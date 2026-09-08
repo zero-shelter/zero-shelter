@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Measure report counts and cross-source joins from committed captures.
+ * Measure report counts and the reduction after merging committed captures.
  * These measurements do not establish precision or the absence of false merges;
  * those require independently labelled data.
  * Run npm run build first. This script does not invoke scanners or the network.
@@ -57,7 +57,7 @@ for (const name of (await readdir(join(benchDir, "captures"))).sort()) {
     both: result,
     raw: result.summary.raw,
     merged: result.summary.merged,
-    // Count raw reports contributing to findings corroborated across sources.
+    // Count the reduction in report entries, including merges within one source.
     crossJoins: both === undefined ? "-" : String(both.summary.raw - both.summary.merged),
     corroborated:
       both === undefined
@@ -71,7 +71,7 @@ for (const name of (await readdir(join(benchDir, "captures"))).sort()) {
   });
 }
 
-console.log("| repo | pinned | raw reports | after judge | reduction | cross-source joins | corroborated by 2 tools | flagged possible dupes |");
+console.log("| repo | pinned | raw reports | after judge | reduction | reports combined (raw - merged) | corroborated by 2 tools | flagged possible dupes |");
 console.log("|---|---|---|---|---|---|---|---|");
 for (const r of rows) {
   console.log(
