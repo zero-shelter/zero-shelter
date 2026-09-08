@@ -108,7 +108,7 @@ catchphrase, adoption metric or claim that security is complete.
 
 ## What changed from the previous roadmap
 
-The [#125 design](./specs/125-adoption-roadmap.md) remains the record of interface
+The [#125 design](./specs/adoption-roadmap.md) remains the record of interface
 ideas and rejected designs. Its instruction to start with #140/#136 is historical:
 #136 shipped, while #247/#248 expose current reliability gaps and #163 provides
 the chosen next feature. This document owns current order. Existing detailed

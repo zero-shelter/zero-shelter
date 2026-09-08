@@ -6,7 +6,7 @@
 
 - Issue: [#163](https://github.com/zero-shelter/zero-shelter/issues/163)
 - Target layer: local project discovery, CLI output, setup skill
-- Related roadmap: [#125](https://github.com/zero-shelter/zero-shelter/issues/125), [adoption roadmap](./125-adoption-roadmap.md)
+- Related roadmap: [#125](https://github.com/zero-shelter/zero-shelter/issues/125), [adoption roadmap](./adoption-roadmap.md)
 - Related PR: linked from #163; GitHub owns lifecycle status and assignment.
 
 This is a proposed implementation contract for Owner review. The feature is a

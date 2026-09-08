@@ -79,7 +79,7 @@ a clean baseline are not success metrics on their own.
 - No proof that a vulnerable path is reachable or unreachable; no inferred VEX
   justification, autonomous acceptance, or automatic deadline renewal.
 - No composite posture score or public project leaderboard. Preserve the
-  [recorded rejected designs](./docs/specs/125-adoption-roadmap.md#rejected-designs).
+  [recorded rejected designs](./docs/specs/adoption-roadmap.md#rejected-designs).
   [#134](https://github.com/zero-shelter/zero-shelter/issues/134), a scoped badge,
   remains a separate deferred proposal, not a rejected score.
 - Local judgement, no runtime LLM or telemetry. Invoked scanners may use the
