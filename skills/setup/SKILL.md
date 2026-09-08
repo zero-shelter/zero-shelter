@@ -42,8 +42,8 @@ Choose an installation method that works on the host, or use
 Do not install both methods. Follow the user's authorization for installation.
 
 After installation, re-run `judge`, preserve its exit code, and inspect the
-source and skipped-source notes. `one source, nothing to reconcile` means only
-one source contributed. An installation success message does not confirm that
+source and skipped-source notes. The single-source note means that only one
+scanner contributed. An installation success message does not confirm that
 the scanner ran.
 
 Do not search the JSON for the string `osv-scanner` as a success test:
