@@ -34,6 +34,7 @@ describe("keys that are always there", () => {
     ["transitiveFixes", "array"],
     ["noLongerReported", "array"],
     ["skipped", "array"],
+    ["missingSources", "array"],
     ["workspaceRoot", "boolean"],
   ])("%s is present and is %s", (key, kind) => {
     expect(report).toHaveProperty(key);
