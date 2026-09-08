@@ -1,5 +1,7 @@
 # Feature specification: preserve CVSS provenance in SARIF
 
+[한국어](./123-sarif-cvss-provenance.ko.md). This document records the design for the linked issue.
+
 ## Issue and lifecycle metadata
 
 - Issue: #123

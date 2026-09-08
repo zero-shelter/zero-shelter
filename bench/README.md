@@ -1,10 +1,8 @@
 # Benchmark
 
-Measures the judge against repositories we did not write. A benchmark over
-fixtures the tool's own authors made proves nothing, so every target here is an
-external project pinned to a commit.
+This benchmark measures judgement results on external projects pinned to commits. Synthetic fixtures remain useful for regression tests; the captures here provide examples from other dependency trees.
 
-## Current numbers (no labels yet — volume only)
+## Captured report counts (no human labels yet)
 
 Captured 2026-08-07 with npm 11.4.2 and osv-scanner 2.5.0, frozen under
 `captures/`:
@@ -27,62 +25,33 @@ worth fixing.
 
 ## Labelling: what a human is actually asked to do
 
-The per-finding sheets (`<repo>.template.tsv`, 645 rows) ask whether each raw
-finding is worth fixing. That is a question about the scanners — they produced
-the list, and a labeller working through 645 of them is grading npm audit and
-osv-scanner rather than this tool. Two people doing it is 1,290 judgements, and
-it will not get done.
+The per-finding sheets (`<repo>.template.tsv`, 645 rows) ask whether each raw scanner finding is worth fixing. Separate decision sheets focus on zero-shelter's merge decisions:
 
-This tool makes two decisions of its own, and those are the ones a benchmark can
-grade:
-
-| sheet | rows | what it asks | getting it wrong means |
+| Sheet | Rows | Question | Error being measured |
 |---|---|---|---|
-| `holds.template.tsv` | 57, every one | should these two have been joined? | caution cost a duplicate |
-| `joins.template.tsv` | 71, sampled from 308 | did these reports describe one advisory? | a false join hid an advisory |
+| `holds.template.tsv` | 57, every held pair | Should these two have been joined? | An unnecessary duplicate remains |
+| `joins.template.tsv` | 71, sampled from 308 joins | Did these reports describe one advisory? | A false join hides an advisory |
 
-128 rows. Two people can finish that.
-
-`holds` is the census and the more interesting sheet: every row is a pair we
-declined to join because they share no identifier, which is the most argued line
-in the design. A labeller saying "those were obviously the same" is telling us
-the caution costs more than it saves.
-
-`joins` is sampled, because 308 is not a census anyone finishes. The sheet says
-so, and any figure drawn from it carries that caveat.
+The decision sheets contain 128 rows for each of two independent labellers. `holds` covers every pair that lacked a shared identifier. `joins` is a sample; results from it must retain that sampling limitation.
 
 ```bash
 node bench/make-decision-sheets.mjs     # regenerate the templates
 node bench/score-labels.mjs             # after two people have filled them
 ```
 
-### The rules that make this worth anything
+### Label requirements
 
-- **Two people, independently.** One person's reading is not ground truth, and
-  the scorer refuses to report a figure from a single sheet.
-- **Cohen's kappa is printed.** Raw agreement flatters: if most rows are
-  obviously one answer, two people agreeing 90% of the time have told you
-  nothing. Below 0.6 the scorer says so and declines to stand behind the number.
-- **Disagreements are printed, not averaged away.** A row two careful readers
-  read differently is the most interesting row on the sheet, and how it was
-  settled belongs in the repository.
-- **No model fills a label in.** An answer key produced by the tool being graded
-  is not an answer key, and it is the first thing anyone reading this will check.
-- **Labels commit before any ranking change they would justify.** The order has
-  to survive in the git history.
+- Two people label independently. The scorer does not report a figure from one sheet.
+- The scorer prints Cohen's kappa to account for chance agreement. Below 0.6 it flags the result and withholds the supported figure.
+- Disagreements are printed and resolved in a recorded discussion.
+- Models must not fill in labels.
+- Commit labels before any ranking change they justify, preserving that order in Git history.
 
-### What these numbers do and do not say
+### Limits of the counts
 
-They say the two sources describe the same advisories under different names
-about half the time, and the judge reconciles that. **They do not say the
-remaining findings are the right ones.** Precision and the dropped-finding rate
-require ground truth, which does not exist yet — see below. Until it does, the
-honest claim is *fewer items*, not *the right items*.
+These captures show how often the two scanners' reports can be combined using shared advisory identifiers. They do not establish whether the remaining findings are worth fixing. Precision and the dropped-finding rate require human ground truth, which is not available yet.
 
-Two capture caveats, recorded in each `meta.json` rather than smoothed over:
-juice-shop and dvna had no lockfile at the pinned commit, so one was generated
-at capture time against the live registry; and every number above depends on
-the advisory databases as of the capture date.
+Each `meta.json` records two capture limitations: juice-shop and dvna had no lockfile at the pinned commit, so one was generated against the registry at capture time; all counts depend on the advisory databases available on that date.
 
 ## Layout
 
@@ -98,10 +67,7 @@ bench/
 
 ## Labelling protocol (human-only)
 
-This is the part that cannot be automated, by design. Proving the tool works
-against ground truth a model generated is circular — and this project runs no
-LLM precisely so that its behaviour is checkable. We do not get to break that
-rule for our own benchmark.
+Human labels are required for evaluating the tool's decisions. Model-generated labels are not accepted as ground truth.
 
 1. **Two labellers, independently.** Copy `labels/<repo>.template.tsv` to
    `labels/<repo>.<github-login>.tsv` and fill the `label` column:
@@ -118,17 +84,13 @@ rule for our own benchmark.
    Low κ is a finding in itself: it means "real" was underspecified, and the
    definition gets tightened before the consensus pass.
 
-One honest limitation to state rather than hide: the ranking code existed
-before these labels. The blindness of the sheets and the independence of the
-labellers is the mitigation, and weights were not tuned against any labelled
-data — there was none. After labels land, any weight change must cite them.
+The ranking code predates these labels. Blind sheets and independent labellers limit evaluation bias; the weights were not tuned against labeled data. After labels are committed, any weight change must cite them.
 
-## With labels, `evaluate.mjs` gains
+## Planned evaluation after labeling
 
 - **precision of "fix these N"** — how many of the top findings are `real`
 - **dropped-finding rate** — `real`-labelled findings that the judge suppressed
-  or merged away. Target: zero. This is the number that matters most, because a
-  deduplicator that eats a real vulnerability is worse than no deduplicator.
+  or merged away. Target: zero.
 - **false merges** — rows labelled as distinct that the judge joined
-- a comparison against the obvious baseline: sorting raw output by severity.
+- a comparison against the baseline: sorting raw output by severity.
   If we only match it, that is what gets published.
