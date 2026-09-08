@@ -1,16 +1,9 @@
 #!/usr/bin/env node
 /**
- * Freeze scanner output for every pinned benchmark repo.
- *
- * This is the only benchmark step that touches the network, and it is run once
- * by a maintainer. Everything downstream — evaluation, labelling, the numbers
- * in the README — reads the committed captures, so results stay reproducible
- * after the registries move on.
- *
- * Only the manifest and lockfile are fetched, at the pinned commit. npm audit
- * and osv-scanner both work from the lockfile alone, and not cloning keeps the
- * capture honest: nothing we run can be influenced by the target's own scripts.
- *
+ * Capture npm audit and OSV output for pinned benchmark repositories.
+ * Only manifests and lockfiles are fetched; downstream evaluation uses committed
+ * captures. Missing lockfiles are generated against the registry at capture time.
+ * No target source tree is cloned. This command uses the network.
  * Usage: node bench/capture.mjs [--osv-bin <path>]
  */
 
@@ -49,9 +42,8 @@ for (const repo of repos) {
     if (res.ok) {
       await writeFile(join(work, file), await res.text());
     } else if (file === "package-lock.json") {
-      // Old projects predate lockfiles. Generating one resolves ranges against
-      // today's registry, which is a real difference — so it is recorded here
-      // rather than smoothed over.
+      // Record when the pinned repository lacks a lockfile and current registry
+      // resolution is required.
       console.log("   no lockfile at pinned commit — generating");
       meta.notes.push(
         "package-lock.json absent at pinned commit; generated at capture time against the live registry",
