@@ -560,6 +560,7 @@ async function hook(
         // not allowed to be wrong in.
         today: new Date().toISOString().slice(0, 10),
         ...(installed === undefined ? {} : { installed }),
+        unscanned: unscannedScope(cwd),
       }),
     );
     if (context !== undefined) process.stdout.write(hookOutput(context));
