@@ -111,7 +111,11 @@ osv-scanner 추가    142건 보고 → 71건 조치  (50% 감소)
 `osv-scanner` 없이 돌려도 동작하고, 그 사실을 말합니다. 다만 도구의 작은 쪽 절반입니다.
 
 pnpm 프로젝트도 그대로 됩니다. `pnpm-lock.yaml`이 있으면 `pnpm audit`을 대신
-실행합니다. npm 6의 옛 리포트 형태도 읽습니다.
+실행합니다. npm 6의 옛 리포트 형태도 읽습니다. 이 형식은 수정 버전을 하나가
+아니라 범위로 담습니다. 안정 버전이 포함되는 하한으로 단독 표기된 경우에만 그
+버전을 패키지 매니저 명령까지 전달합니다. 배타적·프리릴리스·복합 범위는 안전하게
+선택할 수 있을 때까지 명령을 만들지 않고, `<0.0.0>`은 계속 "공개된 수정 버전
+없음"으로 처리합니다.
 
 yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습니다 — `npm audit`이
 `yarn.lock`을 못 읽고, yarn v1은 NDJSON이라 이 도구가 파싱하지 않습니다.
@@ -135,7 +139,7 @@ yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습
 
 advisory가 CVSS vector를 제공하면 각 SARIF 결과는 그 값을
 `properties.cvssVector`에 그대로 보존합니다. scanner 출력에는 vector만 있고 숫자
-score는 없으므로 GitHub의 숫자형 `security_severity`는 대략적인 severity band
+score는 없으므로 GitHub의 숫자형 `security-severity`는 대략적인 severity band
 fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 score를 만들지는 않습니다.
 
 여기엔 짚어 둘 만한 아이러니가 있습니다. 이 프로젝트는 서로 다른 도구의 SARIF를
@@ -174,8 +178,8 @@ fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 sco
 $ npx zero-shelter judge --record     # .zero-shelter/history.jsonl에 한 줄 덧붙임
 $ npx zero-shelter history
   2026-08-20T09:14:02.118Z  16 reported → 7 after merge →    7 outstanding  +7       0 accepted (baseline entries matched)
-  2026-08-21T11:02:55.700Z   4 reported → 2 after merge →    2 outstanding  -5 +2    0 accepted (baseline entries matched)
-  2026-08-22T08:31:10.042Z   4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
+  2026-08-21T11:02:55.700Z  4 reported → 2 after merge →    2 outstanding  +2 -7    0 accepted (baseline entries matched)
+  2026-08-22T08:31:10.042Z  4 reported → 2 after merge →    0 outstanding  -2       2 accepted (baseline entries matched)
 ```
 
 요청한 실행만 기록합니다. 파일은 JSONL이라 `tail`로 읽히고 PR에서 diff가 됩니다.

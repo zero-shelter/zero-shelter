@@ -14,11 +14,13 @@
 
 import type { JudgeResult } from "./report.js";
 import type { RankedFinding } from "./triage.js";
+import { messagesFor } from "./messages.js";
 import { upgradeActions } from "./actions.js";
 import { reachesEveryCopy, type InstalledVersions } from "./lockfile.js";
 import { overrideSnippet, type PackageManager } from "./package-manager.js";
 
 const TOOL_URI = "https://github.com/zero-shelter/zero-shelter";
+const ENGLISH_MESSAGES = messagesFor("en");
 
 /**
  * SARIF has four levels and no more. `moderate` and `low` both land on
@@ -153,7 +155,9 @@ function toResult(
     partialFingerprints: { zeroShelter: finding.fingerprint },
     properties: {
       score: entry.score,
-      reasons: entry.reasons.map((reason) => `${reason.points} ${reason.label}`),
+      reasons: entry.reasons.map(
+        (reason) => `${reason.points} ${ENGLISH_MESSAGES.reasonText(reason)}`,
+      ),
       tools: finding.tools,
       aliases: finding.aliases,
       possibleDuplicates: finding.relatedTo,

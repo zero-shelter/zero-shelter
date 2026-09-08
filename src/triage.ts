@@ -35,10 +35,31 @@ export const WEIGHTS = {
   hasUnjoinedSibling: 5,
 } as const;
 
-export interface Reason {
-  readonly label: string;
-  readonly points: number;
-}
+export type Reason =
+  | {
+      readonly kind: "severity";
+      readonly severity: Severity;
+      readonly points: number;
+    }
+  | {
+      readonly kind: "direct";
+      readonly points: number;
+    }
+  | {
+      readonly kind: "fixAvailable";
+      readonly fixedIn: string | undefined;
+      readonly points: number;
+    }
+  | {
+      readonly kind: "corroborated";
+      readonly tools: number;
+      readonly points: number;
+    }
+  | {
+      readonly kind: "unjoinedSibling";
+      readonly count: number;
+      readonly points: number;
+    };
 
 export interface RankedFinding {
   readonly finding: MergedFinding;
@@ -60,21 +81,20 @@ export function rank(findings: readonly MergedFinding[]): RankedFinding[] {
 function score(finding: MergedFinding): RankedFinding {
   const reasons: Reason[] = [
     {
-      label: `severity: ${finding.severity}`,
+      kind: "severity",
+      severity: finding.severity,
       points: WEIGHTS.severity[finding.severity],
     },
   ];
 
   if (!finding.transitive) {
-    reasons.push({ label: "direct dependency", points: WEIGHTS.directDependency });
+    reasons.push({ kind: "direct", points: WEIGHTS.directDependency });
   }
 
   if (finding.fixAvailable) {
     reasons.push({
-      label:
-        finding.fixedIn === undefined
-          ? "fix available"
-          : `fix available: ${finding.fixedIn}`,
+      kind: "fixAvailable",
+      fixedIn: finding.fixedIn,
       points: WEIGHTS.fixAvailable,
     });
   }
@@ -82,14 +102,16 @@ function score(finding: MergedFinding): RankedFinding {
   const extraTools = finding.tools.length - 1;
   if (extraTools > 0) {
     reasons.push({
-      label: `reported by ${finding.tools.length} tools`,
+      kind: "corroborated",
+      tools: finding.tools.length,
       points: extraTools * WEIGHTS.corroboratedPerExtraTool,
     });
   }
 
   if (finding.relatedTo.length > 0) {
     reasons.push({
-      label: `${finding.relatedTo.length} unjoined finding(s) for the same package`,
+      kind: "unjoinedSibling",
+      count: finding.relatedTo.length,
       points: WEIGHTS.hasUnjoinedSibling,
     });
   }
