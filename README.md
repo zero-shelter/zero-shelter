@@ -155,7 +155,7 @@ SARIF even when findings are present, then preserves the failed judgement as
 the job result. It requires `security-events: write` permission.
 
 SARIF uses stable fingerprints. When supplied by an advisory, `cvssVector` is
-preserved; `security-severity` uses a severity-band fallback, not a calculated
+preserved; `security_severity` uses a severity-band fallback, not a calculated
 CVSS score. The output also includes package and available scanner versions.
 
 ## Baseline and history
