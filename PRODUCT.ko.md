@@ -75,7 +75,7 @@ Scanner가 하나여도 순위, 지원되는 조치 안내, baseline의 가치�
 - 취약 코드의 도달 가능성이나 불가능성을 증명하지 않습니다. VEX 사유 추론,
   자동 위험 수용, 자동 만료 연장을 하지 않습니다.
 - 종합 보안 점수와 공개 프로젝트 순위는 제외합니다.
-  [거절한 설계의 근거](./docs/specs/125-adoption-roadmap.md#rejected-designs)를 보존합니다.
+  [거절한 설계의 근거](./docs/specs/adoption-roadmap.md#rejected-designs)를 보존합니다.
   범위를 명시한 badge [#134](https://github.com/zero-shelter/zero-shelter/issues/134)는
   별도의 보류 제안이며, 거절된 종합 점수와 구분합니다.
 - 판정은 로컬에서 이루어지고 runtime LLM·telemetry는 없습니다. 실행하는 scanner는
