@@ -26,6 +26,8 @@ Never imply that an unscanned domain is clean or that a missing file is dirty.
   under `.github/workflows`.
 - Always mark secrets as unread because a repository may contain them without a
   sentinel file.
+- Treat only regular, project-local files as artifacts: directories, symlinks,
+  and non-`.yml`/`.yaml` workflow entries are ignored.
 - Print one quiet boundary line for clean text runs and add an additive
   `unscanned` object to JSON output.
 - Add deterministic tests, a shallow detector, and synchronized documentation.
@@ -42,8 +44,8 @@ Never imply that an unscanned domain is clean or that a missing file is dirty.
 | Direction | Contract |
 |---|---|
 | Input | Local root-level file signals and the direct entries of `.github/workflows` |
-| Output | `unscanned: { secrets: true, containers: boolean, workflows: integer, infrastructure: boolean }` on CLI JSON; one corresponding text line on clean human output |
-| Errors/exit code | An unreadable optional path is treated as absent; existing exit codes remain unchanged |
+| Output | `unscanned: { secrets: true, complete: boolean, containers: boolean, workflows: integer, infrastructure: boolean }` on CLI JSON; one corresponding text line on clean human output |
+| Errors/exit code | An unreadable optional path sets `complete: false`, adds a human caveat, and does not fail the judgement; existing exit codes remain unchanged |
 | Compatibility | `unscanned` is additive; existing JSON keys and human output with findings remain unchanged |
 
 ## Architecture
@@ -75,7 +77,7 @@ Never imply that an unscanned domain is clean or that a missing file is dirty.
 | Normal input | Existing artifacts are named in one clean-run line and JSON object | `test/unscanned-boundary.test.ts` |
 | Invalid input | An unreadable optional scope path does not change the judgement exit code | detector catch paths and existing CLI tests |
 | Empty input | Secrets remain marked unread even when no file-keyed artifacts exist | `test/unscanned-boundary.test.ts` |
-| Boundary/large input | Only shallow root/workflow entries are inspected; no recursive walk | detector implementation and artifact-count test |
+| Boundary/large input | Only shallow root/workflow entries are inspected; directories, symlinks, and non-workflow files are excluded | detector implementation and artifact-boundary tests |
 | Existing behavior | Findings still use the existing output without a boundary line | `test/unscanned-boundary.test.ts` |
 | Security/privacy abuse case | No contents are read or emitted, and no network process is started | source review and local-only test setup |
 
@@ -91,4 +93,5 @@ clean or dirty.
 |---|---|---|
 | Use the Issue discussion's artifact-subject wording | A fixed list or a "not the …" charge-sheet sentence | A subject-based line is quieter and does not address the reader as if they failed |
 | Show it on clean runs only | Show it on every run | The Issue identifies the green tick as the misleading case; always-on context becomes furniture |
-| Always include secrets; key file-backed domains to present artifacts | Treat every absent domain as unread, or omit secrets | Secrets have no sentinel file, while naming absent Docker/workflow files would recite a list rather than describe this tree |
+| Always include secrets; key file-backed domains to present regular project-local artifacts | Treat every absent domain as unread, or omit secrets | Secrets have no sentinel file, while naming absent Docker/workflow files would recite a list rather than describe this tree; symlinks do not establish project ownership |
+| Distinguish incomplete detection from no artifact | Treat both as `false`/`0` | A fail-open detector must not let JSON consumers mistake an access error for evidence of absence |

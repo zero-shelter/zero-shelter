@@ -8,12 +8,14 @@
  * present.
  */
 
-import { existsSync, readdirSync } from "node:fs";
+import { lstatSync, readdirSync, type Dirent } from "node:fs";
 import { join } from "node:path";
 
 export interface UnscannedScope {
   /** Secret history has no sentinel file, so it is always outside this tool. */
   readonly secrets: true;
+  /** Whether the optional local artifact checks completed without an access error. */
+  readonly complete: boolean;
   /** Whether the project has a root Dockerfile. */
   readonly containers: boolean;
   /** Number of files directly under `.github/workflows`. */
@@ -31,33 +33,63 @@ const INFRASTRUCTURE_FILES = new Set([
 
 /** Read only a few root-level signals; optional unreadable paths do not fail a run. */
 export function unscannedScope(cwd: string): UnscannedScope {
+  let complete = true;
+  let rootEntries: Dirent[] = [];
+  let rootRead = false;
   let workflows = 0;
   let infrastructure = false;
 
   try {
-    workflows = readdirSync(join(cwd, ".github", "workflows"), { withFileTypes: true })
-      .filter((entry) => entry.isFile())
-      .length;
-  } catch {
-    // No workflow directory, or one the process cannot read. Either way there
-    // is no local workflow artifact we can name safely.
+    rootEntries = readdirSync(cwd, { withFileTypes: true });
+    rootRead = true;
+  } catch (error) {
+    if (!isMissing(error)) complete = false;
+  }
+
+  if (rootRead) {
+    infrastructure = rootEntries.some((entry) => {
+      const name = entry.name.toLowerCase();
+      return (
+        entry.isFile() &&
+        (name.endsWith(".tf") || name.endsWith(".tf.json") || INFRASTRUCTURE_FILES.has(name))
+      );
+    });
+  }
+
+  let containers = false;
+  try {
+    containers = lstatSync(join(cwd, "Dockerfile")).isFile();
+  } catch (error) {
+    if (!isMissing(error)) complete = false;
   }
 
   try {
-    infrastructure = readdirSync(cwd, { withFileTypes: true }).some(
-      (entry) =>
-        entry.isFile() &&
-        (entry.name.endsWith(".tf") || entry.name.endsWith(".tf.json") || INFRASTRUCTURE_FILES.has(entry.name)),
-    );
-  } catch {
-    // Scope disclosure must never turn an otherwise valid judgement into an
-    // environment failure.
+    const github = lstatSync(join(cwd, ".github"));
+    if (!github.isSymbolicLink() && github.isDirectory()) {
+      const workflowDir = lstatSync(join(cwd, ".github", "workflows"));
+      if (!workflowDir.isSymbolicLink() && workflowDir.isDirectory()) {
+        workflows = readdirSync(join(cwd, ".github", "workflows"), { withFileTypes: true })
+          .filter((entry) => entry.isFile() && /\.(?:yml|yaml)$/i.test(entry.name))
+          .length;
+      }
+    }
+  } catch (error) {
+    if (!isMissing(error)) complete = false;
   }
 
-  return {
-    secrets: true,
-    containers: existsSync(join(cwd, "Dockerfile")),
-    workflows,
-    infrastructure,
-  };
+  return result();
+
+  function result(): UnscannedScope {
+    return {
+      secrets: true,
+      complete,
+      containers,
+      workflows,
+      infrastructure,
+    };
+  }
+}
+
+function isMissing(error: unknown): boolean {
+  return (error as NodeJS.ErrnoException).code === "ENOENT";
 }

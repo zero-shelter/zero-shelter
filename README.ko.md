@@ -77,6 +77,8 @@ $ npx zero-shelter judge
 알립니다. 그 영역을 스캔하거나 깨끗하다고 판정하지 않습니다. 예를 들어 secret은
 항상 이 도구 밖에 있고, Dockerfile·workflow·infrastructure는 해당 파일이 있을 때만
 언급합니다.
+선택적인 범위 확인을 끝내지 못하면 JSON의 `unscanned.complete`가 `false`가 되고
+사람용 문장에도 표시합니다. 이때 `false`나 `0`은 artifact가 없다는 증거가 아닙니다.
 
 ## 설치
 

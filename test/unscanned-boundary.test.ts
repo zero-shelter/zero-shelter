@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -33,6 +33,7 @@ describe("the dependency-only boundary", () => {
     try {
       expect(unscannedScope(cwd)).toEqual({
         secrets: true,
+        complete: true,
         containers: false,
         workflows: 0,
         infrastructure: false,
@@ -54,6 +55,7 @@ describe("the dependency-only boundary", () => {
 
       expect(unscannedScope(cwd)).toEqual({
         secrets: true,
+        complete: true,
         containers: true,
         workflows: 2,
         infrastructure: true,
@@ -63,9 +65,60 @@ describe("the dependency-only boundary", () => {
     }
   });
 
+  it("does not treat directories, non-workflow files, or symlinks as project artifacts", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "zs-scope-boundary-"));
+    const external = await mkdtemp(join(tmpdir(), "zs-scope-external-"));
+
+    try {
+      await mkdir(join(cwd, "Dockerfile"));
+      await mkdir(join(cwd, ".github", "workflows"), { recursive: true });
+      await writeFile(join(cwd, ".github", "workflows", "README.md"), "not a workflow\n");
+      await writeFile(join(cwd, ".github", "workflows", "notes.txt"), "not a workflow\n");
+      await writeFile(join(external, "external.yml"), "name: External\n");
+      await writeFile(join(cwd, "main.tf"), "resource \"x\" \"y\" {}\n");
+      await rm(join(cwd, "main.tf"));
+      await symlink(join(external, "external.yml"), join(cwd, "main.tf"));
+
+      expect(unscannedScope(cwd)).toEqual({
+        secrets: true,
+        complete: true,
+        containers: false,
+        workflows: 0,
+        infrastructure: false,
+      });
+
+      await rm(join(cwd, ".github", "workflows"), { recursive: true, force: true });
+      await symlink(external, join(cwd, ".github", "workflows"));
+      expect(unscannedScope(cwd).workflows).toBe(0);
+
+      await rm(join(cwd, ".github"), { recursive: true, force: true });
+      const externalGithub = await mkdtemp(join(tmpdir(), "zs-scope-github-"));
+      await mkdir(join(externalGithub, "workflows"));
+      await writeFile(join(externalGithub, "workflows", "ci.yml"), "name: CI\n");
+      await symlink(externalGithub, join(cwd, ".github"));
+      expect(unscannedScope(cwd).workflows).toBe(0);
+      await rm(externalGithub, { recursive: true, force: true });
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+      await rm(external, { recursive: true, force: true });
+    }
+  });
+
+  it("marks the scope check incomplete when the root cannot be read", async () => {
+    const file = join(await mkdtemp(join(tmpdir(), "zs-scope-file-")), "project");
+    await writeFile(file, "not a directory\n");
+
+    try {
+      expect(unscannedScope(file).complete).toBe(false);
+    } finally {
+      await rm(file, { force: true });
+    }
+  });
+
   it("renders the boundary on a clean run in text and JSON", () => {
     const unscanned = {
       secrets: true as const,
+      complete: true,
       containers: true,
       workflows: 2,
       infrastructure: true,
@@ -78,12 +131,36 @@ describe("the dependency-only boundary", () => {
     expect(JSON.parse(renderJson(clean)).unscanned).toEqual(unscanned);
   });
 
+  it("warns when the optional scope check was incomplete", () => {
+    const output = renderHuman(
+      judge([], {
+        baseline: emptyBaseline(),
+        unscanned: {
+          secrets: true,
+          complete: false,
+          containers: false,
+          workflows: 0,
+          infrastructure: false,
+        },
+      }),
+      false,
+    );
+
+    expect(output).toContain("some local artifacts could not be checked");
+  });
+
   it("does not add a boundary line when findings need attention", () => {
     const findings = parseNpmAudit(readFileSync(fixture, "utf8"));
     const output = renderHuman(
       judge(findings, {
         baseline: emptyBaseline(),
-        unscanned: { secrets: true, containers: true, workflows: 1, infrastructure: false },
+        unscanned: {
+          secrets: true,
+          complete: true,
+          containers: true,
+          workflows: 1,
+          infrastructure: false,
+        },
       }),
       false,
     );
@@ -105,6 +182,7 @@ describe("the dependency-only boundary", () => {
       expect(result.code).toBe(1);
       expect(report.unscanned).toEqual({
         secrets: true,
+        complete: true,
         containers: true,
         workflows: 1,
         infrastructure: false,

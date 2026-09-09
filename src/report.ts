@@ -257,7 +257,8 @@ function unscannedLine(scope: UnscannedScope): string {
   const last = subjects[subjects.length - 1]!;
   const prefix = subjects.slice(0, -1);
   const unread = prefix.length === 0 ? last : `${prefix.join(", ")} and ${last}`;
-  return `  dependencies only — ${unread} went unread`;
+  const caveat = scope.complete ? "" : " (some local artifacts could not be checked)";
+  return `  dependencies only — ${unread} went unread${caveat}`;
 }
 
 /**

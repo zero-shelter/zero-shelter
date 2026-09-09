@@ -25,6 +25,8 @@
 - 루트 `Dockerfile`, 루트 Terraform/Compose 파일, `.github/workflows` 바로 아래
   파일을 감지합니다.
 - 별도 sentinel이 없는 secret은 항상 미검사로 표시합니다.
+- regular한 프로젝트 내부 파일만 artifact로 취급합니다. directory, symlink,
+  `.yml`/`.yaml`이 아닌 workflow 항목은 제외합니다.
 - 깨끗한 text 실행에는 조용한 한 줄을, JSON에는 추가적인 `unscanned` 객체를
   제공합니다.
 - 얕은 detector, 결정적 테스트, 영문·한글 문서를 추가합니다.
@@ -41,8 +43,8 @@
 | 방향 | 계약 |
 |---|---|
 | 입력 | 루트 파일 신호와 `.github/workflows` 바로 아래 항목 |
-| 출력 | CLI JSON의 `unscanned: { secrets: true, containers: boolean, workflows: integer, infrastructure: boolean }`, 깨끗한 text의 대응 문장 |
-| 오류/종료 코드 | 읽을 수 없는 선택 경로는 없는 것으로 보고 기존 종료 코드를 유지합니다 |
+| 출력 | CLI JSON의 `unscanned: { secrets: true, complete: boolean, containers: boolean, workflows: integer, infrastructure: boolean }`, 깨끗한 text의 대응 문장 |
+| 오류/종료 코드 | 읽을 수 없는 선택 경로는 `complete: false`와 사람용 주의 문구로 표시하되 판정은 계속합니다 |
 | 호환성 | `unscanned`는 추가 필드이며 기존 JSON 키와 finding 출력은 유지합니다 |
 
 ## 아키텍처
@@ -73,7 +75,7 @@
 | 정상 입력 | 실제 artifact가 깨끗한 실행의 한 줄과 JSON 객체에 표시됩니다 | `test/unscanned-boundary.test.ts` |
 | 잘못된 입력 | 선택 경로를 읽지 못해도 판정 종료 코드가 변하지 않습니다 | detector catch와 기존 CLI 테스트 |
 | 빈 입력 | 파일 기반 artifact가 없어도 secret은 미검사로 표시됩니다 | `test/unscanned-boundary.test.ts` |
-| 경계/대규모 | 루트와 workflow 바로 아래만 보고 재귀 순회하지 않습니다 | detector 및 개수 테스트 |
+| 경계/대규모 | 루트와 workflow 바로 아래만 보고 directory·symlink·비 workflow 파일은 제외합니다 | detector 및 경계 테스트 |
 | 기존 동작 | finding이 있으면 기존 출력에 경계 줄을 추가하지 않습니다 | `test/unscanned-boundary.test.ts` |
 | 보안/개인정보 악용 사례 | 내용이나 network 프로세스를 읽거나 내보내지 않습니다 | 코드 검토와 로컬 테스트 |
 
@@ -88,4 +90,5 @@
 |---|---|---|
 | artifact를 주어로 하는 Issue 논의의 C 문안을 사용 | 고정 목록 또는 고발처럼 들리는 문장 | 독자를 탓하지 않고 조용합니다 |
 | 깨끗한 실행에서만 표시 | 모든 실행에서 표시 | Issue가 지적한 오해는 green tick이며, 항상 표시하면 배경 소음이 됩니다 |
-| secret은 항상, 파일 기반 영역은 실제 artifact가 있을 때만 표시 | 없는 모든 영역 표시 또는 secret 생략 | secret에는 sentinel이 없고 없는 Docker/workflow를 나열하면 이 트리를 설명하지 못합니다 |
+| secret은 항상, 파일 기반 영역은 실제 regular 프로젝트 파일이 있을 때만 표시 | 없는 모든 영역 표시 또는 secret 생략 | secret에는 sentinel이 없고 없는 Docker/workflow를 나열하면 이 트리를 설명하지 못하며 symlink는 프로젝트 소유를 증명하지 않습니다 |
+| 탐지 불완전과 artifact 부재를 구분 | 둘 다 `false`/`0`으로 처리 | fail-open detector의 접근 오류를 JSON 소비자가 부재로 오해하면 안 됩니다 |
