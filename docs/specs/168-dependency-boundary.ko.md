@@ -3,6 +3,7 @@
 ## 이슈와 수명주기 정보
 
 - 이슈: [#168](https://github.com/zero-shelter/zero-shelter/issues/168)
+- 영문 정본: [`168-dependency-boundary.md`](./168-dependency-boundary.md)
 - 대상 계층: CLI, 범위 감지, 리포트 출력
 - 관련 PR: #168 구현 PR
 
