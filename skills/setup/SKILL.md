@@ -30,8 +30,24 @@ the project as a whole is clean.
 
 This tool reconciles what two scanners each called by a different name. With one
 source there is nothing to reconcile, so **install `osv-scanner` before judging
-the result of a first run.** Measured on uptime-kuma: npm audit alone reports 71
-and leaves 71; add osv-scanner and it is 142 in, 71 out.
+the result of a first run.** The pinned captures show what the second source
+buys beyond a shorter list:
+
+| project | fixed versions: npm audit → both | transitive advice: npm audit → both |
+|---|---:|---:|
+| juice-shop | 15/73 → 50/82 | 0 → 11 |
+| nodegoat | 7/177 → 109/173 | 0 → 49 |
+| dvna | 20/51 → 40/51 | 0 → 6 |
+| hackathon-starter | 0/11 → 4/11 | 0 → 2 |
+
+The npm-audit-only transitive advice block is empty in every pinned capture; the
+table's both-sources column shows what changes when osv-scanner contributes. The
+benchmark is reproducible from `bench/captures/` with
+`npm run build && node bench/evaluate.mjs`; these figures are evidence about
+this project's output, not a promise that every repository has the same ratio.
+
+The noise reduction still helps readability. On uptime-kuma, npm audit alone
+reports 71 and leaves 71; add osv-scanner and it is 142 in, 71 out.
 
 ```bash
 brew install osv-scanner        # macOS / Linuxbrew

@@ -48,6 +48,7 @@ These top-level keys are frozen. They will keep their names and their types:
 | `transitiveFixes` | array | Findings that need `overrides` instead |
 | `noLongerReported` | array | Previously accepted, absent this run |
 | `skipped` | array of string | Scanners that did not produce a report |
+| `missingSources` | array of string | Scanners recorded in the baseline that did not contribute this run |
 | `workspaceRoot` | boolean | Whether install commands would land in the wrong package.json |
 | `unscanned` | object | Local artifacts outside the dependency-only judgement |
 
@@ -74,10 +75,15 @@ baseline was written for a different fingerprint schema, so every finding is
 being reported as new until it is re-recorded. Treat its absence as "no
 qualification" and never as "key missing, ignore".
 
+`missingSources` is the separate, additive qualification for a scanner set that
+changed: it lists sources recorded in the baseline that did not contribute this
+time, including runs where alias rematching kept accepted findings suppressed.
+It is empty when source provenance is unavailable or every recorded source ran.
+
 Lesser qualifications do not currently reach JSON at all. When a scanner that
 fed the baseline did not run this time, the terminal says so and the JSON does
-not — if you are gating on this output, that is a gap you should know about
-rather than a guarantee.
+now exposes `missingSources` — if you are gating on this output, treat a
+non-empty list as a qualification rather than a guarantee.
 
 ### What additive means
 
@@ -92,8 +98,13 @@ we care most about, because it is the one a schema check does not catch.
 ### Not frozen
 
 `--format sarif` follows the SARIF 2.1.0 schema, which is the contract there.
-Note that `partialFingerprints.zeroShelter` is stable across machines but not
-across changes to which scanners run — see #86.
+`tool.driver.version` and `tool.driver.semanticVersion` identify the
+zero-shelter package that wrote the file. A result may also carry
+`properties.toolVersions`, an array of `{ tool, version }` objects for scanner
+versions the source supplied; missing versions stay absent rather than guessed.
+`partialFingerprints.zeroShelter` is stable across machines but not across
+changes to which scanners run — see #86. The JSON output intentionally keeps
+its action-oriented `tools` names and does not add provenance versions there.
 
 The baseline file format is not frozen. It is ours, it is going to change, and
 `judge` reads whatever version it finds.

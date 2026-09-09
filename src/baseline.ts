@@ -481,11 +481,12 @@ export function applyBaseline(
   ].sort();
 
   // Only a source that contributed then and not now casts doubt. A scanner
-  // that was absent both times explains nothing, and warning about it would
-  // teach people to skip the line that matters.
+  // that was absent both times explains nothing, and reporting it would teach
+  // people to skip the line that matters. This remains useful even when alias
+  // rematching keeps every acceptance present: the scanner set still changed.
   const ran = new Set(sources ?? []);
   const missingSources =
-    baseline.sources === undefined || sources === undefined || noLongerReported.length === 0
+    baseline.sources === undefined || sources === undefined
       ? []
       : baseline.sources.filter((tool) => !ran.has(tool));
 
