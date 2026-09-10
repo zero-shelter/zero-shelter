@@ -1,16 +1,6 @@
 # What is frozen
 
-This project is below 1.0. That version number says the feature set is still
-moving; it does not say the interfaces a pipeline depends on are.
-
-Two surfaces are frozen from 0.0.7 onward and will not change without a major
-version: **exit codes** and the **top-level shape of `--format json`**. If you
-are deciding whether to put this in a gate that fails builds, those are the two
-things you are betting on, so they are the two things stated here.
-
-Everything else — the human-readable report, the wording of any line, the
-weights, the HTML — can change in a patch release. Do not parse the terminal
-output.
+From 0.0.7 onward, exit codes and the top-level shape of `--format json` are stable until a major version change. Human-readable wording, ranking weights, and HTML may change in patch releases; do not parse terminal output.
 
 ## Exit codes
 
@@ -20,18 +10,7 @@ output.
 | `1` | Judged, and there is at least one finding to act on | yes |
 | `2` | Could not judge: nothing scanned, bad input, unusable baseline, usage error | yes |
 
-The distinction that matters in CI is `1` against `2`. A `1` is a real answer —
-findings exist. A `2` means the tool never reached an answer, and it exists so
-that a project nobody scanned cannot go green:
-
-> Nothing was scanned. Reporting "nothing new to fix" here would be a lie with a
-> zero exit code attached, and in CI it turns a project the tool never looked at
-> green — worse than crashing, because nobody investigates a passing build.
->
-> — `src/cli.ts`
-
-So `zero-shelter judge || true` is not a safe way to make a pipeline pass. It
-also swallows the case where the scanners failed to run.
+Exit `1` means findings were reported. Exit `2` means the tool could not complete a judgement. Avoid `zero-shelter judge || true` in a CI gate: it also hides scanner and input failures.
 
 New failure modes get `2`. We will not add a fourth code without a major
 version, and we will not move a condition between `1` and `2`.
@@ -60,7 +39,7 @@ Each entry in `fixNow` keeps `fingerprint`, `score`, `severity`, `ecosystem`,
 
 `fixedIn` is **frozen if present**. It is absent when no source named a version
 that fixes the finding, which is common — 32 of 82 on the juice-shop captures.
-Treat its absence as "no published fix", never as a key you can rely on.
+Treat its absence as "no fix version reported"; it does not establish whether an upstream fix exists.
 
 **`warning` is frozen if present.** It is absent on a clean run. When it is
 there it is a string, and it means the whole judgement is qualified: the
@@ -73,20 +52,15 @@ changed: it lists sources recorded in the baseline that did not contribute this
 time, including runs where alias rematching kept accepted findings suppressed.
 It is empty when source provenance is unavailable or every recorded source ran.
 
-Lesser qualifications do not currently reach JSON at all. When a scanner that
-fed the baseline did not run this time, the terminal says so and the JSON does
-now exposes `missingSources` — if you are gating on this output, treat a
-non-empty list as a qualification rather than a guarantee.
+Treat a non-empty `missingSources` list as a limitation of the comparison with the baseline.
 
 ### What additive means
 
 New keys may appear in a patch release. New fields may appear inside `fixNow`
-entries. Consume this with a parser that ignores what it does not recognise,
-and a minor upgrade will never break you.
+entries. Parsers should ignore unrecognized fields.
 
 What will not happen without a major version: a frozen key disappearing, changing
-type, or keeping its name while changing meaning. That last one is the failure
-we care most about, because it is the one a schema check does not catch.
+type, or keeping its name while changing meaning. Schema checks alone cannot detect a change in meaning.
 
 ### Not frozen
 
@@ -99,8 +73,7 @@ versions the source supplied; missing versions stay absent rather than guessed.
 changes to which scanners run — see #86. The JSON output intentionally keeps
 its action-oriented `tools` names and does not add provenance versions there.
 
-The baseline file format is not frozen. It is ours, it is going to change, and
-`judge` reads whatever version it finds.
+The baseline file format is not frozen. `judge` validates the format it reads and reports incompatible or unusable data.
 
 ## How this is enforced
 
@@ -111,9 +84,8 @@ against a copy of the table. It checks two things separately:
 - `warning`, when a run produces one, is a string
 
 A change that breaks either fails CI. If you are making that change
-deliberately, the test is where you say so, and the major version is the price.
+deliberately, update the test and follow the major-version requirement.
 
 ## If you need something frozen that is not
 
-Open an issue. Interfaces get frozen by being depended on and said out loud, not
-by waiting for 1.0.
+Open an issue describing the interface and the integration that depends on it.

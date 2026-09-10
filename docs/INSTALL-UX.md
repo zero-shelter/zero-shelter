@@ -1,8 +1,6 @@
 # Install and first-run experience
 
-Owner: @PresentJay. This is the spec and QA bar for one area — getting the tool
-onto a machine and through its first run — so the other two areas can be worked
-on without guessing where the seams are.
+Owner: @PresentJay. This document records the install and first-run scope and its 2026-08-25 QA milestone. The package measurements and output examples below describe the 0.0.7-era checks; use the [README install guide](../README.md#install) for current instructions and [QA policy](./qa/execution-policy.md) for current verification requirements.
 
 ## Boundary
 
@@ -19,26 +17,23 @@ install UX; the wording of an actual finding is output quality.
 
 | Path | Command | Status |
 |---|---|---|
-| No install | `npx zero-shelter judge` | works — the preview package is published as `zero-shelter@0.0.7` |
+| No install | `npx zero-shelter judge` | published as `zero-shelter@0.0.7` at this milestone |
 | Dev dependency | `npm i -D zero-shelter` then `npx zero-shelter judge` | works — uses the published package |
 | From source | `git clone … && npm ci && npm run build && npm run judge` | works |
 
 Node 20 or later. No runtime dependencies. After a build, the `0.0.7` package is
 110.7 kB packed across 79 files (`npm pack --dry-run`).
 
-## What the first run must never do
+## A run with nothing scanned must fail
 
-**Report success when it checked nothing.** It used to:
+Before the fix, a directory without a lockfile could produce:
 
 ```console
 $ cd /tmp/empty-dir && npx zero-shelter judge     # before
 ✓ nothing new to fix          # exit 0
 ```
 
-There is no lockfile there, so nothing was scanned, and both the sentence and
-the exit code said the opposite. In CI that is worse than a crash: the pipeline
-goes green on a project the tool never looked at, and nobody investigates a
-passing build. Now:
+No scanner produced a report in this case, but the command returned success. The corrected 0.0.7-era output was:
 
 ```console
 $ cd /tmp/empty-dir && npx zero-shelter judge     # after
@@ -51,14 +46,13 @@ nothing was scanned, so this is not a pass       # exit 2
 
 The rule this follows: a source that produced a report we could read counts as
 scanned; anything else does not, and zero sources scanned can never be a pass.
-"Scanned and found nothing" stays exit 0 — that distinction is the whole point.
+A successful scan with no findings stays exit 0.
 
 ## QA checklist
 
-The bar for this area. The ten rows below are the user-facing first-run cases;
-`npm run qa` executes fourteen checks in total.
+The table records the first-run cases at the milestone. `npm run qa` had fourteen checks at that time.
 
-| # | Case | Expected | Now |
+| # | Case | Expected | Recorded result |
 |---|---|---|---|
 | 1 | No lockfile in the directory | Says a lockfile is required and how to get one. Exit 2 (cannot judge), never 0 | ✅ repeats npm's own explanation, exit 2 |
 | 2 | `--version` | Prints the version | ✅ #42 (@msnodeve) |
@@ -69,19 +63,15 @@ The bar for this area. The ten rows below are the user-facing first-run cases;
 | 7 | Install footprint | No runtime dependencies; the package payload is `dist` plus standard npm metadata and documentation | ✅ 79 files, 110.7 kB |
 | 8 | Scanner message accuracy | Names formats we actually parse | ✅ yarn v1 removed |
 | 9 | `npx zero-shelter` with no subcommand | Same as `judge` | ✅ |
-| 10 | Second run after `--update-baseline` | `✓ nothing new to fix`, exit 0 — the honest one | ✅ |
+| 10 | Second run after `--update-baseline` | `✓ nothing new to fix`, exit 0 | ✅ |
 
-## Running it
+## Repeating the checks
 
 ```bash
 npm run qa
 ```
 
-Packs the package, installs the tarball into a throwaway project, and runs the
-checks against that — not against the working copy. The distinction is the
-point: this exact check caught a merge that deleted a shipped feature while
-every test and all three CI matrices stayed green, because the tests for the
-deleted code were deleted along with it.
+This packs the package, installs the tarball in a temporary project, and tests the shipped CLI. It caught a missing shipped feature whose source and tests had both been removed; unit tests alone did not detect that omission.
 
 Agent-facing surfaces have a separate gate:
 
@@ -91,14 +81,11 @@ npm run qa:agent
 
 It checks the hook, five skills, copy-paste prompts in the HTML report, the
 plugin manifest, package-manager dialects, and the quiet failure paths. It
-currently runs eighteen checks.
+had eighteen checks at this milestone.
 
-## Definition of done — 2026-08-25 24:00
+## Milestone criteria: 2026-08-25 24:00
 
-All green from `npm run qa` (fourteen checks, two of them added after the QA itself found gaps: a workspace root, and a run with both scanners present), and the result posted as a QA report in
-Discussions. A published version now exists, so the same checks should also be
-repeated against `npx --yes zero-shelter@latest` for each release — packing
-locally proves the tree is sound, not that the registry serves the same bytes.
+The milestone required passing all fourteen `npm run qa` checks and posting the result in Discussions. Two checks were added for gaps found during QA: a workspace root and a run with both scanners present. Repeat the checks against `npx --yes zero-shelter@latest` for each release to verify the registry artifact as well as the local package.
 
 Exit codes, which CI depends on and therefore cannot change casually:
 
@@ -108,9 +95,8 @@ Exit codes, which CI depends on and therefore cannot change casually:
 | 1 | New findings to fix |
 | 2 | Could not judge — bad flags, unreadable input, nothing to scan |
 
-## Not in this area, on purpose
+## Excluded from this area
 
-- An `init` command that writes CI workflow and hook config. Convenience, not
-  correctness; it can wait until after the deadline.
-- Publishing under an npm organisation. Ownership, not install experience.
+- An `init` command that writes CI workflow and hook configuration, deferred beyond this milestone.
+- Publishing under an npm organization, which requires a separate ownership decision.
 - Any change to what gets ranked or how it is worded.

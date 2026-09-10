@@ -4,7 +4,7 @@
 
 This guide covers contributions to scanner inputs, judgement logic, output integrations, agent controls, tests, benchmarks, and documentation.
 
-## Contribution contract
+## Contribution process
 
 Every change follows:
 
@@ -12,7 +12,7 @@ Every change follows:
 Issue → spec → implementation → QA → pull request → review → merge
 ```
 
-A contribution is complete when its behavior, validation evidence, security impact, and documentation are understandable to someone who did not write it.
+Describe the behavior, validation evidence, security impact, and documentation for a reviewer who did not write the change.
 
 ## Quick start
 
@@ -54,7 +54,7 @@ large refactor:
    follow the [Beta QA Guide](./docs/qa/README.md). Then open a PR using the template and include
    the evidence.
 
-> **If your pull request comes from a fork and no checks appear:** GitHub may hold the first workflow run from a fork until a maintainer approves it. Seeing no checks at first does not mean your change is broken. Approval timing depends on maintainer availability. If checks still have not started, leave a comment on the pull request saying that the checks have not started.
+For fork PRs, GitHub may wait for a Maintainer to approve the first workflow run. If checks remain pending, leave a comment on the PR. Workflow approval allows CI to run; it is separate from approval of the change.
 
 An agent may help with any of these steps, but the human contributor owns the
 scope, correctness, and review of every changed file. Repository-local agent
@@ -141,7 +141,7 @@ Use `Fixes #123` only when the merged change should close the Issue. Keep the PR
 
 ## Review
 
-**A reviewer who cannot describe an input that breaks the change does not approve it.**
+A reviewer must describe an input that breaks the change before approving it.
 
 Try a failing input, inspect the changed boundary, and state what was checked. Security-control changes also require review of data flow, logs, subprocesses, permissions, and failure behavior.
 
@@ -162,9 +162,7 @@ At least one Maintainer must approve a merge. Owner approval is additionally req
 
 English is canonical. Korean translations should link to the English source and be updated with behavior changes.
 
-**`skills/*/SKILL.md` is the exception, and its body stays English.** A skill is read by an agent rather than a person: it is matched on the frontmatter `description`, which carries the Korean phrasings a request arrives in, and then the body is read in English and answered in whatever language the human used. A translated body is therefore a second copy to keep in step for a reader that does not need one.
-
-So Korean belongs in the `description` and nowhere else in a skill:
+Skill bodies (`skills/*/SKILL.md`) stay English. Put Korean request phrases in the frontmatter `description` so agents can match requests in Korean and respond in the user's language:
 
 ```yaml
 description: ... Korean requests look like: 의존성 취약점 점검해줘, 보안 스캔 돌려줘.
@@ -180,20 +178,16 @@ For vulnerability reports, follow the [organization security policy](https://git
 
 ## Adding a language
 
-The HTML report is read by people who did not run the command, in whatever
-country they are in. Adding one is three steps and no code beyond strings:
+To add an HTML report language:
 
-1. Add a catalogue to `src/messages.ts`. `Messages` is a type, so a missing key
-   fails the build rather than rendering English into your page.
-2. Add the code to `LANGUAGES` and to the `--lang` line in `src/cli.ts`'s usage
-   text. A test fails if a shipped language is missing from `--help`.
-3. If the language is written right to left, add its code to `RIGHT_TO_LEFT` in
-   `src/html.ts`. The layout uses logical properties, so it mirrors on its own.
+1. Add a catalogue to `src/messages.ts`. The `Messages` type checks for missing keys.
+2. Add the language code to `LANGUAGES` and the `--lang` usage line in `src/cli.ts`. A test checks that `--help` lists each supported language.
+3. For a right-to-left language, add its code to `RIGHT_TO_LEFT` in `src/html.ts`. The layout uses logical CSS properties.
 
-Two things not to translate: the terminal output, whose content is advisory
-identifiers and exit codes, and anything inside a code block. Package names,
-`GHSA-` ids and commands stay as the scanners wrote them.
+Keep terminal output and code blocks untranslated. Preserve package names, advisory identifiers, and commands. Numbers use plain integers so the same report can be compared across machines without locale-dependent formatting.
 
-Numbers are printed as plain integers on purpose. Locale-aware formatting would
-make the same judgement render differently on two machines, and the report is
-meant to be diffable.
+## Writing documentation and public records
+
+Describe the problem and observable behavior first. State the conditions and source of measurements, and separate current behavior from proposals. Keep commands, reproduction steps, technical evidence, authorship, and decision history when editing older text.
+
+Report automated checks, agent review, and human approval separately. Do not claim a check or approval that did not occur. Remove unused template prompts before posting, and explain when a required check does not apply. Avoid repeated summaries, unsupported claims about users, and emphasis that adds no information. Korean translations should preserve the meaning in natural Korean rather than copy English sentence structure.

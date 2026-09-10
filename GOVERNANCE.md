@@ -13,7 +13,7 @@ This document defines how zero-shelter is maintained as an open-source project: 
 | Maintainer | triage, coordinate, merge normal changes | merge after required checks |
 | Owner | protect architecture, security, API, and release policy | final decision on reserved areas |
 
-Roles describe responsibility, not seniority. File-level ownership is intentionally not encoded in `CODEOWNERS` until the affected areas and people are explicitly agreed.
+Roles define responsibilities and decision rights. File-level assignments in `CODEOWNERS` require agreement on the affected areas and people.
 
 ## Decision boundaries
 
@@ -52,7 +52,7 @@ Maintainers own label hygiene. When a status changes, remove the old lifecycle l
 
 A Maintainer merges only when the scope and affected layer are clear, required CI passes, QA evidence covers relevant failure modes, security/privacy impact is addressed, documentation is updated, and no unresolved review or ownership conflict remains.
 
-A reviewer must be able to describe a failing input or explain what was tried and why no such input was found.
+A reviewer must be able to describe an input that breaks the change before approving it. Automated checks and agent review provide evidence; they do not replace the required human approvals.
 
 ## Shared contracts and conflicts
 

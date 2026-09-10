@@ -2,7 +2,7 @@
 
 [English](./AGENTS.md)
 
-이 문서는 coding agent를 위한 저장소 로컬 규칙입니다. 작업 범위·정확성·최종 검토의 책임은 여전히 사람 기여자에게 있습니다.
+이 문서는 코딩 에이전트를 위한 저장소 규칙입니다. 작업 범위·정확성·최종 검토의 책임은 여전히 사람 기여자에게 있습니다.
 
 ## 수정하기 전에
 
@@ -18,23 +18,23 @@
 `src/sarif.ts`, `src/hook.ts`, `package.json`, `.github/`, `skills/`)를
 바꾸려면 명시적인 범위와 거버넌스에서 정한 리뷰가 필요합니다.
 
-테스트나 리포트를 보기 좋게 만들기 위해 ranking 가중치, fingerprint,
-baseline 의미, exit code, output schema, hook 동작을 바꾸지 않습니다.
+테스트나 보고서를 보기 좋게 만들기 위해 순위 가중치, 지문,
+baseline 의미, 종료 코드, 출력 스키마, hook 동작을 바꾸지 않습니다.
 
 ## 경계를 넘을 때 임의로 결정하지 않기
 
 다음 상황에서는 멈추고 사람에게 확인합니다.
 
-- Issue나 명세 범위를 벗어나거나 shared contract를 변경할 때
-- runtime dependency, network/LLM/telemetry, release/publish 동작을 추가할 때
-- secret이나 개인정보를 다룰 때
+- Issue나 명세 범위를 벗어나거나 공유 계약을 변경할 때
+- 런타임 의존성, 네트워크·LLM·텔레메트리, 릴리스·배포 동작을 추가할 때
+- 비밀정보나 개인정보를 다룰 때
 - 다른 기여자의 변경과 충돌하거나 담당자가 불분명할 때
 
-Issue에서 명시하지 않았다면 `npm audit fix` 실행, lockfile 업데이트,
-`--update-baseline` 사용, snapshot·fixture·capture·benchmark label 재생성을
-하지 않습니다. 다른 기여자의 변경을 편하게 만들기 위해 reset·clean·덮어쓰기를 하지 않습니다.
+Issue에서 명시하지 않았다면 `npm audit fix` 실행, 잠금 파일 업데이트,
+`--update-baseline` 사용, 스냅샷·테스트 입력·수집 자료·벤치마크 라벨 재생성을
+하지 않습니다. 필요한 경우 이유도 기록합니다. 다른 기여자의 변경을 reset·clean으로 지우거나 덮어쓰지 않습니다.
 
-실제 secret·개인정보·내부 URL·미공개 취약점 내용을 commit하지 않습니다.
+실제 비밀정보·개인정보·내부 URL·미공개 취약점 내용을 커밋하지 않습니다.
 
 ## 검증
 
@@ -49,8 +49,12 @@ npm run build
 문서만 바꾼 경우에는 `git diff --check`를 실행하고 변경된 링크와 사용자에게
 보이는 설명을 확인합니다.
 
-package나 설치 동작을 바꾼 경우, 해당 script가 있으면 `npm run qa`도 실행합니다.
-CLI나 package 변경이면 `npm pack --dry-run`과 배포 package smoke test도 확인합니다.
+패키지나 설치 동작을 바꾼 경우, 해당 스크립트가 있으면 `npm run qa`도 실행합니다.
+CLI나 패키지 변경이면 `npm pack --dry-run`과 배포 패키지 기본 동작 검사도 확인합니다.
 
 사람 기여자는 모든 변경 파일을 검토하고, 확인하지 못한 내용을 보고합니다.
 사용자에게 보이는 동작이 바뀌면 영어 정본 문서와 한국어 번역도 함께 갱신합니다.
+
+## 공개 글 작성
+
+[문서와 공개 기록 작성 안내](./CONTRIBUTING.ko.md#문서와-공개-기록-작성)를 따릅니다. 확인한 동작과 한계를 설명하고, 과거 기록을 고칠 때 기술 근거·시간 순서·기여자 표기를 보존합니다. 자동 검사와 에이전트 검토를 사람의 승인과 구분하며, 에이전트 검토를 사람의 결정으로 표현하지 않습니다.

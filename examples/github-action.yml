@@ -1,8 +1,7 @@
-# Dependency findings in the Security tab, failing only on what a change added.
-#
-# Copy to .github/workflows/ and commit .zero-shelter/baseline.json alongside it.
-# Without the baseline every run reports the whole backlog and the job is noise
-# from day one — which is how security checks get switched off.
+# Upload dependency findings to the Security tab and fail when judge fails.
+# Copy to .github/workflows/. A baseline is optional: commit one only after
+# reviewing and accepting the recorded risks. New findings can also come from
+# advisory or scanner changes, not only from the code in a pull request.
 
 name: dependencies
 
@@ -27,13 +26,9 @@ jobs:
 
       - run: npm ci
 
-      # Optional. Without it only npm audit runs, and the two sources cannot be
-      # reconciled — which is where most of the deduplication comes from.
-      #
-      # Pinned by version and verified by checksum: a security tool that curls
-      # an unverified binary into its own pipeline has no standing to lecture
-      # anyone about supply chains. Check the checksum for the version you
-      # pin; the one below is v2.5.0 linux/amd64 — see skills/ci/SKILL.md.
+      # OSV is an optional additional source for this npm example. Verify the checksum
+      # for the pinned version and platform; this one is v2.5.0 linux/amd64.
+      # See skills/ci/SKILL.md for package-manager-specific guidance.
       - name: Install osv-scanner (pinned, checksum-verified)
         run: |
           curl -sSfL -o /usr/local/bin/osv-scanner \
@@ -41,8 +36,8 @@ jobs:
           echo "edcfc41d257db36148f065055655fe3fcfc434b0b423ea67468a84c207524e0c  /usr/local/bin/osv-scanner" | sha256sum -c -
           chmod +x /usr/local/bin/osv-scanner
 
-      # continue-on-error so the SARIF still uploads when findings are present.
-      # The job result comes from the check below, after the upload.
+      # Continue so SARIF can upload when findings are present; the final step fails
+      # the job when judge failed. It does not distinguish exit 1 from exit 2.
       - name: Judge
         id: judge
         continue-on-error: true

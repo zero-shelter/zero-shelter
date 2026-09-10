@@ -1,5 +1,7 @@
 # Feature specification: explicit `--no-color` CLI option
 
+[한국어](./cli-no-color.ko.md). This document records the design for the linked issue.
+
 ## Issue and lifecycle metadata
 
 - Issue: #65

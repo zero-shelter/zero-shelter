@@ -1,47 +1,47 @@
-# Security and Privacy
+# 보안과 개인정보
 
 [English](./SECURITY.md)
 
-zero-shelter는 dependency Finding을 판정하고 Agent에 짧은 context를 전달할 수 있습니다. 사용자가 명시적으로 외부 연동을 선택하지 않는 한 프로젝트 데이터가 로컬에 남는 trust boundary를 지켜야 합니다.
+zero-shelter는 의존성 발견 사항을 판정하고 에이전트에 짧은 문맥 정보를 전달할 수 있습니다. 사용자가 명시적으로 외부 연동을 선택하지 않는 한 프로젝트 데이터가 로컬에 남는 신뢰 경계를 지켜야 합니다.
 
 ## 반드시 지키는 기본값
 
 - 실행 중 LLM 호출 금지
-- telemetry와 문서화되지 않은 network 요청 금지
-- 프로젝트 파일·prompt·Finding·secret·개인정보를 기본값으로 외부 전송하지 않음
-- secret 원문을 log·fixture·benchmark capture·report에 기록하지 않음
-- 개인정보는 가능한 이른 지점에서 최소화·redaction·hash
+- 텔레메트리와 문서화되지 않은 네트워크 요청 금지
+- 프로젝트 데이터·프롬프트·발견 사항·비밀정보·개인정보를 기본값으로 외부 전송하지 않음
+- 비밀정보 원문을 로그·테스트 입력·벤치마크 수집 자료·보고서에 기록하지 않음
+- 개인정보는 가능한 이른 지점에서 최소화하거나 민감한 부분을 제거·해시 처리
 - fail-open/fail-closed를 명시
-- 사용자 동작과 data-flow를 문서화
+- 사용자 동작과 데이터 흐름을 문서화
 
-scanner 자체에는 network 동작이 있을 수 있습니다. 그 경계를 정확히 설명하고 프로젝트가 숨은 traffic을 추가하지 않도록 합니다.
+스캐너 자체에는 네트워크 동작이 있을 수 있습니다. 그 경계를 정확히 설명하고 프로젝트가 숨은 통신을 추가하지 않도록 합니다.
 
 ## 취약점 신고
 
-공개되지 않은 취약점을 public Issue나 PR로 올리지 않습니다. [조직 보안 정책](https://github.com/zero-shelter/.github/blob/main/SECURITY.md)을 따르고 재현 방법·영향 버전/commit·영향도·안전한 연락 경로를 비공개로 전달합니다.
+공개되지 않은 취약점을 공개 Issue나 PR로 올리지 않습니다. [조직 보안 정책](https://github.com/zero-shelter/.github/blob/main/SECURITY.md)을 따르고 재현 방법·영향 버전/커밋·영향도·안전한 연락 경로를 비공개로 전달합니다.
 
 ## 보안 제어 기여
 
-개인정보·secret·prompt·권한·subprocess·network·보안 정책을 바꾸는 PR은 다음을 포함한 명세가 필요합니다.
+개인정보·비밀정보·프롬프트·권한·하위 프로세스·네트워크·보안 정책을 바꾸는 PR은 다음을 포함한 명세가 필요합니다.
 
 | 필수 항목 | 질문 |
 |---|---|
 | 보호 데이터 | 무엇이 민감한가? |
-| Trust boundary | 어떤 process/service가 볼 수 있는가? |
-| Data-flow | 어디서 생성·변환·저장·출력되는가? |
+| 신뢰 경계 | 어떤 프로세스·서비스가 볼 수 있는가? |
+| 데이터 흐름 | 어디서 생성·변환·저장·출력되는가? |
 | 보존 | 어디에 얼마나 오래 남는가? |
-| 실패 모드 | block·warning·fail-open 중 무엇인가? |
+| 실패 모드 | 차단·경고·실패 시 허용 중 무엇인가? |
 | 악용 사례 | 어떤 악성 입력을 테스트했는가? |
-| 사용자 제어 | 기본값과 opt-in/out은 무엇인가? |
+| 사용자 제어 | 기본값과 사용자의 선택 방법은 무엇인가? |
 
-공격 입력 테스트와 reviewer 근거도 PR에 포함합니다.
+공격 입력 테스트와 리뷰어의 검증 근거도 PR에 포함합니다.
 
 ## 공개 기여의 안전
 
-실제 secret·개인정보·내부 URL·고객 데이터·미공개 취약점 상세를 commit하지 않습니다. synthetic fixture와 redacted example을 사용합니다. 민감정보를 발견하면 복사해 Issue에 올리지 말고 비공개 보안 경로로 알립니다.
+실제 비밀정보·개인정보·내부 URL·고객 데이터·미공개 취약점 상세를 커밋하지 않습니다. 합성한 테스트 입력과 민감정보를 제거한 예시를 사용합니다. 저장소나 Git 기록에서 민감정보를 발견하면 작업을 멈추고 비공개 보안 경로로 알립니다.
 
 ## 현재 범위
 
-현재 v1은 dependency scanning·판정·baseline ratchet·SARIF 출력·비차단 agent hook을 제공합니다. 완전한 SAST·secret scanning·prompt intent detection·privacy compliance 자체를 보장하지는 않습니다.
+현재 v1은 의존성 검사·판정·baseline 비교·SARIF 출력·사용자 작업을 차단하지 않는 에이전트 hook을 제공합니다. 완전한 SAST·비밀정보 검사·프롬프트 의도 분석·개인정보 규정 준수 자체를 보장하지는 않습니다.
 
-향후 제어 기능은 명시적 명세·threat model·테스트·Owner 승인을 거쳐 추가합니다.
+향후 제어 기능은 명시적 명세·위협 모델·테스트·Owner 승인을 거쳐 추가합니다.

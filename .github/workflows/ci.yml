@@ -8,21 +8,15 @@ on:
 permissions:
   contents: read
 
-# The org allows only actions/checkout and requires SHA pinning, so this
-# workflow cannot use setup-node. The OS matrix uses the preinstalled Node.
-#
-# The OS matrix uses each runner's preinstalled Node. The dedicated node20
-# job below independently exercises the declared support floor (see #154).
+# The organization allows only SHA-pinned actions/checkout. The OS matrix uses
+# preinstalled Node; the node20 job checks the declared floor separately (#154).
 
 jobs:
   test:
-    # A job with no bound waits for GitHub's six-hour cap. Every job here
-    # finishes in single digits, so a cap well under that turns a stall into a
-    # failure someone can read. See #158.
+    # Bound stalled jobs below the GitHub default timeout (#158).
     timeout-minutes: 15
 
-    # The OS matrix is the point: fingerprints must be identical on every host,
-    # so a green run on one of them proves nothing on its own.
+    # Check fingerprints and tests across the supported runner operating systems.
     strategy:
       fail-fast: false
       matrix:
@@ -41,10 +35,8 @@ jobs:
 
       - run: npm test
 
-  # The declared floor must be exercised explicitly. Runner images move
-  # independently, so the OS matrix above does not prove that Node 20 still
-  # works. Node 20 is no longer in the hosted tool cache, so install one
-  # release directly with a pinned checksum instead of adding an action.
+  # Install a pinned, checksum-verified Node 20 release to test the support floor
+  # independently of changing runner images and hosted tool-cache availability.
   node20:
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -79,16 +71,10 @@ jobs:
 
       - run: npm test
 
-  # The install experience, checked against the packaged tarball on the two
-  # platforms most people install on. This script has caught more real problems
-  # than any other check here — a deleted feature, a claim about pnpm that was
-  # only true through --input, a second scanner erasing the upgrade commands —
-  # and every one of them was invisible to the unit tests. Windows is included
-  # because it is the platform none of us develops on.
+  # Install the packaged tarball on Linux and Windows to cover packaging, scanner
+  # execution and platform behavior beyond unit fixtures.
   install-experience:
-    # This one reaches the registry, so it is the one that stalls. The bound in
-    # scripts/qa-install.mjs should fire first; this is what catches the case it
-    # cannot see.
+    # Allow registry requests, with a job timeout beyond the script timeout.
     timeout-minutes: 20
 
     strategy:
@@ -107,10 +93,7 @@ jobs:
 
       - run: npm run qa
 
-      # The other four surfaces: the prompt hook, the five skills, the
-      # copy-paste prompts in the html report, and the plugin manifest. Nobody
-      # notices these breaking — an agent does not complain that advice was in
-      # the wrong dialect, it pastes it and reports success.
+      # Check hook context, skills, HTML prompts and the plugin manifest.
       - run: npm run qa:agent
 
   third-party:
@@ -121,19 +104,13 @@ jobs:
 
       - run: npm ci
 
-      # THIRD_PARTY.md is what anyone auditing this package reads to find out
-      # what it pulls in. Regenerating it in CI keeps it from drifting away
-      # from package.json between releases.
+      # Compare generated dependency notices with the committed files.
       - run: npm run third-party
 
       - name: Fail if either THIRD_PARTY file is stale
         run: git diff --exit-code THIRD_PARTY.md THIRD_PARTY.ko.md
 
-  # The tool, run on this repository, by this repository. A security tool that
-  # its own CI does not run is a claim rather than a product — and this job is
-  # the only place the whole path (scanner subprocess, ingest, judgement,
-  # SARIF, exit code) executes as a user would run it. The unit tests drive
-  # everything from fixtures on purpose, so they cannot catch a break here.
+  # Run scanner subprocesses, ingestion, judgement and outputs on this repository.
   self:
     timeout-minutes: 15
     runs-on: ubuntu-latest
@@ -144,12 +121,7 @@ jobs:
 
       - run: npm run build
 
-      # Cross-source reconciliation is the claim this project is built on, and
-      # until now our own CI ran a single source — so the path that does the
-      # reconciling was never exercised outside fixtures. Pinned by version and
-      # verified by checksum: a security tool that curls an unverified binary
-      # into its own pipeline has no standing to lecture anyone about supply
-      # chains.
+      # Exercise both scanner sources using a pinned, checksum-verified OSV binary.
       - name: Install osv-scanner (pinned, checksum-verified)
         run: |
           curl -sSfL -o osv-scanner \
@@ -169,19 +141,15 @@ jobs:
             console.log('npm audit and osv-scanner both reported');
           "
 
-      # No runtime dependencies, so a finding here means a devDependency needs
-      # attention. Exit 1 is a real failure: we have nothing recorded as
-      # accepted, and adding a baseline to silence our own tool would be the
-      # exact behaviour this project exists to argue against.
+      # This repository has no accepted baseline; outstanding development dependency
+      # findings fail this step. Do not add acceptance merely to silence CI.
       - run: node dist/bin.js judge
 
       - name: Also produce the SARIF a user would upload
         if: always()
         run: node dist/bin.js judge --format sarif --output zero-shelter.sarif
 
-      # Parsed, not required: a .sarif extension makes require() treat the file
-      # as JavaScript, which fails on the first colon and says nothing useful
-      # about the SARIF.
+      # Read SARIF as JSON; require() treats the .sarif extension as JavaScript.
       - name: Fail if the SARIF is not valid JSON with a run in it
         if: always()
         run: |

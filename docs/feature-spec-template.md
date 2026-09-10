@@ -1,6 +1,8 @@
+<!-- Replace template prompts before publishing. Explain when an item does not apply; preserve the required scope, interface, security, and QA information. -->
+
 # Feature specification: <name>
 
-## Issue and lifecycle metadata
+## Issue and ownership
 
 Lifecycle status is managed by GitHub labels and ownership by the Issue/PR assignee. Do not duplicate a mutable status in this document.
 
