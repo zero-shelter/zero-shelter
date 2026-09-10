@@ -45,7 +45,7 @@ node bench/score-labels.mjs             # after two people have filled them
 ### Label requirements
 
 - Two people label independently. The scorer does not report a figure from one sheet.
-- The scorer prints Cohen's kappa to account for chance agreement. Below 0.6 it flags the result and withholds the supported figure.
+- The scorer prints Cohen's kappa to account for chance agreement. Below 0.6 it flags the result; the figures remain visible for context but should not be quoted as supported until the sheets are reconciled.
 - Disagreements are printed and resolved in a recorded discussion.
 - Models must not fill in labels.
 - Commit labels before any ranking change they justify, preserving that order in Git history.

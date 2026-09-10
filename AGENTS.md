@@ -18,7 +18,7 @@ Use the exit code to distinguish findings from a failed inspection:
 
 ## Remediation commands
 
-Use the JSON `upgrades` commands, which are grouped by package and compared using version rules. Do not derive commands from `fixedIn`: string comparison, for example, puts `4.17.21` above `4.18.1` and can select an insufficient version.
+Use the JSON `upgrades` commands, which are grouped by package and compared using version rules. Do not derive commands from `fixedIn`: string comparison, for example, can put `4.9.0` above `4.10.0` and select an insufficient version.
 
 `transitiveFixes` requires a different approach. Installing an indirect dependency at the top level can leave the vulnerable copy in place. Propose the project's package-manager-specific override or resolution and explain that forcing a version may break the parent dependency. Do not apply it without the user's decision. The [install notes](./README.md#install) explain package-manager selection.
 
