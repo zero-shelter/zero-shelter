@@ -1,11 +1,5 @@
 /**
- * Which scanners ran is a fact about the run, not about what is left over.
- *
- * It used to be recovered from the outstanding findings, which works right up
- * until a run goes well. Accept everything and there are no findings to read
- * tools off, so the history record — the audit trail, the thing the "is this
- * getting better" reader depends on — claimed no scanner ran on exactly the
- * days one did.
+ * Retain scanner run metadata when all reported findings are accepted.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -44,8 +38,18 @@ describe("the summary line", () => {
   const render = (sources: string[]): string =>
     renderHuman(judge(findings, { baseline: emptyBaseline(), sources }), false);
 
-  it("says why there was nothing to reconcile when one scanner ran", () => {
-    expect(render(["npm-audit"])).toContain("one source, nothing to reconcile");
+  it("identifies a run without cross-scanner comparison", () => {
+    expect(render(["npm-audit"])).toContain("one source; no cross-scanner comparison");
+  });
+
+  it("still merges repeated reports from the same scanner", () => {
+    const repeated = judge([...findings, ...findings], {
+      baseline: emptyBaseline(), sources: ["npm-audit"],
+    });
+    expect(repeated.merged).toBeLessThan(repeated.raw);
+    const text = renderHuman(repeated, false);
+    expect(text).toContain("one source; no cross-scanner comparison");
+    expect(text).not.toContain("nothing to reconcile");
   });
 
   it("stays quiet about it when two did", () => {

@@ -1,14 +1,6 @@
 /**
- * The ratchet has to survive the advice the README gives.
- *
- * Accept a backlog with npm audit alone, then add osv-scanner because the
- * install docs say the second source is the premise rather than an optional
- * extra. Before this, that produced a red build, 70 findings reborn under new
- * fingerprints, and a green tick claiming they had been resolved.
- *
- * Fingerprints are derived after merge and merge output depends on who
- * contributed, so the recorded key genuinely no longer exists. What does
- * survive is the alias set, which is the thing the two scanners agreed on.
+ * A changed scanner set can change merged fingerprints. Shared aliases
+ * must still match accepted findings without reporting them as new or absent.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -32,7 +24,7 @@ describe("adding the second scanner", () => {
   const baseline = baselineFrom(npmOnly, ["npm-audit"]);
   const after = applyBaseline(bothTools, baseline, ["npm-audit", "osv-scanner"]);
 
-  it("changes the fingerprints, which is why this was ever a problem", () => {
+  it("changes fingerprints when scanners add aliases", () => {
     const before = new Set(npmOnly.map((entry) => entry.finding.fingerprint));
     const now = bothTools.map((entry) => entry.finding.fingerprint);
     expect(now.some((fingerprint) => !before.has(fingerprint))).toBe(true);
@@ -51,7 +43,7 @@ describe("adding the second scanner", () => {
     expect(after.noLongerReported).toEqual([]);
   });
 
-  it("says how many it recognised the long way round", () => {
+  it("reports the number of alias rematches", () => {
     expect(after.rematched.length).toBeGreaterThan(0);
     expect(after.suppressed).toEqual(expect.arrayContaining(after.rematched));
   });

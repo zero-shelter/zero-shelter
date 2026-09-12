@@ -1,5 +1,5 @@
 /**
- * Rendering. Three views of one dataset — never three datasets.
+ * Text, JSON and explanation views of the same judgement.
  */
 
 import type { AppliedBaseline } from "./baseline.js";
@@ -27,20 +27,12 @@ export interface JudgeResult {
   /** Versions the lockfile actually holds — decides whether `npm i` can reach them. */
   readonly installed?: InstalledVersions;
   /**
-   * Scanners that produced a readable report this run.
-   *
-   * The caller works this out on both the scan path and the `--input` path, and
-   * until now it reached `applyBaseline` and stopped there. Everything
-   * downstream that needs to say which tools were present — the history record,
-   * the summary line, SARIF — had to guess it back from the findings, which
-   * answers "none" on a run where every finding was already accepted.
+   * Scanners that produced a readable report, including empty reports.
+   * Keep run metadata independent of outstanding findings.
    */
   readonly sources?: readonly string[];
   /**
-   * How this project spells a remedy.
-   *
-   * pnpm ignores a top-level `overrides` key and yarn wants `resolutions`, so
-   * an npm-shaped snippet does nothing at all rather than failing loudly.
+   * Package manager used for upgrade commands and override syntax.
    */
   readonly packageManager?: PackageManager;
   /** The date the caller judged on, for saying how old an advisory is. */
@@ -57,8 +49,7 @@ const COLOR = {
 } as const;
 
 /**
- * Colour is opt-out via NO_COLOR and off when not writing to a terminal, so
- * piping into a file or a CI log never produces escape soup.
+ * NO_COLOR disables colour; FORCE_COLOR enables it. Otherwise follow TTY status.
  */
 export function colorEnabled(env: NodeJS.ProcessEnv, isTTY: boolean): boolean {
   if (env["NO_COLOR"] !== undefined && env["NO_COLOR"] !== "") return false;
@@ -84,7 +75,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   const { fixNow } = result;
 
   if (fixNow.length === 0) {
-    lines.push(paint("✓ nothing new to fix", COLOR.green));
+    lines.push(paint("✓ no new findings", COLOR.green));
     lines.push(summary(result, paint));
     lines.push(...resolvedLines(result, paint));
     lines.push(...ratchetLines(result, paint));
@@ -94,8 +85,8 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   lines.push(
     paint(
       result.fixNow.length < result.applied.fresh.length
-        ? `fix these ${result.applied.fresh.length} now — top ${fixNow.length} shown`
-        : `fix these ${fixNow.length} now`,
+        ? `findings to review: ${result.applied.fresh.length} (top ${fixNow.length} shown)`
+        : `findings to review: ${fixNow.length}`,
       COLOR.bold,
     ),
     "",
@@ -103,8 +94,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 
   const rows = fixNow.map((entry) => ({
     severity: entry.finding.severity,
-    // Only the exception is marked. Labelling every row is the same as
-    // labelling none — the eye stops seeing it.
+    // Mark development-only findings; the scope does not affect ranking.
     name:
       scopeOf(entry.finding.packageName, result.installed) === "dev"
         ? `${entry.finding.packageName} (dev)`
@@ -138,15 +128,10 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
     );
   }
 
-  // Everything below describes the project, not the page. --top decides how
-  // many rows are printed; letting it decide these too turns a display limit
-  // into a claim about the codebase.
+  // Compute project totals and remediation from all findings, not the --top slice.
   const outstanding = result.applied.fresh;
   const manager = result.packageManager ?? "npm";
-  // `clears N` rests on reading dependents' ranges out of package-lock.json.
-  // There is no reader for pnpm-lock.yaml or yarn.lock, so on those projects
-  // the check answers yes by default. Printing the number anyway would trade
-  // one silent lie for another.
+  // Only npm lockfiles support verified upgrade counts.
   const promises = canPromiseClears(manager);
   const actions = upgradeActions(outstanding, result.installed, manager);
   if (actions.length > 0) {
@@ -213,13 +198,11 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   lines.push(...resolvedLines(result, paint));
   lines.push(...ratchetLines(result, paint));
 
-  // A first run on an existing project reports its whole backlog and reduces
-  // nothing, which reads like the tool failing. Say what it is actually for.
+  // Explain that baseline acceptance requires a risk decision.
   if (!result.baselineExists) {
     lines.push(
       paint(
-        "  first run — record these as accepted with --update-baseline, " +
-          "then only new findings are reported",
+        "  first run: review findings before accepting risk with --update-baseline",
         COLOR.dim,
       ),
     );
@@ -240,16 +223,8 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 }
 
 /**
- * How long this has been public, in whole days.
- *
- * The one urgency signal severity cannot carry: it is assigned when the
- * advisory is written and never moves again, so it says a finding is critical
- * and says nothing about whether anyone has had a year to act. Integer days,
- * floored, because the ranking around it is integer-only and a figure that
- * rounds differently per platform is a figure that is only true on one machine.
- *
- * Empty when the source did not say, or when the caller supplied no date to
- * measure against. Silence beats a guess.
+ * Whole days since the advisory publication date. Empty without valid
+ * publication and comparison dates, or for future dates. Context only.
  */
 function ageOf(published?: string, today?: string): string {
   if (published === undefined || today === undefined) return "";
@@ -260,17 +235,8 @@ function ageOf(published?: string, today?: string): string {
 }
 
 /**
- * How much of the pile actually ships.
- *
- * The complaint this answers: a high in a test runner and a high in something
- * serving requests arrive with the same score, side by side, and the reader has
- * to sort that out by hand every time — which is the attention this tool claims
- * to give back.
- *
- * It splits the denominator and leaves the score alone. A weight would be a
- * claim about relative risk we cannot currently defend with a measurement, and
- * an invented composite is the thing PRODUCT.md names as the anti-reference.
- * Silent without a lockfile, because then we did not look.
+ * Count production and development findings using lockfile scope metadata.
+ * Omit the split without a readable lockfile; it does not change ranking.
  */
 function scopeSplit(result: JudgeResult): string {
   if (result.installed === undefined) return "";
@@ -287,13 +253,7 @@ function scopeSplit(result: JudgeResult): string {
 }
 
 /**
- * What the baseline did that the reader did not ask for.
- *
- * A finding recognised under a fingerprint other than the recorded one has been
- * rescued by a rule nobody can see, and an unseen rescue is the same kind of
- * problem as an unseen loss — it is how a tool ends up trusted for the wrong
- * reason. So it is counted out loud, with the cause, which is almost always
- * that the set of scanners changed.
+ * Report alias rematches and expired acceptances so baseline behavior is visible.
  */
 function ratchetLines(
   result: JudgeResult,
@@ -314,17 +274,13 @@ function ratchetLines(
 
   const installScripts = result.installed?.installScripts;
   if (installScripts !== undefined && installScripts.size > 0) {
-    // Inventory, not an alarm. Native modules need install scripts, so a
-    // number here is normal and a red banner over `core-js` would only teach
-    // people to stop reading. What is worth knowing is that the set exists,
-    // how big it is, and who is in it.
+    // Display install-script metadata separately from vulnerability findings.
     const names = [...installScripts].sort();
     const shown = names.slice(0, 3).join(", ");
     const rest = names.length > 3 ? ` and ${names.length - 3} more` : "";
     lines.push(
       paint(
-        `  ${names.length} package(s) run a script on install — code that executes ` +
-          `before any test does: ${shown}${rest}`,
+        `  ${names.length} package(s) run a script on install: ${shown}${rest}`,
         COLOR.dim,
       ),
     );
@@ -343,11 +299,7 @@ function ratchetLines(
 }
 
 /**
- * Why the obvious command is not on the list.
- *
- * "Use overrides instead" is advice the reader has to take on faith. The
- * lockfile knows which packages pin the old version, and naming them is the
- * difference between being told to trust the tool and being able to check it.
+ * Name parent packages whose version ranges block a direct upgrade.
  */
 function whyNotDirect(fix: TransitiveFix, installed?: InstalledVersions): string | undefined {
   const blockers = blockedBy(fix.packageName, fix.upgradeTo, installed);
@@ -368,13 +320,8 @@ function whyNotDirect(fix: TransitiveFix, installed?: InstalledVersions): string
 }
 
 /**
- * Credit for work that was actually done, and the caveat that comes with it.
- *
- * Someone who upgrades a package and re-runs this deserves to see that it
- * worked; without it the only feedback is a number quietly getting smaller.
- * But a finding also disappears when the scanner that found it did not run this
- * time, and from here those look identical — so this says what it can defend
- * ("no longer reported") and names the doubt when there is one.
+ * Report accepted findings absent from this run, with a caveat when baseline
+ * scanners did not run. Absence alone does not establish a fix.
  */
 function resolvedLines(
   result: JudgeResult,
@@ -386,7 +333,7 @@ function resolvedLines(
   const lines = [
     paint(
       `  ✓ ${gone} accepted finding(s) no longer reported — ` +
-        "re-record with --update-baseline to drop them",
+        "review before --update-baseline; it also accepts all current findings",
       COLOR.green,
     ),
   ];
@@ -412,26 +359,20 @@ function summary(
 ): string {
   const { raw, merged, applied, fixNow } = result;
   const outstanding = applied.fresh.length;
-  // Measured against everything still outstanding. Using the truncated list
-  // here would let --top 3 announce a 98% reduction on a project with 82
-  // findings left, which is the tool congratulating itself for looking away.
+  // Use all outstanding findings so --top cannot change the percentage.
   const removed = raw - outstanding;
   // Integer percentage: a float here would print differently across locales.
   const percent = raw === 0 ? 0 : Math.round((removed * 100) / raw);
 
-  // With one source there is nothing to reconcile, so the reduction is zero and
-  // the screen looks like a tool that did nothing. Every yarn project lands
-  // here — npm audit cannot read yarn.lock, so osv-scanner runs alone. Saying
-  // why is not an apology: one scanner is a valid way to run this, and the
-  // ranking and the baseline still work.
+  // Explain the absence of cross-source reconciliation for a single scanner.
   const lonely = result.sources !== undefined && result.sources.length === 1;
 
   return paint(
-    `  ${raw} reported → ${merged} after merge → ${outstanding} to fix` +
+    `  ${raw} reported → ${merged} after merge → ${outstanding} to review` +
       scopeSplit(result) +
       (raw === 0
         ? ""
-        : `  (${percent}% less noise${lonely ? " — one source, nothing to reconcile" : ""})`) +
+        : `  (${percent}% fewer listed${lonely ? " — one source; no cross-scanner comparison" : ""})`) +
       (fixNow.length < outstanding ? `, showing ${fixNow.length}` : "") +
       (applied.suppressed.length > 0
         ? `, ${applied.suppressed.length} already accepted`
@@ -461,11 +402,7 @@ export function renderExplain(result: JudgeResult): string {
 
     lines.push(`  ${"".padStart(5)}  range ${finding.vulnerableRange}`);
 
-    // Carried from the source, not folded into the score above. The score is
-    // integer arithmetic over rules printed in the table below; a CVSS number
-    // is float arithmetic over a vector we did not compute. Showing both and
-    // mixing neither is what lets a reader disagree with our order while still
-    // trusting the figure their security team asked for.
+    // Publication dates and CVSS vectors are context, not ranking inputs.
     const published = finding.published;
     if (published !== undefined) {
       const age = ageOf(published, result.today);
@@ -521,11 +458,7 @@ export function renderExplain(result: JudgeResult): string {
 }
 
 /**
- * The weights, readable.
- *
- * This section exists so the ranking can be argued with, and a one-line JSON
- * dump is not something anyone argues with — they skip it. Flattened to
- * `label  points` so a disagreement can point at a row.
+ * List the exported ranking weights with their labels.
  */
 function weightsTable(): string[] {
   const t = messagesFor("en");
@@ -554,10 +487,7 @@ function weightsTable(): string[] {
 }
 
 /**
- * The machine-readable view, deliberately trimmed.
- *
- * An agent reading this pays for every token, so member findings and full alias
- * chains stay out. `--explain` is where the full picture lives.
+ * Compact JSON view. Full members and alias chains are available in --explain.
  */
 export function renderJson(result: JudgeResult): string {
   return `${JSON.stringify(
@@ -577,10 +507,7 @@ export function renderJson(result: JudgeResult): string {
       // The commands, so a caller does not have to re-derive them from the
       // findings and get the version comparison subtly wrong.
       workspaceRoot: result.workspaceRoot === true,
-      // The dialect reaches here last and it matters most: the skills point an
-      // agent at this field and tell it to run what it finds. `clears` is
-      // dropped where it cannot be verified, for the same reason the terminal
-      // drops it — a number an agent reports as closed had better be closed.
+      // Use manager-specific commands and omit unverifiable clears counts.
       upgrades: upgradeActions(
         result.applied.fresh,
         result.installed,

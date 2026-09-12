@@ -35,41 +35,43 @@ import {
 import type { ScaFinding } from "./finding.js";
 import { versionOutput } from "./version.js";
 
-const USAGE = `zero-shelter judge — decide which dependency findings to fix now
+const USAGE = `zero-shelter judge — review dependency scanner findings
 
+First run
   npx zero-shelter judge [options]
 
   --input <file>        read scanner output instead of running scanners.
                         Repeatable. Format is detected from the contents.
+  --cwd <dir>           project directory (default .)
+  --top <n>             report at most n findings
+
+Save and inspect results
   --format <fmt>        text (default) | json | sarif | html
-  --lang <code>         language for the html report: en (default) | ko
-  --stamp <text>        a line of your choosing in the html footer. Left out
-                        by default so the same judgement renders identically
   --json                shorthand for --format json
   --output <file>       write to a file instead of stdout
+  --lang <code>         language for the html report: en (default) | ko
+  --stamp <text>        optional text in the html report
   --explain             show how each score was reached
-  --top <n>             report at most n findings
-  --record              append this run to .zero-shelter/history.jsonl
-  --update-baseline     record the current findings as accepted and exit 0
-  --baseline <file>     baseline location (default ${BASELINE_PATH})
-  --cwd <dir>           project directory (default .)
   --no-color            disable ANSI colors in text output
+
+Baseline and history
+  --baseline <file>     baseline location (default ${BASELINE_PATH})
+  --update-baseline     accept current findings and exit 0. Review risk first.
+  --record              append this run to .zero-shelter/history.jsonl
+
+  npx zero-shelter history [--json] [--last <n>]
+  Show findings added or no longer reported between recorded runs.
+
+Agent integration
+  npx zero-shelter hook [--input <file>]
+  Print findings as agent context for editors with a prompt hook.
+  Errors produce no context and exit 0. See docs/AGENT-HOOK.md.
+
   --version             print the installed package version
   --help                print this help
 
-Exit code is 1 when there is anything new to fix, so CI fails on regressions
-rather than on the backlog it inherited.
-
-  npx zero-shelter history [--json] [--last <n>]
-
-  What has happened to this project's findings, from the recorded runs. Says
-  what appeared and what stopped being reported between them.
-
-  npx zero-shelter hook [--input <file>]
-
-  Prints the current findings as agent context, for editors that support a
-  prompt hook. Never blocks a prompt and never fails: on any error it stays
-  quiet and exits 0. See docs/AGENT-HOOK.md.
+Judge exit codes: 0 = no new findings; 1 = new findings; 2 = could not judge.
+Exit 0 does not mean every vulnerability is resolved.
 `;
 
 export const renderSkippedNotes = (skipped: readonly string[]): string =>
@@ -170,10 +172,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       skipped = collected.skipped;
       sources = collected.contributed;
 
-      // Nothing was scanned. Reporting "nothing new to fix" here would be a
-      // lie with a zero exit code attached, and in CI it turns a project the
-      // tool never looked at green — worse than crashing, because nobody
-      // investigates a passing build.
+      // No readable scanner report: exit 2 rather than claiming a clean scan.
       if (collected.contributed.length === 0) {
         process.stderr.write(
           `cannot judge ${cwd}: no scanner produced a report\n` +
@@ -266,10 +265,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       (values.explain === true ? `\n${renderExplain(result)}\n` : "");
   }
 
-  // Recording is bookkeeping, not judging. A history file we could not append
-  // to is worth saying out loud, and it is not worth throwing away a finished
-  // judgement over — exit 2 means "could not judge", which would be false, and
-  // the report never reached the reader at all.
+  // A history write failure is a warning; it does not invalidate the judgement.
   const recordFailure = values.record === true ? await record(cwd, result) : undefined;
   if (recordFailure !== undefined) process.stderr.write(`${recordFailure}\n`);
 
@@ -340,10 +336,8 @@ async function readInput(
   try {
     raw = await readFile(path, "utf8");
   } catch (error) {
-    // A missing file, a directory, and a permissions problem are three
-    // different things to go and fix, and "cannot read" was the same sentence
-    // for all of them. reasonFor already existed; this was the one read that
-    // did not use it.
+    // Include the filesystem error code to distinguish missing paths, directories
+    // and permission failures.
     throw new Error(`cannot read ${path}: ${reasonFor(error)}`);
   }
 
@@ -403,8 +397,7 @@ async function record(cwd: string, result: JudgeResult): Promise<string | undefi
   const path = resolve(cwd, HISTORY_PATH);
   try {
     await mkdir(dirname(path), { recursive: true });
-    // The only clock in the tool. Everything else stays reproducible; a history
-    // without time answers none of the questions it exists for.
+    // Timestamp the recorded run here; the history renderer receives the value.
     await appendEntry(path, entryFrom(result, new Date().toISOString()));
     return undefined;
   } catch (error) {
@@ -523,10 +516,7 @@ async function hook(
       cwdFlag ?? cwdFromPayload(await readStdin(process.stdin), process.cwd()),
     );
 
-    // Reading saved reports rather than running scanners. Without it this
-    // surface — the one an agent reads on every prompt — can only be exercised
-    // against a tree with real vulnerable dependencies, so it is the one thing
-    // CI could never check. Same flag, same meaning, as on judge.
+    // Support stored reports for repeatable hook checks without live scanners.
     let findings: ScaFinding[];
     let skipped: string[] = [];
     if (inputs !== undefined && inputs.length > 0) {
@@ -542,8 +532,7 @@ async function hook(
     const { baseline, exists } = await loadBaseline(
       resolve(cwd, baselineFlag ?? BASELINE_PATH),
     );
-    // Without this the agent is handed the commands the report stopped
-    // printing, which is the worst place for them: it will run them.
+    // Use lockfile facts for hook advice just as for the human report.
     const installed = readInstalledVersions(cwd);
     const context = hookContext(
       judge(findings, {
@@ -552,10 +541,7 @@ async function hook(
         skipped,
         packageManager: detectPackageManager(cwd),
         workspaceRoot: isWorkspaceRoot(cwd),
-        // Without this an expired acceptance is invisible here while judge
-        // reports it and exits 1. The agent would be told the project is
-        // quieter than CI says it is, which is the one direction this tool is
-        // not allowed to be wrong in.
+        // Use the same expiry date as judge so hook context includes expired findings.
         today: new Date().toISOString().slice(0, 10),
         ...(installed === undefined ? {} : { installed }),
       }),
@@ -571,15 +557,11 @@ async function loadBaseline(path: string, onNote?: BaselineNote) {
   try {
     return { baseline: parseBaseline(await readFile(path, "utf8"), path, onNote), exists: true };
   } catch (error) {
-    // JSON.parse says "Unexpected end of JSON input" and nothing about where.
-    // The reader is left guessing which file the tool even means — and an
-    // empty or truncated baseline is a normal outcome of an interrupted write.
+    // Include the baseline path in parse errors.
     if (error instanceof SyntaxError) {
       throw new Error(`${path} is not valid JSON: ${error.message}`);
     }
-    // A missing baseline is the normal first run, not a failure. A malformed
-    // one is a failure: silently treating it as empty would report the whole
-    // backlog as new and look like a regression nobody caused.
+    // A missing baseline is a first run; an unreadable baseline is an error.
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return { baseline: emptyBaseline(), exists: false };
     }

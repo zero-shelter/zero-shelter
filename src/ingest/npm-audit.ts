@@ -1,9 +1,6 @@
 /**
- * Ingest `npm audit --json` (report version 2, npm 7 and later).
- *
- * This is the one source we can always read: if a project has a lockfile it
- * has npm, so nothing needs installing before `zero-shelter judge` produces
- * something. Every other scanner is optional on top of it.
+ * Parse npm audit JSON (npm 7+) and the older advisories shape used by
+ * npm 6 and pnpm.
  */
 
 import { fingerprint } from "../fingerprint.js";
@@ -35,9 +32,7 @@ export function parseNpmAudit(
     throw new Error("npm audit output is not a JSON object");
   }
 
-  // pnpm audit and npm 6 emit the older `advisories` shape.
-  // Rejecting it would turn "we support npm" into "we support npm 7+", which
-  // is a much smaller promise than it needs to be.
+  // pnpm audit and npm 6 use the advisories shape.
   if (isRecord(report["advisories"])) {
     return parseAdvisories(report["advisories"], declared);
   }
@@ -68,14 +63,8 @@ export function parseNpmAudit(
  * makes its aliases richer than what npm 7+ leaves us to scrape out of a URL.
  */
 /**
- * Whether the manifest asks for this package by name.
- *
- * The comment below is still right that this source cannot tell. What changed
- * is that it used to defer to a source that knows, and on yarn, pnpm and every
- * non-npm ecosystem no such source runs — so the placeholder became the answer
- * and a declared dependency was described as arriving through another one.
- * `declared` is `package.json` answering the only part of the question it can.
- * Undefined where there is no readable manifest, which is the old behaviour.
+ * Use manifest declarations when the report omits directness. Without a
+ * readable manifest, retain the transitive fallback.
  */
 function isTransitive(
   packageName: string,
@@ -127,9 +116,7 @@ function parseAdvisories(
       ),
       advisoryId,
       aliases,
-      // This shape says nothing about direct versus transitive. Guessing would
-      // hand the ranking a fact nobody established — but `package.json` is not
-      // a guess. See isTransitive.
+      // This shape omits directness; use manifest declarations when available.
       transitive: isTransitive(normalizeText(packageName), declared),
       // "<0.0.0" is how this format spells "no patch exists".
       fixAvailable: hasPatch,
@@ -154,17 +141,9 @@ function fixedVersionFromPatchedRange(range: string): string | undefined {
 }
 
 /**
- * The advisories actually filed against this package.
- *
- * `via` mixes two things. An object is a real advisory. A string is the name of
- * another vulnerable package that drags this one in — `mkdirp` has
- * `via: ["minimist"]` because the advisory belongs to minimist, not mkdirp.
- *
- * We deliberately do not follow those strings into new findings. Doing so
- * reports one advisory once per package it propagates through, which is a large
- * part of why `npm audit` output feels unusable in the first place. The
- * propagation is still visible: the package that owns the advisory is reported,
- * and its `effects` say what it reached.
+ * Read advisory objects in via. String entries name propagated dependencies
+ * and do not create separate findings; their own advisory objects are handled
+ * under the owning package.
  */
 function directAdvisoriesOf(entry: Record<string, unknown>): Record<string, unknown>[] {
   const via = entry["via"];

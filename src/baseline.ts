@@ -1,17 +1,9 @@
 /**
- * The ratchet.
+ * Record accepted findings and compare later scans against them.
  *
- * A repository with history lights up on the first run. Demanding all of it be
- * fixed is the same as being ignored, so the first run records what is already
- * there and afterwards only new findings are surfaced.
- *
- * The record is a list of accepted findings rather than a list of hashes, for
- * two reasons that arrived from opposite directions. A fingerprint is derived
- * after merge, so it changes when the set of scanners changes — and the README
- * tells people to add a second scanner, which used to hand them a red build and
- * a green tick claiming their findings were resolved. And a file of hex strings
- * cannot be reviewed by the person who has to defend the acceptances later.
- * Both wanted the same field, so both were done at once.
+ * Acceptances include aliases so the same advisory can still match when the
+ * scanner set changes. The readable record also preserves the risk decision.
+ * Creating or updating it requires an explicit user choice.
  */
 
 import { SCHEMA_VERSION } from "./fingerprint.js";
@@ -21,11 +13,8 @@ import type { RankedFinding } from "./triage.js";
 export const BASELINE_PATH = ".zero-shelter/baseline.json";
 
 /**
- * One accepted finding, as it is written down.
- *
- * `aliases` is the load-bearing field. Everything else is either the key
- * (`fingerprint`), scope for the fallback match (`ecosystem`, `package`), or
- * for the human reading the file.
+ * An accepted finding. Aliases support rematching within ecosystem/package
+ * when the merged fingerprint changes.
  */
 export interface AcceptedFinding {
   readonly fingerprint: string;
@@ -36,15 +25,8 @@ export interface AcceptedFinding {
   readonly aliases: readonly string[];
   readonly severity: string;
   /**
-   * The versions the tree held when this was accepted, sorted.
-   *
-   * Context about the decision rather than part of its identity: rematching
-   * is still by fingerprint and shared alias, so upgrading one vulnerable
-   * version to another does not resurface a finding somebody already settled.
-   *
-   * It is the one field a reader cannot recover later — the tree has moved on
-   * — and the one a PURL needs, which is what an emitted VEX document is
-   * blocked on. Absent when there was no lockfile to ask.
+   * Installed versions at acceptance time, sorted. Context only: matching uses
+   * fingerprints and shared aliases. Absent without a readable lockfile.
    */
   readonly versions?: readonly string[];
   /** Never read from a clock while judging — supplied by the caller. */
@@ -89,11 +71,8 @@ export interface AppliedBaseline {
    */
   readonly missingSources: string[];
   /**
-   * Accepted findings recognised under a fingerprint other than the recorded
-   * one, almost always because the scanner set changed.
-   *
-   * Surfaced rather than done quietly. A ratchet that rescues findings by a
-   * rule nobody can see is the same kind of problem as one that loses them.
+   * Accepted findings matched through shared aliases after their fingerprint
+   * changed, for example when another scanner contributed identifiers.
    */
   readonly rematched: RankedFinding[];
   /** Acceptances whose `expires` has passed. Back in `fresh`, and named. */
@@ -117,11 +96,8 @@ const optional = (record: Record<string, unknown>, key: string): { [k: string]: 
   typeof record[key] === "string" ? { [key]: record[key] } : {};
 
 /**
- * Dropped rather than rejected when it is the wrong shape.
- *
- * An unreadable `expires` throws because it decides a gate. This decides
- * nothing — it is context — so a malformed one costs a reader some history
- * and must not cost them the run.
+ * Malformed installed-version metadata is omitted because it is context,
+ * not part of the acceptance match or expiry decision.
  */
 function versionsOf(value: unknown): { versions?: readonly string[] } {
   if (!Array.isArray(value)) return {};
@@ -130,20 +106,14 @@ function versionsOf(value: unknown): { versions?: readonly string[] } {
 }
 
 /**
- * `at` is the file this actually came from.
- *
- * The messages named the default location, so a project passing
- * `--baseline somewhere/else.json` was told to go and fix a file it does not
- * use. Defaulted rather than required, because most callers are the default.
+ * Use the supplied file path in errors, including for custom baseline paths.
  */
 /** A note about the file that is worth saying and is not a reason to stop. */
 export type BaselineNote = (note: string) => void;
 
 /**
- * Every key an accepted entry can carry. Anything else is doing nothing.
- *
- * Kept beside `AcceptedFinding` on purpose: a field added there and forgotten
- * here starts warning about itself, which is a loud way to be reminded.
+ * Known acceptance keys. Keep this list aligned with AcceptedFinding so
+ * unknown-key warnings identify ignored input.
  */
 const KNOWN_KEYS: ReadonlySet<string> = new Set([
   "fingerprint",
@@ -218,11 +188,8 @@ function parseAccepted(
       throw new Error(`${at} has an accepted entry with no fingerprint`);
     }
 
-    // A key we do not read is not an error — a newer zero-shelter's baseline
-    // looks exactly like this to an older one, and STABILITY.md promises we
-    // read whatever version we find. It is worth saying out loud, because the
-    // likeliest reason for one is a misspelling of `expires`, and a deadline
-    // that does not exist is invisible until it fails to arrive. See #192.
+    // Warn on unknown keys without rejecting forward-compatible baseline files.
+    // See #192.
     for (const key of Object.keys(record)) {
       if (KNOWN_KEYS.has(key)) continue;
       onNote?.(
@@ -250,10 +217,8 @@ function parseAccepted(
 }
 
 /**
- * The rematch rests entirely on these, so losing them quietly turns the rescue
- * off without saying so — while `sources`, which decides much less, throws on
- * the same mistake. Absent is fine and means a v1 record; the wrong shape is
- * not.
+ * Absent aliases are valid for a legacy record. Reject a malformed alias
+ * list because silently dropping it would disable rematching.
  */
 function aliasesOf(value: unknown, fingerprint: string, at: string): string[] {
   if (value === undefined) return [];
@@ -268,11 +233,8 @@ function aliasesOf(value: unknown, fingerprint: string, at: string): string[] {
 }
 
 /**
- * An expiry we cannot compare is worse than none: it decides a gate.
- *
- * Rejected rather than ignored, because the failure is silent in the dangerous
- * direction — a mistyped date that sorts high never expires, and the finding
- * stays accepted forever while the file looks like it has a deadline on it.
+ * Reject malformed expiry dates: ignoring one could accept a finding
+ * indefinitely despite the recorded deadline.
  */
 function expiry(value: unknown, fingerprint: string, at: string): { expires?: string } {
   if (typeof value !== "string") return {};
@@ -304,11 +266,7 @@ function isRealDate(value: string): boolean {
 }
 
 /**
- * One accepted finding per line, sorted.
- *
- * This file is committed and reviewed. A diff that moves one line when one
- * acceptance changes is the difference between a reviewable record and a wall
- * of hex nobody reads.
+ * One accepted finding per line, sorted to keep diffs readable.
  */
 export function serializeBaseline(baseline: Baseline): string {
   const accepted = [...baseline.accepted]
@@ -353,16 +311,8 @@ function ordered(entry: AcceptedFinding): Record<string, unknown> {
 }
 
 /**
- * `previous` is what is already on disk, and dropping it is data loss.
- *
- * `reason`, `acceptedBy` and `expires` are written by a person — that is the
- * whole point of them — and the skills prescribe `--update-baseline` as the way
- * to prune a baseline after a fix lands. Rebuilding the file from findings
- * alone destroyed the audit trail on every prune, silently, using the command
- * we told people to run.
- *
- * `recordedAt` is carried too. When this acceptance was first made is a fact
- * about a decision, not about the last time someone tidied the file.
+ * Preserve reason, acceptedBy, expires and recordedAt from previous
+ * acceptances when rebuilding the baseline. See the metadata preservation tests.
  */
 export function baselineFrom(
   findings: readonly RankedFinding[],
@@ -480,10 +430,8 @@ export function applyBaseline(
     ),
   ].sort();
 
-  // Only a source that contributed then and not now casts doubt. A scanner
-  // that was absent both times explains nothing, and reporting it would teach
-  // people to skip the line that matters. This remains useful even when alias
-  // rematching keeps every acceptance present: the scanner set still changed.
+  // Compare previously recorded sources with this run, even when alias
+  // rematching keeps all accepted findings present.
   const ran = new Set(sources ?? []);
   const missingSources =
     baseline.sources === undefined || sources === undefined
@@ -504,10 +452,7 @@ function aliasIndex(accepted: readonly AcceptedFinding[]): Map<string, AcceptedF
   const index = new Map<string, AcceptedFinding[]>();
   for (const entry of accepted) {
     for (const alias of entry.aliases) {
-      // A list, not a value. Two acceptances in one package can share an alias
-      // — that is how the sources said they were related in the first place —
-      // and overwriting means the one that lost is never matched again and
-      // gets announced as resolved while it is still being reported.
+      // Keep every acceptance sharing an alias so all can match a merged finding.
       const at = key(entry.ecosystem, entry.package, alias);
       const found = index.get(at);
       if (found === undefined) index.set(at, [entry]);
@@ -518,14 +463,8 @@ function aliasIndex(accepted: readonly AcceptedFinding[]): Map<string, AcceptedF
 }
 
 /**
- * Every accepted record this finding stands in for.
- *
- * Usually one. It is more when a merge collapsed several: npm audit files
- * `semver` under two advisory ids it cannot tell apart, and a single
- * osv-scanner alias is enough to reveal they were always one advisory. After
- * that merge there is one finding where the baseline holds two acceptances, and
- * both are answered for. Marking only the first leaves the other looking
- * resolved, which is the green tick this change exists to stop printing.
+ * All baseline entries represented by a finding. A merge can combine multiple
+ * accepted records; each must match so none is incorrectly marked absent.
  */
 function coveringAcceptances(
   entry: RankedFinding,
@@ -551,22 +490,12 @@ function key(ecosystem: string, packageName: string, alias: string): string {
 }
 
 /**
- * Lexicographic comparison, which is why these are ISO dates.
- *
- * Without a date to compare against we cannot know, and an acceptance that
- * quietly stops expiring is worse than one that never expired — so no `today`
- * means nothing expires and the caller decides whether to supply one.
+ * ISO dates compare lexicographically. Without a caller-supplied date, no
+ * acceptance expires.
  */
 function hasExpired(entry: AcceptedFinding, today?: string): boolean {
   if (entry.expires === undefined || today === undefined) return false;
-  // Compared as text, which only works on a real ISO date. `2027-1-1` sorts
-  // after `2027-01-01` and `26-12-31` sorts before everything, so a typo
-  // silently becomes either "never expires" or "expired already" — and the
-  // first of those quietly turns a gate green. Anything else does not expire,
-  // and parseBaseline has already said so out loud.
-  //
-  // The same predicate as the parser on purpose: two gates that disagree about
-  // what a date is would let one of them through.
+  // Use the same ISO-date validation as parseBaseline before comparing dates.
   return isRealDate(entry.expires) && entry.expires < today;
 }
 

@@ -1,12 +1,6 @@
 /**
- * Which package manager this project uses, and how it spells a remedy.
- *
- * Every prescription used to be npm syntax. pnpm ignores a top-level
- * `overrides` key outright and yarn wants `resolutions`, so a pnpm user pasted
- * our advice, re-ran, saw the finding still there, and concluded the tool had
- * lied to them. It is not a rare path: measured across eight repositories, six
- * had no direct commands at all, which makes the transitive block the only
- * advice those projects ever get.
+ * Select package-manager commands and override syntax from lockfiles.
+ * pnpm uses nested overrides; Yarn uses resolutions.
  */
 import { closeSync, existsSync, openSync, readSync } from "node:fs";
 import { join } from "node:path";
@@ -35,15 +29,10 @@ export function detectPackageManager(cwd: string): PackageManager {
 }
 
 /**
- * berry and classic disagree about the key, so guessing costs a user their fix.
- *
- * Read the head of the file rather than all of it. Lockfiles get very large and
- * the marker is in the first few lines by construction.
+ * Read the lockfile header to distinguish Yarn Berry from Classic.
  */
 function yarnGeneration(path: string): PackageManager {
-  // Actually the head. `readFileSync(...).slice()` read the whole file first
-  // and then threw it away, which on a large monorepo lockfile is tens of
-  // megabytes of peak memory to answer a question the first line settles.
+  // Read only the header to bound memory use on large lockfiles.
   const buffer = Buffer.alloc(HEAD_BYTES);
   let read = 0;
   let handle;
@@ -138,13 +127,8 @@ export function overrideBlock(
 }
 
 /**
- * Whether `clears N` can be honest here.
- *
- * The promise rests on reading dependents' required ranges out of
- * `package-lock.json`. We have no reader for `pnpm-lock.yaml` or `yarn.lock`,
- * so on those projects `reachesEveryCopy` answers yes by default and the
- * guarantee shipped in 0.0.7 is quietly switched off. Saying the number anyway
- * would trade one silent lie for another.
+ * Only npm has the lockfile range reader needed to verify upgrade counts.
+ * pnpm and Yarn omit counts because reachesEveryCopy defaults to true for them.
  */
 export function canPromiseClears(manager: PackageManager): boolean {
   return manager === "npm";

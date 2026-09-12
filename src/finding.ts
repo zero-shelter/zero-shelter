@@ -1,19 +1,15 @@
 /**
- * The shape every ingester produces and everything downstream consumes.
- *
- * It is deliberately small. Scanner output carries a lot that only matters to
- * the scanner that produced it, and anything we keep here has to survive being
- * merged with a finding from a different tool that described the same problem
- * in different words.
+ * Shared scanner finding format, normalized before merging and ranking.
  */
 
 /**
- * What kind of thing was found. Fingerprint recipes differ per class, so this
- * is not cosmetic — a single recipe across classes is wrong for all of them.
+ * Finding category, used to select the fingerprint recipe.
  */
 export type FindingClass = "SCA";
 
-/** How badly we want the reader to care, before our own ranking runs. */
+/**
+ * Scanner severity before deterministic ranking.
+ */
 export type Severity = "critical" | "high" | "moderate" | "low" | "info";
 
 /** Where a finding came from, kept so `--explain` can name its sources. */
@@ -75,21 +71,13 @@ export interface ScaFinding {
   readonly transitive: boolean;
 
   /**
-   * When the advisory was published, verbatim from the source.
-   *
-   * Severity is assigned when an advisory is written and never moves again, so
-   * it is the only urgency signal we carry and it says nothing about whether
-   * anyone has had a year to act. This is a fact from the source rather than a
-   * number of ours, which is the only form that survives the standard
-   * PRODUCT.md sets for anything that ranks.
+   * Publication date from the source. Displayed as context; it does not affect
+   * the ranking.
    */
   readonly published?: string;
   /**
-   * The CVSS vector as the source wrote it. Carried, never computed.
-   *
-   * Turning a vector into a score is float arithmetic, and scoring here is
-   * integer-only so the same input ranks the same on every machine. So this is
-   * shown beside the finding and stays out of the score.
+   * CVSS vector from the source. Preserved for inspection and excluded from
+   * the integer ranking score.
    */
   readonly cvssVector?: string;
 
@@ -132,7 +120,7 @@ export function pickAdvisoryId(aliases: readonly string[]): string {
     return byPrefix !== 0 ? byPrefix : compare(a, b);
   });
 
-  // ponytail: sort-and-take-first beats a manual min loop; the list is tiny.
+  // Alias sets are small; sorting also makes the tie-break deterministic.
   return ranked[0]!;
 }
 

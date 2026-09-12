@@ -1,14 +1,6 @@
 /**
- * What was installed when the decision was made.
- *
- * The baseline is a record a person reads later to decide whether an old
- * decision still holds. `reason`, `acceptedBy` and `recordedAt` all exist for
- * that reader. Which version we were looking at belongs in the same set, and
- * it is the one piece that cannot be recovered afterwards — the tree has moved
- * on. It is also what a PURL needs, which is what #138 is blocked on.
- *
- * The thing these tests are guarding against is the change nobody asked for:
- * recording a version must not quietly become scoping the acceptance to it.
+ * Record installed versions as acceptance context without using them to
+ * change the scope of the acceptance match. See #138.
  */
 import { describe, expect, it } from "vitest";
 

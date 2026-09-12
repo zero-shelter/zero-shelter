@@ -1,11 +1,5 @@
 /**
- * PRODUCT.md promises WCAG AA text contrast. Nothing checked it, and one colour
- * did not meet it: the faint ink used for labels, tags and column headers sat
- * at 3.11 against paper, where 4.5 is the bar for text that size.
- *
- * A promise nobody measures is a promise that drifts, so the palette is
- * measured here rather than eyeballed. The maths is small enough to carry: a
- * dependency for eight colours would cost more than it saves.
+ * Measure text contrast in both report themes against WCAG AA requirements.
  */
 
 import { describe, expect, it } from "vitest";
@@ -132,6 +126,6 @@ describe("copying without a clipboard", () => {
     );
 
     expect(withFindings).toContain("data-select=");
-    expect(withFindings).toContain("press ctrl-C");
+    expect(withFindings).toContain("press Ctrl+C");
   });
 });

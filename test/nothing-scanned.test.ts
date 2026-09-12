@@ -1,8 +1,5 @@
 /**
- * The failure this guards against: a project nobody scanned reporting clean.
- *
- * It is the worst output this tool can produce. A crash gets investigated; a
- * green CI badge on a project the scanners never opened does not.
+ * Distinguish an unreadable or missing scan from a readable empty report.
  */
 
 import { describe, expect, it } from "vitest";
@@ -52,7 +49,7 @@ describe("when nothing could be scanned", () => {
 
     expect(result.contributed).toEqual([]);
     expect(result.findings).toEqual([]);
-    // npm already says what is wrong and how to fix it. Replacing that with our
+    // npm already says what is wrong and how to review it. Replacing that with our
     // own parser's complaint sends people looking for a bug in us.
     expect(result.skipped.join(" ")).toContain("requires an existing lockfile");
     expect(result.skipped.join(" ")).toContain("npm i --package-lock-only");

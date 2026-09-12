@@ -1,14 +1,7 @@
 #!/usr/bin/env node
 /**
- * Regenerate THIRD_PARTY.md and THIRD_PARTY.ko.md from the dependencies
- * actually installed.
- *
- * Direct dependencies only, with the resolved version rather than the range —
- * that is what the 2026 오픈소스 개발자대회 SBOM guide (붙임1 / 부록1) asks for,
- * and hand-maintaining the list is exactly how it goes stale.
- *
- * Both languages are generated from the same rows, so the translation cannot
- * drift from the English: there is nothing to keep in sync by hand.
+ * Generate English and Korean notices from installed direct dependencies,
+ * including resolved versions, licenses and repository links.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -42,27 +35,27 @@ const table = (purpose) =>
     )
     .join("\n");
 
-// Scanners are run as separate processes and none of their code ships here, so
-// they are not dependencies — but they are third-party software this tool needs
-// to do anything, and leaving them off the page reads as hiding them.
+// Document scanner executables separately from bundled package dependencies.
 const EXTERNAL = `## External executables
 
-Called as separate processes. No code from either is bundled or vendored here.
+Called as separate processes. None of their code is bundled or vendored here.
 
-| Tool | Required | How it is used |
+| Tool | Used for | How it is used |
 |---|---|---|
-| npm CLI (\`npm audit\`) | yes | Already present wherever there is a lockfile. Run as \`npm audit --json\`; only its output is read. |
-| [osv-scanner](https://github.com/google/osv-scanner) | no | Used when found on \`PATH\`, skipped quietly otherwise. |
+| npm CLI (\`npm audit\`) | npm / Yarn projects | Run as \`npm audit --json\` for npm and Yarn projects; only its output is read. |
+| pnpm CLI (\`pnpm audit\`) | pnpm projects | Run as \`pnpm audit --json\` when a pnpm lockfile is detected. |
+| [osv-scanner](https://github.com/google/osv-scanner) | Installed on \`PATH\` | Used when found on \`PATH\`, reported as skipped otherwise. |
 `;
 
 const EXTERNAL_KO = `## 외부 실행 도구
 
-별도 프로세스로 호출합니다. 두 도구 모두 코드가 이 저장소에 포함되거나 동봉되지 않습니다.
+별도 프로세스로 호출합니다. 아래 도구의 코드는 이 패키지에 포함되지 않습니다.
 
-| 도구 | 필수 | 사용 방식 |
+| 도구 | 사용 조건 | 사용 방식 |
 |---|---|---|
-| npm CLI (\`npm audit\`) | 예 | lockfile이 있는 곳엔 이미 있습니다. \`npm audit --json\`으로 실행하고 출력만 읽습니다. |
-| [osv-scanner](https://github.com/google/osv-scanner) | 아니오 | \`PATH\`에 있을 때만 사용하고, 없으면 조용히 건너뜁니다. |
+| npm CLI (\`npm audit\`) | npm / Yarn 프로젝트 | \`npm audit --json\`으로 실행하고 출력만 읽습니다. |
+| pnpm CLI (\`pnpm audit\`) | pnpm 프로젝트 | pnpm 락파일을 확인하면 \`pnpm audit --json\`으로 실행합니다. |
+| [osv-scanner](https://github.com/google/osv-scanner) | \`PATH\`에 설치된 경우 | 없으면 건너뛴 이유를 표시합니다. |
 `;
 
 writeFileSync(
@@ -91,10 +84,10 @@ writeFileSync(
 
 [English](./THIRD_PARTY.md) · [한국어](./THIRD_PARTY.ko.md)
 
-직접 의존성만, \`package-lock.json\`에 실제로 설치된 버전으로 적습니다.
-\`npm run third-party\`로 재생성하며, 둘 중 하나라도 낡으면 CI가 실패합니다.
+직접 의존성을 \`package-lock.json\`에 기록된 버전과 함께 표시합니다.
+\`npm run third-party\`로 재생성하며, 파일이 생성 결과와 다르면 CI가 실패합니다.
 
-간접(transitive) 의존성과 GitHub Actions는 의도적으로 제외했습니다.
+간접 의존성과 GitHub Actions는 포함하지 않습니다.
 
 | 번호 | 라이브러리명 | 버전 | 라이선스 | 공식 저장소 URL | 사용 목적 및 주요 기능 |
 |---|---|---|---|---|---|
@@ -112,8 +105,7 @@ function readJson(path) {
 }
 
 function normalizeLicense(license) {
-  // ponytail: `license` is an SPDX string in every package we depend on. The
-  // deprecated object/array forms only need handling if one ever shows up.
+  // Current direct dependencies use SPDX strings; other forms need review.
   if (typeof license === "string") return license;
   return "UNKNOWN — verify manually";
 }

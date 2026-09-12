@@ -268,8 +268,8 @@ describe("report", () => {
   it("renders a table without escape codes when colour is off", () => {
     const text = renderHuman(result, false);
     expect(text).not.toMatch(/\[/);
-    expect(text).toContain("fix these");
-    expect(text).toContain("less noise");
+    expect(text).toContain("findings to review:");
+    expect(text).toContain("fewer listed");
   });
 
   it("emits colour only when asked", () => {
@@ -278,7 +278,7 @@ describe("report", () => {
 
   it("says so plainly when nothing is new", () => {
     const clean = judge(both, { baseline: baselineFrom(result.fixNow) });
-    expect(renderHuman(clean, false)).toContain("nothing new to fix");
+    expect(renderHuman(clean, false)).toContain("no new findings");
   });
 
   it("shows the skipped scanners rather than hiding them", () => {
@@ -286,10 +286,10 @@ describe("report", () => {
   });
 
   /**
-   * A first run reduces nothing and prints "0% less noise", which reads as the
+   * A first run reduces nothing and prints "0% fewer listed", which reads as the
    * tool not working. It has to say what the first run is for.
    */
-  it("tells a first-time user what to do instead of reporting 0% reduction", () => {
+  it("explains the first-run baseline choice", () => {
     const first = judge(both, { baseline: emptyBaseline(), baselineExists: false });
     expect(renderHuman(first, false)).toContain("--update-baseline");
     expect(renderHuman(result, false)).not.toContain("--update-baseline");
@@ -337,7 +337,7 @@ describe("report", () => {
     expect(json.fixNow).toHaveLength(result.fixNow.length);
   });
 
-  it("keeps the JSON free of the member findings, which agents pay for", () => {
+  it("omits member findings from compact JSON", () => {
     expect(renderJson(result)).not.toContain('"members"');
   });
 });

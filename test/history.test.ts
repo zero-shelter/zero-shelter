@@ -1,11 +1,6 @@
 /**
- * The history answers questions the baseline cannot: when did this appear, did
- * anything get fixed, is the backlog growing.
- *
- * Two things it must never do. Lose everything because the last write was
- * interrupted — a truncated line is the normal outcome of a killed process.
- * And call a disappearance a fix, when a finding also leaves the list by being
- * accepted, or because the scanner that found it did not run.
+ * Preserve readable history lines after a partial write and distinguish
+ * absent findings from confirmed fixes.
  */
 
 import { describe, expect, it } from "vitest";

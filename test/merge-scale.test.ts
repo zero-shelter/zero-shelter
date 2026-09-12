@@ -1,13 +1,6 @@
 /**
- * Sibling detection used to compare every merged finding with every other one.
- * At 7,500 findings that was a second of CPU, and a large monorepo produces
- * more than that — so the cost showed up exactly where the tool is supposed to
- * help most.
- *
- * These tests pin the behaviour the index has to keep, and one loose bound to
- * catch a return to quadratic. The bound is deliberately generous: a timing
- * assertion tight enough to be precise is an assertion that fails on a busy CI
- * runner for no reason.
+ * Guard indexed sibling detection against semantic changes and quadratic
+ * runtime. The timing bound allows headroom for busy CI runners.
  */
 
 import { describe, expect, it } from "vitest";

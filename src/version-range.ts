@@ -1,17 +1,9 @@
 /**
- * Does a dependency range accept a given version?
+ * Check whether a parent dependency range accepts a fixed version.
  *
- * Asked for one reason: `npm i pkg@7` only replaces the copies whose dependents
- * will take a 7. A package that asked for `^6.0.2` keeps its own copy, and any
- * finding on that copy survives a command we promised would clear it.
- *
- * ponytail: not a semver implementation, and not a resolver. It answers
- * containment for the range forms lockfiles actually hold — measured across the
- * bench captures, caret/tilde/exact/`*` are 97.5% of 2,678 ranges and the
- * comparator, partial and union forms below take it to 99.9%. Prereleases are
- * compared as the release they precede, which is wrong in general and right for
- * every case here. Anything unparsed answers "does not accept", so the caller
- * declines to promise rather than promising wrongly.
+ * Supports the range forms below, not full semver resolution. Prereleases are
+ * compared by release numbers, so this is not general prerelease containment.
+ * Unparsed ranges return false to avoid promising an unsupported upgrade.
  */
 
 const ANY = new Set(["", "*", "x", "X", "latest"]);

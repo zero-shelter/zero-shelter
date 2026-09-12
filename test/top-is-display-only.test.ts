@@ -1,10 +1,5 @@
 /**
- * `--top` decides how many rows are printed. It must not decide what the
- * report claims about the project.
- *
- * Before this was true, `--top 3` on juice-shop announced "3 to fix (98% less
- * noise)" while 82 findings were outstanding — the tool congratulating itself
- * for looking away, in the one number people quote from it.
+ * --top limits displayed rows without changing project totals or upgrade advice.
  */
 
 import { readFileSync } from "node:fs";
@@ -30,7 +25,7 @@ describe("--top", () => {
   });
 
   it("does not change the reduction percentage", () => {
-    const percent = (text: string) => /\((\d+)% less noise\)/.exec(text)?.[1];
+    const percent = (text: string) => /\((\d+)% fewer listed\)/.exec(text)?.[1];
 
     expect(percent(renderHuman(capped, false))).toBe(percent(renderHuman(all, false)));
   });
@@ -38,7 +33,7 @@ describe("--top", () => {
   it("says the real number first and the shown number second", () => {
     const text = renderHuman(capped, false);
 
-    expect(text).toContain(`fix these ${all.applied.fresh.length} now — top 1 shown`);
+    expect(text).toContain(`findings to review: ${all.applied.fresh.length} (top 1 shown)`);
     expect(text).toContain("showing 1");
   });
 
