@@ -13,6 +13,7 @@ import {
 import type { RankedFinding } from "./triage.js";
 import { WEIGHTS } from "./triage.js";
 import { messagesFor } from "./messages.js";
+import type { UnscannedScope } from "./scope.js";
 
 export interface JudgeResult {
   readonly raw: number;
@@ -37,6 +38,8 @@ export interface JudgeResult {
   readonly packageManager?: PackageManager;
   /** The date the caller judged on, for saying how old an advisory is. */
   readonly today?: string;
+  /** Local project artifacts this dependency-only judgement leaves unread. */
+  readonly unscanned?: UnscannedScope;
 }
 
 const COLOR = {
@@ -77,6 +80,9 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   if (fixNow.length === 0) {
     lines.push(paint("✓ no new findings", COLOR.green));
     lines.push(summary(result, paint));
+    if (result.unscanned !== undefined) {
+      lines.push(paint(unscannedLine(result.unscanned), COLOR.dim));
+    }
     lines.push(...resolvedLines(result, paint));
     lines.push(...ratchetLines(result, paint));
     return lines.join("\n");
@@ -220,6 +226,22 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   return lines.join("\n");
+}
+
+function unscannedLine(scope: UnscannedScope): string {
+  const subjects: string[] = [];
+  if (scope.containers) subjects.push("the Dockerfile");
+  if (scope.workflows > 0) {
+    subjects.push(`${scope.workflows} workflow file${scope.workflows === 1 ? "" : "s"}`);
+  }
+  if (scope.infrastructure) subjects.push("infrastructure files");
+  subjects.push("anything to do with secrets");
+
+  const last = subjects[subjects.length - 1]!;
+  const prefix = subjects.slice(0, -1);
+  const unread = prefix.length === 0 ? last : `${prefix.join(", ")} and ${last}`;
+  const caveat = scope.complete ? "" : " (some local artifacts could not be checked)";
+  return `  dependencies only — ${unread} went unread${caveat}`;
 }
 
 /**
@@ -503,6 +525,7 @@ export function renderJson(result: JudgeResult): string {
       noLongerReported: result.applied.noLongerReported,
       warning: result.applied.warning,
       skipped: result.skipped,
+      ...(result.unscanned === undefined ? {} : { unscanned: result.unscanned }),
       missingSources: result.applied.missingSources,
       // The commands, so a caller does not have to re-derive them from the
       // findings and get the version comparison subtly wrong.

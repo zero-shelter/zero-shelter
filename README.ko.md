@@ -51,6 +51,7 @@ recorded 13 finding(s) from npm audit, osv-scanner as accepted in .zero-shelter/
 $ npx zero-shelter judge
 ✓ nothing new to fix
   13 reported → 13 after merge → 0 to fix (100% less noise), 13 already accepted
+  dependencies only — 2 workflow files and anything to do with secrets went unread
 ```
 
 새 항목이 있으면 종료 코드가 `1`입니다. CI가 물려받은 백로그가 아니라 **이번
@@ -71,6 +72,13 @@ $ npx zero-shelter judge
 그중 하나가 이번에 안 돌았으면 어느 것인지 말해 줍니다. JSON에서는
 `missingSources`가 같은 조건을 전달합니다. 전부 다시 돌았으면 없는 의심을 지어내지
 않습니다.
+
+깨끗한 실행에서는 프로젝트에 실제로 있는 artifact만 사용해 의존성 판정의 경계도
+알립니다. 그 영역을 스캔하거나 깨끗하다고 판정하지 않습니다. 예를 들어 secret은
+항상 이 도구 밖에 있고, Dockerfile·workflow·infrastructure는 해당 파일이 있을 때만
+언급합니다.
+선택적인 범위 확인을 끝내지 못하면 JSON의 `unscanned.complete`가 `false`가 되고
+사람용 문장에도 표시합니다. 이때 `false`나 `0`은 artifact가 없다는 증거가 아닙니다.
 
 ## 설치
 

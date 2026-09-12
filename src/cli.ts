@@ -34,6 +34,7 @@ import {
 } from "./history.js";
 import type { ScaFinding } from "./finding.js";
 import { versionOutput } from "./version.js";
+import { unscannedScope } from "./scope.js";
 
 const USAGE = `zero-shelter judge — review dependency scanner findings
 
@@ -213,6 +214,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     ...(installed === undefined ? {} : { installed }),
     ...(sources === undefined ? {} : { sources }),
     ...(top === undefined ? {} : { top }),
+    unscanned: unscannedScope(cwd),
   });
 
   if (values["update-baseline"] === true) {
@@ -544,6 +546,7 @@ async function hook(
         // Use the same expiry date as judge so hook context includes expired findings.
         today: new Date().toISOString().slice(0, 10),
         ...(installed === undefined ? {} : { installed }),
+        unscanned: unscannedScope(cwd),
       }),
     );
     if (context !== undefined) process.stdout.write(hookOutput(context));

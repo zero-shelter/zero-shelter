@@ -50,6 +50,7 @@ recorded 13 finding(s) from npm audit, osv-scanner as accepted in .zero-shelter/
 $ npx zero-shelter judge
 ✓ nothing new to fix
   13 reported → 13 after merge → 0 to fix (100% less noise), 13 already accepted
+  dependencies only — 2 workflow files and anything to do with secrets went unread
 ```
 
 Exit code is `1` when anything is new, so CI fails on the regression this change
@@ -70,6 +71,14 @@ when the scanner that found it did not run. The baseline records which scanners
 contributed, so when one of them is missing this run, the line says which —
 and when JSON is the surface, `missingSources` carries the same qualification.
 When they all ran again, it does not manufacture doubt.
+
+On a clean run, the report also states the dependency-only boundary using only
+artifacts present in the project. It does not scan or judge those domains: for
+example, secrets are always outside this tool, while Dockerfiles, workflows,
+and infrastructure are mentioned only when the corresponding files exist.
+If an optional scope check cannot complete, JSON sets `unscanned.complete` to
+`false` and the human line says so; `false` or `0` then is not evidence that an
+artifact is absent.
 
 ## Install
 
