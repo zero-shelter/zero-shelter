@@ -1,10 +1,6 @@
 /**
- * Two things the lockfile knows that no scanner reports.
- *
- * Neither is an advisory. Where a package runs decides whether a finding is
- * news, and there is no CVE for "this package executes code when you install
- * it" — which is the one way into a dependency tree that needs no vulnerability
- * at all. Both are one field in a file we already open for `clears`.
+ * Preserve lockfile scope and install-script metadata separately from
+ * vulnerability findings.
  */
 import { describe, expect, it } from "vitest";
 

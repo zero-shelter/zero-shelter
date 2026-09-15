@@ -1,17 +1,7 @@
 /**
- * An interrupted write must cost one line, not every line after it.
- *
- * A cancelled workflow or a reclaimed runner leaves `history.jsonl` without a
- * final newline. `--record` appended straight onto that, welding the new entry
- * into the broken one — so the new run was unreadable too, and so was the next,
- * and the next. `history` went on reporting "1 line(s) could not be read"
- * while recording had silently stopped. See #196.
- *
- * Driven through `appendEntry` rather than a spawned CLI. The first version of
- * this file ran `dist/bin.js`, which passed here and failed on all three
- * runners: the `test` job runs `npm ci`, `typecheck` and `test`, and never
- * builds. A test that needs an artifact its own job does not produce is a test
- * that only works on the machine that happened to build.
+ * Preserve readable entries after an interrupted history write without a
+ * final newline. Exercise appendEntry directly so tests do not require dist.
+ * See #196.
  */
 import { appendFileSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";

@@ -1,6 +1,6 @@
 {
   "name": "zero-shelter",
-  "description": "Judge dependency scanner output locally: what to fix now, and why.",
+  "description": "Review dependency scanner findings, supported upgrades, and accepted risks locally.",
   "version": "0.0.10",
   "author": {
     "name": "zero-shelter"

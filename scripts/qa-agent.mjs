@@ -1,13 +1,7 @@
 /**
- * Walk the paths we tell agents to walk.
+ * Check the hook, shipped skills, HTML prompts and plugin manifest.
  *
- * The install QA covers a human at a terminal. This covers the other four
- * surfaces — the prompt hook, the five skills, the copy-paste prompts embedded
- * in the html report, and the plugin manifest — because those are the ones
- * nobody notices breaking. An agent does not complain that the advice was in
- * the wrong dialect; it pastes it, gets no error, and reports success.
- *
- *   node scripts/qa-agent.mjs [--keep]
+ * Usage: node scripts/qa-agent.mjs [--keep]
  */
 import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -74,11 +68,8 @@ async function project(manager) {
 const INPUTS = ["--input", NPM_REPORT, "--input", OSV_REPORT];
 
 /**
- * Only what a reader would actually type.
- *
- * Prose mentions the tool by name constantly — "wire zero-shelter into a
- * project's CI" is not an instruction to run `zero-shelter into`. Fenced shell
- * blocks are the part a skill promises will work.
+ * Extract commands only from shell fences; prose can mention command names
+ * without being executable guidance.
  */
 function shellLines(markdown) {
   const lines = [];
@@ -98,7 +89,7 @@ function shellLines(markdown) {
 const contextOf = (stdout) =>
   JSON.parse(stdout).hookSpecificOutput.additionalContext;
 
-await check("hook answers a payload", "context returned", async () => {
+await check("hook returns context for a stored report", "context returned", async () => {
   const dir = await project("npm");
   const { code, stdout } = await cli(
     dir,
@@ -115,7 +106,7 @@ await check("hook answers a payload", "context returned", async () => {
  * Same check without --input, against real scanners. Kept because the flag
  * exists for testability and this is the path that actually runs in an editor.
  */
-await check("hook answers a real payload", "context returned", async () => {
+await check("hook returns context from a live scanner", "context returned", async () => {
   const dir = process.env["ZS_AGENT_REAL_PROJECT"];
   if (dir === undefined) {
     return "skipped — set ZS_AGENT_REAL_PROJECT to a project with findings";
@@ -131,15 +122,15 @@ await check("hook answers a real payload", "context returned", async () => {
   return "exit 0, additionalContext present";
 });
 
-await check("hook stays silent and calm on a broken project", "exit 0, no output", async () => {
+await check("hook returns no context on scanner failure", "exit 0, no output", async () => {
   const dir = await mkdtemp(join(tmpdir(), "zs-agent-empty-"));
   const { code, stdout } = await cli(dir, ["hook"], JSON.stringify({ cwd: dir }));
-  expect(code === 0, `a hook that fails a prompt is worse than one that says nothing: exit ${code}`);
+  expect(code === 0, `expected hook exit 0, received ${code}`);
   expect(stdout.trim() === "", "hook spoke about a project it could not scan");
   return "exit 0, silent";
 });
 
-await check("hook survives junk on stdin", "exit 0", async () => {
+await check("hook handles invalid JSON on stdin", "exit 0", async () => {
   const dir = await project("npm");
   const { code } = await cli(dir, ["hook"], "not json at all");
   expect(code === 0, `exit ${code}`);
@@ -147,12 +138,9 @@ await check("hook survives junk on stdin", "exit 0", async () => {
 });
 
 /**
- * The hook has been left behind by three separate changes now — the package
- * manager dialect, the withheld clears count, and before that the lockfile it
- * was not reading. It is the surface where being wrong costs most: a person
- * would notice `npm i` in a pnpm repository, an agent runs it.
+ * Check package-manager commands and count guards in hook context.
  */
-await check("hook speaks the project's dialect", "one dialect per manager", async () => {
+await check("hook uses package-manager-specific commands", "commands match the package manager", async () => {
   const expected = { npm: "npm i ", pnpm: "pnpm add ", yarn: "yarn add " };
 
   for (const [manager, command] of Object.entries(expected)) {
@@ -181,14 +169,11 @@ await check("hook speaks the project's dialect", "one dialect per manager", asyn
 // ── what the setup skill tells an agent to check ────────────────────────────
 
 /**
- * This check used to enshrine the wrong semantics, which is worse than not
- * having it: it asserted that grepping the JSON for "osv-scanner" returns
- * non-zero when the scanner ran — and it does, but it *also* returns non-zero
- * when the scanner is missing, because `skipped` names it. The gate was green
- * on a happy path that could never see the failing case.
+ * Verify both present and absent scanner states. A skipped scanner name in
+ * JSON is not evidence that the scanner contributed.
  */
 await check(
-  "the setup skill's verification command answers both ways",
+  "source status distinguishes one and two contributing scanners",
   "one source detected, two sources detected",
   async () => {
     const dir = await project("npm");
@@ -209,20 +194,20 @@ await check(
   },
 );
 
-await check("a one-source run says so where the skill looks", "phrase present", async () => {
+await check("single-source note is visible in terminal output", "phrase present", async () => {
   const dir = await project("npm");
   const { stdout } = await cli(dir, ["judge", "--input", NPM_REPORT]);
   expect(
-    stdout.includes("one source, nothing to reconcile"),
+    stdout.includes("one source; no cross-scanner comparison"),
     "the setup skill tells the agent to look for this phrase and it is not there",
   );
   return "phrase present";
 });
 
-await check("nothing scanned is not a pass", "exit 2", async () => {
+await check("no readable scanner report returns exit 2", "exit 2", async () => {
   const dir = await mkdtemp(join(tmpdir(), "zs-agent-bare-"));
   const { code, stderr } = await cli(dir, ["judge"]);
-  expect(code === 2, `a project nobody scanned must not go green: exit ${code}`);
+  expect(code === 2, `expected exit 2 without a scanner report, received ${code}`);
   expect(stderr.includes("not a pass"), "exit 2 without saying why");
   return "exit 2 with an explanation";
 });
@@ -230,7 +215,7 @@ await check("nothing scanned is not a pass", "exit 2", async () => {
 // ── every surface must give the same advice ─────────────────────────────────
 
 for (const manager of ["npm", "pnpm", "yarn"]) {
-  await check(`${manager}: every surface speaks one dialect`, "consistent", async () => {
+  await check(`${manager}: output uses the detected package manager`, "consistent", async () => {
     const dir = await project(manager);
     const expected = { npm: '"overrides"', pnpm: '"pnpm"', yarn: '"resolutions"' }[manager];
     const wrong = manager === "npm" ? null : '"overrides":';
@@ -285,11 +270,9 @@ await check("clears is only promised where it can be checked", "withheld off npm
 });
 
 /**
- * Recording is bookkeeping. A history file we cannot append to is worth saying
- * out loud and is not worth throwing a finished judgement away over — exit 2
- * means "could not judge", and the judgement was fine.
+ * A history write failure must preserve the judgement and report the warning.
  */
-await check("a history that cannot be written does not sink the run", "verdict survives", async () => {
+await check("history write failure preserves the judgement result", "judgement result preserved", async () => {
   const dir = await project("npm");
   // A directory where the file belongs: append fails with EISDIR.
   await mkdir(join(dir, ".zero-shelter", "history.jsonl"), { recursive: true });
@@ -297,37 +280,37 @@ await check("a history that cannot be written does not sink the run", "verdict s
   const { code, stdout, stderr } = await cli(dir, ["judge", ...INPUTS, "--record"]);
 
   expect(code === 1, `the judgement earned exit 1, --record turned it into ${code}`);
-  expect(stdout.includes("to fix"), "the report never reached the reader");
+  expect(stdout.includes("to review"), "the report never reached the reader");
   expect(stderr.includes("history.jsonl"), "the write failure was swallowed silently");
   return "exit 1, report printed, failure named on stderr";
 });
 
 // ── the loop the fix skill describes ────────────────────────────────────────
 
-await check("accept, then re-run, and it is quiet", "ratchet closes", async () => {
+await check("accepted findings remain accepted on the next run", "accepted findings stay accepted", async () => {
   const dir = await project("npm");
   const accepted = await cli(dir, ["judge", ...INPUTS, "--update-baseline"]);
   expect(accepted.code === 0, `--update-baseline exited ${accepted.code}`);
 
   const again = await cli(dir, ["judge", ...INPUTS]);
   expect(again.code === 0, `a re-run after accepting everything must exit 0, got ${again.code}`);
-  expect(again.stdout.includes("nothing new to fix"), "the loop did not close");
+  expect(again.stdout.includes("no new findings"), "the loop did not close");
   return "exit 0, nothing new";
 });
 
-await check("a scanner joining later does not reopen the backlog", "ratchet holds", async () => {
+await check("additional scanner aliases preserve matching acceptances", "alias acceptances preserved", async () => {
   const dir = await project("npm");
   await cli(dir, ["judge", "--input", NPM_REPORT, "--update-baseline"]);
   const { stdout } = await cli(dir, ["judge", ...INPUTS]);
 
-  const outstanding = Number(/→ (\d+) to fix/.exec(stdout)?.[1] ?? "-1");
+  const outstanding = Number(/→ (\d+) to review/.exec(stdout)?.[1] ?? "-1");
   expect(outstanding >= 0, "could not read the outstanding count");
   expect(outstanding < 20, `adding a scanner reopened ${outstanding} findings`);
   expect(
     !stdout.includes("accepted finding(s) no longer reported"),
     "claimed renamed findings were resolved",
   );
-  return `${outstanding} genuinely new, nothing falsely resolved`;
+  return `${outstanding} new findings, nothing falsely resolved`;
 });
 
 // ── the action examples people copy ─────────────────────────────────────────
@@ -407,7 +390,7 @@ await check("the plugin manifest points at skills that exist", "5 skills", async
   return `${skills.length} skills, all with a description`;
 });
 
-await check("no skill teaches a command the CLI does not have", "all reachable", async () => {
+await check("skill commands are supported by the CLI", "all reachable", async () => {
   const { readdirSync } = await import("node:fs");
   const help = (await cli(ROOT, ["--help"])).stdout;
   const known = new Set(["judge", "history", "hook", "help", "version"]);
@@ -425,7 +408,7 @@ await check("no skill teaches a command the CLI does not have", "all reachable",
   return `${seen.size} distinct commands, all real`;
 });
 
-await check("no skill teaches a flag the CLI rejects", "all accepted", async () => {
+await check("skill flags are supported by the CLI", "all accepted", async () => {
   const { readdirSync } = await import("node:fs");
   const help = (await cli(ROOT, ["--help"])).stdout;
 
@@ -451,7 +434,7 @@ await check("no skill teaches a flag the CLI rejects", "all accepted", async () 
  * the command and the manager-specific forced-version form; duplicating either
  * in a skill is how guidance drifts after a new manager is added.
  */
-await check("no skill teaches manager-specific dependency remedies", "manager-neutral", async () => {
+await check("skills use generated remediation guidance", "manager-neutral", async () => {
   const { readdirSync } = await import("node:fs");
   const install = /\b(?:npm|pnpm|yarn)\s+(?:i|install|add|update|upgrade|remove|uninstall)\b/i;
   const forcedVersion = /\b(?:overrides|resolutions)\b/i;

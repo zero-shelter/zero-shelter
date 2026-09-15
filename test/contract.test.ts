@@ -1,13 +1,6 @@
 /**
- * The interfaces docs/STABILITY.md freezes.
- *
- * A pipeline that fails builds on exit code 1 and parses `--format json` is
- * betting on these two surfaces, and the bet is worth nothing if it lives in a
- * document nobody runs. So this asserts against real output rather than against
- * a second copy of the table.
- *
- * Breaking one of these is allowed. Doing it quietly is not: this test is where
- * you say so, and the major version is the price.
+ * Check the JSON fields documented in docs/STABILITY.md against rendered
+ * output. Contract changes require the documented compatibility review.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

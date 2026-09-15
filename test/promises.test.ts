@@ -1,11 +1,6 @@
 /**
- * The two claims a user has to take on trust before running this at all: that
- * it does not phone anywhere, and that it does not write to their repository
- * unless asked.
- *
- * Both are true today. Neither is the kind of thing that stays true by itself —
- * one `fetch` for an advisory description, one cache file "for speed", and the
- * README becomes a lie about the thing people chose it for.
+ * Check local I/O boundaries: no network imports in the core and no project
+ * writes unless requested.
  */
 
 import { execFile } from "node:child_process";
@@ -95,7 +90,7 @@ describe("no writing unless asked", () => {
   }, 120_000);
 });
 
-describe("the invariants the README calls unbreakable", () => {
+describe("documented report invariants", () => {
   it("scores with integers only", async () => {
     const { readFileSync } = await import("node:fs");
     const { parseNpmAudit } = await import("../src/ingest/npm-audit.js");

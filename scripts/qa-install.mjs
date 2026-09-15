@@ -1,15 +1,9 @@
 #!/usr/bin/env node
 /**
- * The install-and-first-run QA, run against the packaged artifact.
- *
- * Not the working copy. That distinction is not pedantry: this exact check
- * caught a merge that silently deleted a shipped feature while every test and
- * all three CI matrices stayed green, because the tests for the deleted code
- * were deleted with it. `npm test` cannot see what is missing from the tarball;
- * this can.
+ * Install and smoke-test the packaged artifact, including public CLI paths.
  *
  * Usage: node scripts/qa-install.mjs [--keep]
- *   --keep   leave the temporary project behind for poking at
+ *   --keep leaves temporary projects available for inspection.
  */
 
 import { execFile } from "node:child_process";
@@ -26,13 +20,7 @@ const keep = process.argv.includes("--keep");
 const windows = process.platform === "win32";
 
 /**
- * A stalled subprocess must not become a stalled job.
- *
- * `src/scan.ts` bounds the scanners it spawns for this reason. This harness
- * spawns the same things one layer out and had no bound of its own, so when
- * npm's advisory endpoint stopped answering, every scan-dependent check sat
- * for two minutes and the job ran for half an hour with no output. Nothing
- * below GitHub's six-hour cap would have stopped a genuinely infinite one.
+ * Bound subprocess duration so an unresponsive registry cannot stall the QA job.
  */
 const STEP_TIMEOUT_MS = 120_000;
 // `npm ci` and a tarball install into a cold temp directory are legitimately
@@ -40,16 +28,8 @@ const STEP_TIMEOUT_MS = 120_000;
 const INSTALL_TIMEOUT_MS = 300_000;
 
 /**
- * The CLI gets more than the scanner it is waiting on.
- *
- * An outer bound equal to the product's own means a race: `src/scan.ts` ends a
- * stalled scanner at its boundary and is still writing "could not judge" when
- * we end the CLI at the same moment. The caller then sees a generic timeout
- * instead of the explanation this whole change exists to surface.
- *
- * Read off the packaged artifact rather than restated, so the two cannot drift
- * apart. Filled in once the tarball is installed; the fallback is only for the
- * checks that run before that.
+ * Give the CLI additional time after its scanner timeout so it can report
+ * the failure. Read the bound from the installed artifact.
  */
 let cliTimeoutMs = 240_000;
 const HEADROOM_MS = 60_000;
@@ -83,7 +63,7 @@ const VULNERABLE = { lodash: "4.17.11" };
 const results = [];
 const check = async (name, expectation, fn) => {
   // Scoped to this check on purpose. Some checks exit 2 because that is what
-  // they are asserting — "nothing scanned is not a pass" runs in an empty
+  // they are asserting — "no readable scanner report returns exit 2" runs in an empty
   // directory and a lockfile complaint there is the expected answer, not a
   // symptom. Only a check that actually failed gets to explain itself.
   couldNotJudge = undefined;
@@ -101,42 +81,21 @@ const check = async (name, expectation, fn) => {
 };
 
 /**
- * Why the CLI could not judge during the check that is running now.
- *
- * Exit 2 means "could not judge", and the reason — usually npm's own words
- * about a registry it could not reach — goes to stderr. Without it, a check
- * that needed findings fails on an assertion that says nothing about why, and
- * a reader concludes the packaged code is broken. Carrying it onto the failed
- * result is the difference between "the registry is down" and "you broke the
- * report".
- *
- * Reset per check by `check`, so a deliberate exit 2 in a passing check is
- * never offered as the explanation for a different one.
+ * Capture stderr for unexpected exit 2 and associate it with the current
+ * check. Reset per check so expected failures do not affect later results.
  */
 let couldNotJudge;
 
 /**
- * The scanner has already failed for want of a report, so it will fail the
- * same way for every remaining check in this environment.
- *
- * Each of those costs the tool's own 120-second timeout, and thirteen of them
- * runs past the job cap — so the run is killed before it can print why, which
- * is the one thing this harness needed to say. Every check still runs and
- * still reports; it just stops paying again for an answer already known.
- *
- * Only set when a directory that *has* a lockfile still produced nothing. The
- * empty-directory check exits 2 by design — that is a fact about the directory
- * and says nothing about the next one — so it must not arm this.
+ * After a scan with a lockfile produces no report, reuse the failure for
+ * remaining live-scanner checks. Every check still records its result.
+ * The intentional empty-directory failure must not trigger this fallback.
  */
 let noScannerAnywhere;
 
 /**
- * Invocations that never reach a scanner.
- *
- * `history` reads a recorded file, and exits 2 when there is none yet — which
- * this harness asserts on purpose. Treating that as a scanner failure both
- * mislabels it and, once the short circuit exists, stops the `--record` that
- * the same check is about to make.
+ * Classify history and help separately from scanner-dependent invocations
+ * so an expected history failure cannot disable subsequent scans.
  */
 const SCANS_NOTHING = new Set(["--version", "--help", "history"]);
 
@@ -180,12 +139,8 @@ const expect = (condition, message) => {
 };
 
 /**
- * A project of its own.
- *
- * The checks run in order against a shared project, and one of them records a
- * baseline and upgrades the dependency — so anything that needs outstanding
- * findings has to start from its own copy rather than inherit whatever the
- * check above it left behind.
+ * Use separate projects for checks that require outstanding findings; other
+ * checks may accept a baseline or upgrade dependencies in the shared project.
  */
 const freshProject = async (name, manifest = {}) => {
   const dir = join(workspace, name);
@@ -267,20 +222,20 @@ await check("9. no subcommand behaves like judge", "same exit code", async () =>
   return `exit ${bare.code}`;
 });
 
-await check("findings are reported at all", "exit 1 with a known-vulnerable dep", async () => {
+await check("new findings return exit 1", "exit 1 with a known-vulnerable dep", async () => {
   const { code, stdout } = await cli(project, ["judge"]);
   expect(code === 1, `exit ${code}`);
-  expect(/fix these/.test(stdout), "no findings reported");
-  return `exit 1, ${(stdout.match(/fix these (\d+)/) ?? [])[1]} finding(s)`;
+  expect(/findings to review:/.test(stdout), "no findings reported");
+  return `exit 1, ${(stdout.match(/findings to review: (\d+)/) ?? [])[1]} finding(s)`;
 });
 
-await check("the report says what to run", "an npm i command appears", async () => {
+await check("report includes the expected upgrade command", "an npm i command appears", async () => {
   const { stdout } = await cli(project, ["judge"]);
   expect(/npm i lodash@/.test(stdout), "no upgrade command in the report");
   return (stdout.match(/npm i \S+/) ?? [])[0];
 });
 
-await check("1. nothing scanned is not a pass", "exit 2, never 0", async () => {
+await check("1. no readable scanner report returns exit 2", "exit 2, never 0", async () => {
   const { code, stderr } = await cli(empty, ["judge"]);
   expect(code === 2, `exit ${code} — a directory with no lockfile must not pass`);
   expect(/lockfile/i.test(stderr), "the message does not mention the lockfile");
@@ -304,13 +259,13 @@ await check("3. an old Node is explained", "exit 2 with both versions named", as
   return "exit 2";
 });
 
-await check("10. baseline silences, then the loop closes", "exit 0, then credit for a fix", async () => {
+await check("10. baseline acceptance and subsequent comparison", "exit 0, then credit for a fix", async () => {
   const recorded = await cli(project, ["judge", "--update-baseline"]);
   expect(recorded.code === 0, `--update-baseline exited ${recorded.code}`);
 
   const after = await cli(project, ["judge"]);
   expect(after.code === 0, `re-run exited ${after.code}`);
-  expect(/nothing new to fix/.test(after.stdout), "did not go quiet after recording");
+  expect(/no new findings/.test(after.stdout), "did not go quiet after recording");
 
   // Now actually fix it, and check the run says so.
   await npm(["install", "--package-lock-only", "--no-audit", "--no-fund", "--ignore-scripts", "lodash@4.18.1"], { cwd: project });
@@ -360,7 +315,7 @@ await check("both sources reconcile when osv-scanner is present", "cross-source 
   return "npm audit + osv-scanner";
 });
 
-await check("the html report is one openable file", "self-contained, escaped, no network", async () => {
+await check("HTML is self-contained and deterministic", "self-contained, escaped, no network", async () => {
   const fresh = await freshProject("html-project");
   const { stdout } = await cli(fresh, ["judge", "--format", "html"]);
 
@@ -393,7 +348,7 @@ await check("history records only when asked", "no file until --record", async (
   return "silent until asked, then two runs with a delta";
 });
 
-await check("7. nothing but dist ships", "no runtime dependencies", async () => {
+await check("7. package contains only intended published files", "no runtime dependencies", async () => {
   const manifest = JSON.parse(
     await readFile(join(project, "node_modules", "zero-shelter", "package.json"), "utf8"),
   );

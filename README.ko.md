@@ -51,6 +51,13 @@ JSON 출력의 `summary`는 다음과 같으며 종료 코드는 `1`입니다.
 | `1` | 새 항목을 검토해야 합니다. |
 | `2` | 판정하지 못했습니다. 오류를 확인하고 통과로 처리하지 마세요. |
 
+깨끗한 실행에서는 프로젝트에 실제로 있는 artifact만 사용해 의존성 판정의 경계도
+알립니다. 그 영역을 스캔하거나 깨끗하다고 판정하지 않습니다. 예를 들어 secret은
+항상 이 도구 밖에 있고, Dockerfile·workflow·infrastructure는 해당 파일이 있을 때만
+언급합니다.
+선택적인 범위 확인을 끝내지 못하면 JSON의 `unscanned.complete`가 `false`가 되고
+사람용 문장에도 표시합니다. 이때 `false`나 `0`은 artifact가 없다는 증거가 아닙니다.
+
 ## 설치
 
 `npx`로 실행하거나 `npm i -g zero-shelter`로 CLI를 설치합니다.

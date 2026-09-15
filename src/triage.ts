@@ -1,9 +1,6 @@
 /**
- * Decide what to fix now.
- *
- * Scoring is integer-only and the weights live in one exported table, because
- * `--explain` reads that table rather than re-describing the logic. A second
- * description of the rules is a second place for them to be wrong.
+ * Rank dependency findings with integer weights from one exported table.
+ * The explanation renderer reads the same weights.
  */
 
 import type { MergedFinding } from "./merge.js";
@@ -18,10 +15,14 @@ export const WEIGHTS = {
     info: 5,
   } satisfies Record<Severity, number>,
 
-  /** You can act on a direct dependency today; a transitive one may need a parent bump. */
+  /**
+   * Prefer direct dependencies under the current ranking policy.
+   */
   directDependency: 20,
 
-  /** A named fix turns "be aware of this" into a task with an end. */
+  /**
+   * Weight for an available remediation path.
+   */
   fixAvailable: 25,
 
   /** Two tools agreeing is weak evidence that it is not a parsing artefact. */

@@ -1,14 +1,6 @@
 /**
- * Severity is assigned when an advisory is written and never moves again.
- *
- * So it can say a finding is critical and cannot say anyone has had eight years
- * to act on it. On the juice-shop captures a 2,878-day-old critical sits beside
- * a 19-day-old one and the two are indistinguishable — which is how a team ends
- * up with `npm audit || true` in CI and stops reading any of it.
- *
- * Both figures here come from the advisory. Neither enters the score: that is
- * integer arithmetic over rules the reader can argue with, and a CVSS number is
- * float arithmetic over a vector we did not compute.
+ * Preserve publication dates and CVSS vectors from scanners without adding
+ * them to the ranking score.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

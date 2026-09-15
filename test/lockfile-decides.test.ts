@@ -1,10 +1,5 @@
 /**
- * Which audit runs is decided by the lockfile in front of us.
- *
- * The gap this closes: our README claimed to read pnpm reports, and it does —
- * but only through `--input`. A pnpm project running `zero-shelter judge` got
- * `npm audit`, which fails with ENOLOCK without a package-lock.json, and the
- * whole run ended in "nothing was scanned".
+ * Select the audit executable from the detected lockfile, including pnpm.
  */
 
 import { readFileSync } from "node:fs";

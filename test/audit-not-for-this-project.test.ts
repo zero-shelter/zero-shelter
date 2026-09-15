@@ -1,17 +1,6 @@
 /**
- * npm's explanation is right for npm and wrong for a yarn project.
- *
- * `npm audit` fails without a `package-lock.json` and says so:
- *
- *   This command requires an existing lockfile. Try creating one first with:
- *   npm i --package-lock-only
- *
- * Correct, and it does not know it is standing in a yarn project — where
- * following it writes a second lockfile beside the first and leaves two that
- * can disagree. We do know, from the lockfile that is present. See #187.
- *
- * Passing npm's text through stays the default: with no lockfile at all, npm is
- * answering the right question and its answer is the right one.
+ * Suppress npm lockfile-creation advice for an existing Yarn project.
+ * With no detected lockfile, preserve the original npm guidance. See #187.
  */
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

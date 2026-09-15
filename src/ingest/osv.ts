@@ -1,10 +1,5 @@
 /**
- * Ingest `osv-scanner --format json`.
- *
- * The reason this source matters is not that it finds more than npm audit. It
- * is that it publishes `aliases` — the GHSA, CVE and OSV names for one
- * advisory, in one list. npm audit gives a single identifier per finding, so
- * without osv-scanner there is frequently nothing for the merge step to join on.
+ * Parse osv-scanner JSON, preserving advisory aliases for cross-scanner merging.
  */
 
 import { fingerprint } from "../fingerprint.js";
@@ -50,14 +45,8 @@ export function parseOsv(
 }
 
 /**
- * Whether the manifest asks for this package by name.
- *
- * The comment below is still right that this source cannot tell. What changed
- * is that it used to defer to a source that knows, and on yarn, pnpm and every
- * non-npm ecosystem no such source runs — so the placeholder became the answer
- * and a declared dependency was described as arriving through another one.
- * `declared` is `package.json` answering the only part of the question it can.
- * Undefined where there is no readable manifest, which is the old behaviour.
+ * Use manifest declarations for directness because this scanner does not
+ * report it. Without a readable manifest, retain the transitive fallback.
  */
 function isTransitive(
   packageName: string,
@@ -108,10 +97,7 @@ function findingsForPackage(
       vulnerableRange: rangeOf(vuln, packageName, installedVersion),
       advisoryId,
       aliases,
-      // osv-scanner reports what it finds in the lockfile without saying
-      // whether the manifest asks for it directly. Claiming to know would be
-      // worse than deferring to a source that does — see isTransitive for what
-      // happens when no such source runs.
+      // Use manifest declarations because osv-scanner omits directness.
       transitive: isTransitive(normalizeText(packageName), declared),
       fixAvailable: fixed !== undefined,
       sources: toolVersion === undefined

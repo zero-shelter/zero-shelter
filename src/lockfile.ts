@@ -1,14 +1,7 @@
 /**
- * What the tree actually holds, and who asked for it.
- *
- * `npm audit` says a package is direct when its name appears in
- * `package.json`. That is a fact about the name, not about the copy an
- * advisory is attached to. A project can depend on `tar@~6.2.1` directly while
- * three other packages pin their own `tar@^6`, and then `npm i tar@7` moves the
- * top-level entry and leaves every vulnerable copy where it was.
- *
- * Reading the lockfile is the only way to tell the two apart, so this is the
- * one place that does it.
+ * Read installed versions and parent dependency ranges from npm lockfiles.
+ * A direct dependency name does not establish that an upgrade reaches every
+ * vulnerable copy; parent ranges can retain older versions.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -28,19 +21,13 @@ export interface InstalledVersions {
   /** Package name to the ranges other packages require, never the project's own. */
   readonly required: ReadonlyMap<string, readonly Requirement[]>;
   /**
-   * Whether a package reaches production, from the lockfile's own `dev` flag.
-   *
-   * A high in a test runner and a high in something serving requests are not
-   * the same news, and until this existed they scored identically and sat next
-   * to each other. This is a label, not a weight — see `scopeOf`.
+   * Production/development scope from the lockfile dev flag. Display context
+   * only; it does not change ranking.
    */
   readonly scopes: ReadonlyMap<string, Scope>;
   /**
-   * Packages that run a script on install.
-   *
-   * Not an advisory and not a finding: no CVE exists for "this package runs
-   * code". It is the one part of a dependency tree where a compromise needs no
-   * vulnerability at all, and it is knowable from a field we already walk past.
+   * Packages marked as running an install script. This metadata is separate
+   * from vulnerability findings.
    */
   readonly installScripts: ReadonlySet<string>;
 }
@@ -78,16 +65,12 @@ export function readInstalledVersions(cwd: string): InstalledVersions | undefine
   try {
     parsed = JSON.parse(readFileSync(path, "utf8"));
   } catch {
-    // ponytail: a lockfile we cannot parse is the same as no lockfile here —
-    // we lose precision in the advice, not correctness of the findings.
+    // Without readable lockfile metadata, callers use name-level upgrade advice.
     return undefined;
   }
 
   const packages = (parsed as { packages?: Record<string, LockEntry> }).packages;
-  // `undefined` was guarded and `null` was not, so a lockfile with an explicit
-  // null crashed Object.entries and put a raw stack trace in front of the
-  // reader. Anything that is not a plain object is the same situation as no
-  // lockfile: less precision in the advice, not a broken run.
+  // Reject non-object package maps, including null, without throwing.
   if (typeof packages !== "object" || packages === null || Array.isArray(packages)) {
     return undefined;
   }
@@ -139,11 +122,7 @@ export function fromPackages(packages: Record<string, LockEntry>): InstalledVers
 }
 
 /**
- * Where this package runs, or `unknown` when there is no lockfile to ask.
- *
- * `unknown` is deliberately not collapsed into `prod`. Guessing the more
- * alarming answer is still guessing, and a reader who sees it should know we
- * did not look rather than believe we did.
+ * Package scope, or unknown without lockfile metadata.
  */
 export function scopeOf(
   packageName: string,

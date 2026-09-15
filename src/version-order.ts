@@ -1,19 +1,7 @@
 /**
- * Ordering published version strings.
- *
- * Shared because two places need the same answer and a second implementation
- * is a second chance to get it backwards: string order puts 4.17.21 above
- * 4.18.1, which points people at an older release than the one they need.
- *
- * ponytail: still not a semver implementation, and the line has moved once.
- * It orders release numbers and prerelease identifiers — the two things that
- * decide which published fix is highest — and knows nothing about ranges.
- * Reach for a real semver parser if ranges ever need solving here;
- * `src/version-range.ts` is where that question already lives.
- *
- * The prerelease rules are semver.org §11 rather than ours. Inventing an
- * ordering for `rc.2` against `rc.1` would be a second opinion about strings
- * the ecosystem already agrees on.
+ * Compare release numbers and prerelease identifiers to choose a fixed
+ * version. String ordering would place 4.17.21 above 4.18.1. Prerelease
+ * precedence follows semver.org §11; range containment lives in version-range.ts.
  */
 
 export function isHigher(candidate: string, current: string): boolean {

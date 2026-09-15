@@ -1,8 +1,6 @@
 /**
- * The report is one static file someone opens, so the failures worth guarding
- * are the ones a browser will not tell you about: a package name that escapes
- * into markup, a page that only works with JavaScript, a clock that makes two
- * identical judgements produce two different files.
+ * Check self-contained rendering, escaping, localization and deterministic
+ * HTML output.
  */
 
 import { readFileSync } from "node:fs";
@@ -30,7 +28,7 @@ describe("the html report", () => {
     expect(page).not.toMatch(/<script[^>]+src=/);
   });
 
-  it("leads with the command rather than the diagnosis", () => {
+  it("places commands before finding details", () => {
     const actionIndex = page.indexOf("npm i ");
     const ledgerIndex = page.indexOf('class="ledger"');
 
@@ -72,10 +70,10 @@ describe("the html report", () => {
     const korean = renderHtml(result, { language: "ko" });
 
     expect(korean).toContain('<html lang="ko">');
-    expect(korean).toContain("이걸 실행하세요");
+    expect(korean).toContain("명령 실행");
     // Identifiers stay as the scanners wrote them; only the chrome translates.
     expect(korean).toContain(result.fixNow[0]!.finding.advisoryId);
-    expect(korean).not.toContain("Run this");
+    expect(korean).not.toContain("Run commands");
   });
 
   it("translates score reasons and weights with the rest of the Korean ledger", () => {
@@ -130,7 +128,7 @@ describe("the html report", () => {
     const accepted = judge(findings, { baseline: baselineFrom(result.fixNow) });
     const rendered = renderHtml(accepted, { language: "en" });
 
-    expect(rendered).toContain("Nothing new to fix.");
+    expect(rendered).toContain("No new findings.");
     expect(rendered).not.toContain("npm i ");
     // No celebration, no empty table headers.
     expect(rendered).not.toContain('class="ledger"');
@@ -145,7 +143,7 @@ describe("the html report", () => {
     expect(renderHtml(nothing, { language: "en" })).toContain("this is not a pass");
   });
 
-  it("carries the weights so the ranking can be argued with", () => {
+  it("includes the ranking weights", () => {
     expect(page).toContain("severity: critical");
     expect(page).toContain("direct dependency");
   });
@@ -194,7 +192,7 @@ describe("finding the action", () => {
   it("offers prompts that end by re-judging", () => {
     // An agent told only to upgrade reports the upgrade. One told to re-judge
     // reports what the tool says, which is the only claim worth making.
-    expect(page).toContain("Or hand it to an agent");
+    expect(page).toContain("Ask an agent");
     expect(page).toContain("npx zero-shelter judge` again");
     expect(page).toContain("Do not run --update-baseline");
     expect(page).toContain("do not report success from npm audit");
@@ -208,7 +206,7 @@ describe("finding the action", () => {
     expect(commands).toBeGreaterThan(0);
   });
 
-  it("says what the numbers mean without shouting it", () => {
+  it("provides an expandable glossary", () => {
     // Folded away: a first reader needs it, a fiftieth reader does not.
     expect(page).toContain("What the numbers mean");
     expect(page).toContain("Not the same as fixed");
@@ -226,7 +224,7 @@ describe("finding the action", () => {
       language: "en",
     });
 
-    expect(unfixable).toContain("no published fix");
+    expect(unfixable).toContain("No fix version was reported for:");
     expect(unfixable).toContain("say plainly when you cannot tell");
   });
 });

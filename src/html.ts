@@ -1,15 +1,6 @@
 /**
- * The judgement as a page someone opens.
- *
- * A record, not a dashboard: the reader is mid-task, has a browser tab open
- * between an editor and a terminal, and wants the next action in seconds with
- * the evidence within reach. Donut charts and composite risk scores would be
- * inventions of this layer, and inventing here would undo the one thing the
- * tool sells — that its judgement can be checked.
- *
- * Constraints that shape the code: one file, no network, no build step, and
- * byte-identical output for the same judgement. That last one is why there is
- * no clock unless a caller passes one in.
+ * Render a self-contained HTML report with inline styles and optional copy
+ * controls. No network requests, runtime dependencies, or clock reads.
  */
 
 import {
@@ -33,8 +24,7 @@ import type { Change } from "./history.js";
 export interface HtmlOptions {
   readonly language: Language;
   /**
-   * Recorded runs, oldest first. Absent when nothing was recorded — an empty
-   * chart of one data point is a decoration, not information.
+   * Recorded runs, oldest first. Displayed when at least two runs are available.
    */
   readonly history?: readonly Change[];
   /** Printed verbatim in the footer. Omitted entirely when absent. */
@@ -67,25 +57,26 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   const manager = result.packageManager ?? "npm";
   const actions = upgradeActions(outstanding, result.installed, manager);
   const indirect = transitiveFixes(outstanding, result.installed);
-  // `clears N` rests on reading dependents' ranges out of package-lock.json.
-  // There is no reader for pnpm-lock.yaml or yarn.lock, so on those managers
-  // the count and the sentence that promises it must both stay quiet — see
-  // the terminal and the agent hook, which already follow this rule.
+  // Only npm lockfiles support verified counts; hide both counts and any
+  // count-related instructions for other managers.
   const promises = canPromiseClears(manager);
 
   const body = [
-    header(result, options, t),
-    // "The caller must show this" is written above the field in baseline.ts,
-    // and this caller was not showing it. A stale baseline suppresses nothing,
-    // so the page listed every finding as new with no hint that the ratchet
-    // had not run — which reads as a regression nobody caused.
+    header(options, t),
+    scannerStatus(result, t),
+    // Keep stale-baseline warnings visible before the summary.
     result.applied.warning === undefined
       ? ""
       : `<section class="warning"><p>${escape(result.applied.warning)}</p></section>`,
     result.skipped.length > 0 ? notes(result.skipped) : "",
+    result.applied.noLongerReported.length > 0 && result.applied.missingSources.length > 0
+      ? `<p class="caveat">${escape(t.resolvedDoubt(result.applied.missingSources.join(", ")))}</p>`
+      : "",
+    summary(result, t),
     outstanding.length === 0
       ? verdict(result, t)
       : [
+          '<div class="action-paths">',
           actionBlock(actions, result.workspaceRoot === true, t, promises, manager),
           promptBlock(
             actions,
@@ -101,6 +92,7 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
             t,
             manager,
           ),
+          "</div>",
           indirect.length > 0 ? transitiveBlock(indirect, t, manager) : "",
           ledger(result, t),
         ].join("\n"),
@@ -136,7 +128,33 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   ].join("\n");
 }
 
-function header(result: JudgeResult, options: HtmlOptions, t: ReturnType<typeof messagesFor>): string {
+function header(options: HtmlOptions, t: ReturnType<typeof messagesFor>): string {
+  return [
+    '<header class="top">',
+    '<div class="titles">',
+    `<h1>${escape(t.heading)}</h1>`,
+    `<p class="sub">${escape(t.subheading)}</p>`,
+    "</div>",
+    `<label class="theme" for="dark"><span class="dot"></span>${escape(t.themeLabel)}</label>`,
+    "</header>",
+    options.stamp === undefined ? "" : `<p class="stamp">${escape(options.stamp)}</p>`,
+  ].filter((line) => line !== "").join("\n");
+}
+
+function scannerStatus(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
+  // Older callers may omit run metadata. Findings can name contributors, but
+  // an empty finding list alone cannot establish whether a scanner ran.
+  const sources = result.sources ?? [...new Set(
+    [...result.applied.fresh, ...result.applied.suppressed]
+      .flatMap((entry) => entry.finding.tools),
+  )];
+  const status = sources.length > 0
+    ? `${escape(t.sourcesUsed)}: ${sources.map(escape).join(", ")}`
+    : escape(result.sources === undefined ? t.sourcesUnknown : t.sourcesNone);
+  return `<p class="scanner-status">${status}</p>`;
+}
+
+function summary(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
   const { raw, merged, applied, fixNow } = result;
   const counts = [
     stat(String(raw), t.summaryReported),
@@ -146,24 +164,8 @@ function header(result: JudgeResult, options: HtmlOptions, t: ReturnType<typeof 
       ? stat(String(applied.suppressed.length), t.summaryAccepted)
       : "",
     fixNow.length < applied.fresh.length ? stat(String(fixNow.length), t.summaryShown) : "",
-  ]
-    .filter((cell) => cell !== "")
-    .join("");
-
-  return [
-    '<header class="top">',
-    '<div class="titles">',
-    `<h1>${escape(t.heading)}</h1>`,
-    `<p class="sub">${escape(t.subheading)}</p>`,
-    "</div>",
-    `<label class="theme" for="dark"><span class="dot"></span>${escape(t.themeLabel)}</label>`,
-    "</header>",
-    `<div class="counts">${counts}</div>`,
-    glossary(t),
-    options.stamp === undefined ? "" : `<p class="stamp">${escape(options.stamp)}</p>`,
-  ]
-    .filter((line) => line !== "")
-    .join("\n");
+  ].filter((cell) => cell !== "").join("");
+  return `<div class="counts">${counts}</div>\n${glossary(t)}`;
 }
 
 function stat(value: string, label: string, emphasis = false): string {
@@ -184,7 +186,7 @@ function notes(skipped: readonly string[]): string {
 }
 
 function verdict(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
-  const scanned = result.raw > 0 || result.applied.suppressed.length > 0;
+  const scanned = (result.sources?.length ?? 0) > 0 || result.raw > 0 || result.applied.suppressed.length > 0;
   return `<p class="verdict">${escape(scanned ? t.nothingOutstanding : t.nothingScanned)}</p>`;
 }
 
@@ -201,9 +203,7 @@ function actionBlock(
 
   const rows = actions.map(
     (action, index) =>
-      // Only the first row is filled. Six identical filled bars is a card grid
-      // wearing a different hat, and it puts the accent well past the tenth of
-      // the surface a restrained palette allows.
+      // Emphasize the first command in the existing ordered list.
       `<li class="command${index === 0 ? " command--lead" : ""}">` +
       `<code>${escape(action.command)}</code>` +
       (promises && action.clears > 1
@@ -226,11 +226,7 @@ function actionBlock(
 }
 
 /**
- * Prompts, because the next step is often "ask the agent to do it".
- *
- * Each one ends by re-judging. An agent told only to upgrade will report the
- * upgrade; one told to re-judge reports what the tool says, which is the only
- * claim worth making.
+ * Limit package names per prompt and report the number omitted.
  */
 const UNFIXABLE_NAMED = 8;
 
@@ -262,9 +258,7 @@ function promptBlock(
     );
   }
   if (unfixable.length > 0) {
-    // Naming forty packages in one prompt helps nobody, but pretending there
-    // were only eight is the silent truncation this project objects to
-    // everywhere else.
+    // Limit prompt length and disclose how many package names were omitted.
     const named = unfixable.slice(0, UNFIXABLE_NAMED);
     const hidden = unfixable.length - named.length;
     prompts.push(
@@ -293,10 +287,7 @@ function promptBlock(
 }
 
 /**
- * A glossary, folded away.
- *
- * Someone reading their first report does not know what "after merge" means,
- * and someone reading their fiftieth does not want to be told again.
+ * Optional definitions of report terms.
  */
 function glossary(t: ReturnType<typeof messagesFor>): string {
   const rows = t.glossaryTerms.map(
@@ -318,9 +309,7 @@ function transitiveBlock(
   manager: PackageManager,
 ): string {
   const total = indirect.reduce((sum, entry) => sum + entry.clears, 0);
-  // Written in this project's own syntax. A pnpm user pasting a top-level
-  // "overrides" key gets no error and no effect, which reads as the tool
-  // having lied rather than as a mistake they can see.
+  // Render override syntax for the detected package manager.
   const block = overrideBlock(
     manager,
     indirect.map((entry) => [entry.packageName, entry.upgradeTo] as const),
@@ -437,10 +426,7 @@ function duplicateName(
 }
 
 /**
- * The weights table, in the page rather than behind a flag.
- *
- * The ranking is only arguable if the numbers behind it are visible, and a
- * reader who disagrees should be able to point at a row.
+ * Expose the ranking weights in an expandable table.
  */
 function weights(t: ReturnType<typeof messagesFor>): string {
   const rows = [
@@ -471,7 +457,7 @@ function weights(t: ReturnType<typeof messagesFor>): string {
 
 function closing(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
   const parts: string[] = [];
-  const { suppressed, noLongerReported, missingSources } = result.applied;
+  const { suppressed, noLongerReported } = result.applied;
 
   if (suppressed.length > 0) {
     parts.push(
@@ -484,9 +470,6 @@ function closing(result: JudgeResult, t: ReturnType<typeof messagesFor>): string
       '<section class="quiet-block">' +
         `<h2>${escape(t.resolved)}</h2>` +
         `<p>${escape(t.resolvedBody(noLongerReported.length))}</p>` +
-        (missingSources.length > 0
-          ? `<p class="caveat">${escape(t.resolvedDoubt(missingSources.join(", ")))}</p>`
-          : "") +
         "</section>",
     );
   }
@@ -495,18 +478,13 @@ function closing(result: JudgeResult, t: ReturnType<typeof messagesFor>): string
 }
 
 /**
- * The recorded runs, as a row per run.
- *
- * Bars rather than a line chart: the question is "is this going up or down",
- * and a bar someone can read the number off answers it without a drawing that
- * implies precision we do not have between two points.
+ * Show each recorded run with its outstanding count and changes.
  */
 const RUNS_SHOWN = 12;
 
 function historyBlock(history: readonly Change[], t: ReturnType<typeof messagesFor>): string {
   const recent = history.slice(-RUNS_SHOWN);
-  // Truncating without saying so is the thing this project keeps objecting to
-  // in other people's reports.
+  // Disclose the number of recorded runs outside the displayed window.
   const hidden = history.length - recent.length;
   const peak = Math.max(...recent.map((change) => change.entry.outstanding.length), 1);
 
@@ -556,11 +534,7 @@ function footer(options: HtmlOptions, t: ReturnType<typeof messagesFor>): string
 }
 
 /**
- * Escaping everything that reaches the page.
- *
- * Package names, advisory titles and tool output are written by other people.
- * A report that renders them raw is a security tool with a cross-site
- * scripting hole in its own output.
+ * Escape untrusted scanner strings in both HTML text and attributes.
  */
 function escape(value: string): string {
   return value
@@ -628,6 +602,7 @@ body:has(#dark:checked) {
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+::selection { background: var(--accent-soft); color: var(--ink); }
 body {
   margin: 0;
   background: var(--paper);
@@ -650,7 +625,7 @@ code, pre, .num, .count-value { font-family: ui-monospace, SFMono-Regular, "SF M
 .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
 h1 { margin: 0; font-size: 30px; font-weight: 620; letter-spacing: -0.015em; }
 .sub { margin: 6px 0 0; color: var(--ink-soft); max-width: 62ch; }
-h2 { font-size: 13px; font-weight: 640; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px; }
+h2 { font-size: 16px; font-weight: 640; color: var(--ink); margin: 0 0 10px; }
 
 .theme {
   display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
@@ -669,7 +644,8 @@ body:has(#dark:checked) .theme .dot { background: var(--accent); }
 .count--lead .count-value { font-size: 34px; font-weight: 620; color: var(--ink); letter-spacing: -0.02em; }
 .count-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
 
-.warning { border-inline-start: 3px solid var(--accent); padding-inline-start: 14px; margin: 20px 0 0; }
+.warning { border: 1px solid var(--accent); padding: 12px 14px; margin: 20px 0 0; }
+.scanner-status { color: var(--ink-soft); font-size: 13px; margin: 20px 0 0; }
 .warning p { margin: 0; color: var(--ink); font-size: 14px; }
 .notes { margin: 18px 0 0; padding: 0; list-style: none; }
 .notes li { color: var(--ink-soft); font-size: 13px; padding-inline-start: 16px; position: relative; margin-block: 5px; }
@@ -685,18 +661,21 @@ body:has(#dark:checked) .theme .dot { background: var(--accent); }
 .term dd { margin: 0; color: var(--ink-soft); }
 @media (max-width: 700px) { .term { grid-template-columns: 1fr; gap: 2px; } }
 
-.prompts { margin-top: 34px; max-width: 82ch; }
+.action-paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 34px; }
+.action-paths > section { min-width: 0; }
+@media (max-width: 760px) { .action-paths { grid-template-columns: 1fr; gap: 28px; } }
+.prompts { max-width: 82ch; }
 .prompt-list { list-style: none; margin: 0; padding: 0; }
-.prompt { display: flex; align-items: flex-start; gap: 18px; padding: 13px 0; border-bottom: 1px solid var(--rule); }
-.prompt p { margin: 0; flex: 1; max-width: 68ch; font-size: 13.5px; color: var(--ink); }
+.prompt { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--rule); }
+.prompt p { margin: 0; flex: 1 1 240px; overflow-wrap: anywhere; max-width: 68ch; font-size: 13.5px; color: var(--ink); }
 .prompt .copy { flex: none; margin-top: 1px; }
 
-.act { margin-top: 42px; }
+.act { min-width: 0; }
 .commands { list-style: none; margin: 0; padding: 0; }
 .command { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; padding: 11px 16px 11px 0; border-bottom: 1px solid var(--rule); }
-.command code { font-size: 16px; color: var(--ink); }
+.command code { font-size: 14px; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
 .command--lead { padding-inline: 16px; background: var(--accent-soft); border-bottom-color: transparent; margin-bottom: 4px; }
-.command--lead code { font-size: 19px; font-weight: 560; letter-spacing: -0.01em; }
+.command--lead code { font-size: 15px; font-weight: 560; letter-spacing: -0.01em; }
 .clears { font-size: 12px; color: var(--ink-soft); }
 .command--lead .clears { color: var(--accent); font-weight: 560; }
 .copy {
@@ -732,11 +711,10 @@ body:has(#dark:checked) .theme .dot { background: var(--accent); }
 .meter { display: inline-flex; gap: 2px; }
 .meter i { display: inline-block; width: 6px; height: 13px; background: var(--rule-strong); }
 .meter i.on { background: var(--mark); }
-/* Rank is already carried by how many blocks are filled. Colour marks one
-   thing only: the row that is worst. Tinting high as well turned the whole
-   column amber, which is both alarm design and far past a restrained palette. */
+/* Filled blocks and the severity label retain rank without color. */
 .sev--critical .meter i.on { background: var(--accent); }
 .c-pkg code { font-size: 14px; }
+.row > summary > span, .reasons li { min-width: 0; overflow-wrap: anywhere; }
 .c-pkg.repeat code { color: var(--ink-faint); }
 .tag { display: block; font-size: 11px; color: var(--ink-faint); margin-top: 3px; }
 .c-adv code { font-size: 12px; color: var(--ink-soft); }
@@ -749,7 +727,9 @@ body:has(#dark:checked) .theme .dot { background: var(--accent); }
 @media (max-width: 900px) {
   .headrow { display: none; }
   .row > summary { grid-template-columns: 92px minmax(0, 1fr) 56px; row-gap: 6px; }
-  .c-fix, .c-src { grid-column: 2 / -1; }
+  .c-pkg { grid-column: 2; grid-row: 1; }
+  .c-adv, .c-fix, .c-src { grid-column: 2 / -1; }
+  .c-num { grid-column: 3; grid-row: 1; }
   .row .reasons { padding-inline-start: 0; }
 }
 
@@ -757,7 +737,7 @@ details summary { cursor: pointer; font-size: 12px; color: var(--ink-faint); pad
 details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 details[open] summary { color: var(--ink-soft); }
 .reasons, .weights ul { list-style: none; margin: 8px 0 12px; padding: 0; font-size: 13px; }
-.reasons li, .weights li { display: flex; gap: 12px; padding: 2px 0; color: var(--ink-soft); }
+.reasons li, .weights li { display: flex; flex-wrap: wrap; gap: 12px; padding: 2px 0; color: var(--ink-soft); }
 .reasons .num, .weights .num { min-width: 34px; text-align: end; color: var(--ink); }
 .weights { margin-top: 18px; }
 
@@ -783,12 +763,8 @@ details[open] summary { color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 `.trim();
 
-// Progressive: every command is selectable text without this, and the button
-// simply does nothing if clipboard access is refused.
-// This page is usually opened from disk, where the clipboard API is refused or
-// missing depending on the browser. A button that silently does nothing is
-// worse than no button, so there is a fallback, and when even that fails the
-// text gets selected so ctrl-C still works.
+// Copy from local files using the clipboard API, then execCommand, then
+// text selection. Commands remain selectable with JavaScript disabled.
 const SCRIPT = `<script>
 document.querySelectorAll(".copy").forEach(function (button) {
   button.addEventListener("click", function () {
@@ -812,7 +788,7 @@ document.querySelectorAll(".copy").forEach(function (button) {
       document.body.removeChild(field);
       if (copied) { done(); return; }
 
-      var source = button.previousElementSibling || button.parentElement;
+      var source = button.parentElement.querySelector("code, p") || button.parentElement;
       var range = document.createRange();
       range.selectNodeContents(source);
       var selection = window.getSelection();

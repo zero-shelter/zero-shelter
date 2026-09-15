@@ -1,9 +1,6 @@
 /**
- * The pipeline, with no I/O of its own.
- *
- * Keeping this pure is what lets the tests drive the whole path from fixtures
- * without spawning scanners, which is the difference between covering the
- * judgement and covering the subprocess plumbing.
+ * Pure merge, ranking and baseline pipeline. Callers provide scanner results
+ * and run metadata; tests can exercise it without subprocesses.
  */
 
 import { type Baseline, applyBaseline } from "./baseline.js";
@@ -11,6 +8,7 @@ import { mergeFindings } from "./merge.js";
 import type { ScaFinding } from "./finding.js";
 import type { JudgeResult } from "./report.js";
 import { rank } from "./triage.js";
+import type { UnscannedScope } from "./scope.js";
 
 export interface JudgeOptions {
   readonly baseline: Baseline;
@@ -23,17 +21,16 @@ export interface JudgeOptions {
   /** Cap on how many findings the report asks anyone to act on at once. */
   readonly top?: number;
   /**
-   * Today, as an ISO date, for deciding whether an acceptance has expired.
-   *
-   * Supplied by the caller so that judging never reads a clock. Omit it and
-   * nothing expires, which is the safe direction: an acceptance that quietly
-   * stops expiring is worse than one that never did.
+   * Caller-supplied ISO date for expiry comparisons. When omitted, no
+   * acceptance expires; judgement never reads a clock.
    */
   readonly today?: string;
   /** How this project spells a remedy. Read off whichever lockfile is present. */
   readonly packageManager?: PackageManager;
   /** Versions the lockfile holds, when there is one to read. */
   readonly installed?: InstalledVersions;
+  /** Local artifacts this dependency-only judgement leaves unread. */
+  readonly unscanned?: UnscannedScope;
 }
 
 import type { InstalledVersions } from "./lockfile.js";
@@ -61,5 +58,6 @@ export function judge(
     ...(options.sources === undefined ? {} : { sources: options.sources }),
     ...(options.packageManager === undefined ? {} : { packageManager: options.packageManager }),
     ...(options.today === undefined ? {} : { today: options.today }),
+    ...(options.unscanned === undefined ? {} : { unscanned: options.unscanned }),
   };
 }

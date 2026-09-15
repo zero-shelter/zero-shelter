@@ -1,11 +1,5 @@
 /**
- * What the tool says when the person running it makes an ordinary mistake.
- *
- * These are the paths nobody writes tests for and everybody hits: the wrong
- * file passed to --input, an --output path that cannot be written. Both used
- * to answer with something less useful than the situation deserved — one with
- * "unrecognised report" about this tool's own output format, the other with a
- * Node stack trace.
+ * Check actionable errors for unsupported input and unwritable output.
  */
 
 import { mkdtemp, writeFile } from "node:fs/promises";

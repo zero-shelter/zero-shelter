@@ -17,6 +17,7 @@ flowchart TD
     subgraph entry["Entry — the only place with side effects"]
         bin["bin.ts<br/>14 lines"]
         cli["cli.ts<br/>argv, files, exit code"]
+        scope["scope.ts<br/>local boundary signals"]
     end
 
     subgraph acq["Acquisition — subprocesses"]
@@ -53,6 +54,7 @@ flowchart TD
     end
 
     bin --> cli
+    cli --> scope
     cli --> scan
     scan --> npma
     scan --> osv
@@ -74,8 +76,9 @@ flowchart TD
 ```
 
 **Project I/O and subprocesses stay at the boundary.** `cli.ts` owns files,
-stdin, stdout, and exit codes; `scan.ts` owns scanner subprocesses; and
-`version.ts` reads only the installed package metadata. The judgement,
+stdin, stdout, and exit codes; `scan.ts` owns scanner subprocesses; `scope.ts`
+reads only shallow local artifact names; and `version.ts` reads only the
+installed package metadata. The judgement,
 normalization, history model, and presentation modules remain data-to-data
 functions. That is not architectural taste — it is what lets the tests drive
 the judgement path from fixtures without ever spawning a scanner, so a test
@@ -105,6 +108,7 @@ sequenceDiagram
     cli->>cli: parseArgs
     cli->>base: read .zero-shelter/baseline.json
     note over cli,base: missing is a normal first run;<br/>malformed is a hard error
+    cli->>cli: unscannedScope(cwd)
 
     cli->>scan: collect({ cwd })
     scan->>scan: npm audit --json
@@ -196,6 +200,7 @@ to change the history   → src/history.ts, src/cli.ts
 to add a command        → src/cli.ts
 to change remediation dialect → src/package-manager.ts, src/actions.ts,
                               src/report.ts, src/hook.ts
+to disclose the dependency boundary → src/scope.ts, src/cli.ts, src/report.ts
 
 Two callers build a judgement: `judge` and `hook`, and they assemble the
 options separately. Every field added to `JudgeOptions` has to be wired into

@@ -1,16 +1,6 @@
 /**
- * A key nobody reads is worth saying out loud.
- *
- * #161 closed the door where an acceptance's expiry *value* cannot be compared
- * — `9999-99-99` sorted above every real date and stayed accepted forever while
- * the file looked like it had a deadline on it. The door where the *key* is
- * misspelled was still open, and it costs the same thing: `expiress` parses,
- * validates, sorts, diffs and does nothing.
- *
- * It is a warning rather than a refusal on purpose. `docs/STABILITY.md` says
- * the baseline format is not frozen and that `judge` reads whatever version it
- * finds, so an unknown key is also what a newer zero-shelter's file looks like
- * to an older one. See #192.
+ * Warn on ignored acceptance keys such as misspelled expires without
+ * rejecting forward-compatible baseline files. See #192.
  */
 import { describe, expect, it } from "vitest";
 

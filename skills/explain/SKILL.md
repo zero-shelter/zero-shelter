@@ -27,6 +27,7 @@ means the tool could not judge, even if an output appears empty.
 | `workspaceRoot` | Advice was produced at a workspace root. Determine the intended workspace and its manager option before executing. |
 | `transitiveFixes` | Advice for dependencies brought in by another package. Review the manager-specific forced-version action and parent compatibility. |
 | `noLongerReported` | Accepted findings not reported in this run. |
+| `unscanned` | Scope checks that did not scan or judge non-dependency artifacts, plus whether those checks completed. |
 | `missingSources` | Baseline sources that did not contribute to this run; these limit comparison. |
 | `skipped` | Scanner inputs that could not contribute, with reasons. |
 

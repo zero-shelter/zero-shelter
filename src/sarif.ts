@@ -1,15 +1,5 @@
 /**
- * SARIF 2.1.0 output.
- *
- * This is how the judgement reaches somewhere people already look. Uploading
- * the file to GitHub code scanning puts the short list in the Security tab and
- * annotates the pull request, which is where the ratchet was always meant to
- * be read.
- *
- * There is an irony worth naming: this project exists because SARIF from
- * different tools cannot be reconciled by the tools that consume it. Emitting
- * SARIF is not a contradiction — it means downstream receives one already-
- * judged run instead of four raw ones to fail at merging.
+ * Render one judged run as SARIF 2.1.0 for code-scanning consumers.
  */
 
 import type { JudgeResult } from "./report.js";
@@ -72,11 +62,7 @@ export function renderSarif(result: JudgeResult): string {
             merged: result.merged,
             accepted: result.applied.suppressed.length,
             skipped: result.skipped,
-            // `--top` is a display limit, and a consumer uploading this has no
-            // other way to tell three alerts from three-of-eighty-two. Silent
-            // truncation is the thing this project objects to everywhere else;
-            // a Security tab that looks complete and is not is the worst place
-            // for it.
+            // Expose the display limit so consumers can distinguish a subset from all findings.
             outstanding: result.applied.fresh.length,
             truncated: result.fixNow.length < result.applied.fresh.length,
             // A stale baseline suppressed nothing, so every finding here is
@@ -125,9 +111,7 @@ function toResult(
   manager: PackageManager,
 ) {
   const { finding } = entry;
-  // Carried into the alert text on purpose. Someone reading this in a Security
-  // tab is one click from a page of prose about the advisory and nowhere near
-  // the one line that resolves it.
+  // Include remediation guidance in alert text.
   const remedy = remedyFor(entry, installed, manager);
   const toolVersions = toolVersionsOf(finding);
 
@@ -151,12 +135,8 @@ function toResult(
         },
       },
     ],
-    // GitHub uses these to decide whether an alert is the same one it saw
-    // before. Ours is stable across machines, and across runs that used the
-    // same set of scanners — it is derived after merge, and merge output
-    // depends on who contributed. Change the set and the alert history breaks:
-    // measured on one capture, 73 fingerprints with one source and 82 with two,
-    // sharing 3. See issue #86.
+    // SARIF fingerprints are stable for the same scanner set. Different alias
+    // sets after merging can change them; see #86.
     partialFingerprints: { zeroShelter: finding.fingerprint },
     properties: {
       score: entry.score,
@@ -196,12 +176,8 @@ function toolVersionsOf(finding: MergedFinding): { tool: string; version: string
 }
 
 /**
- * What to do about one finding, in a sentence.
- *
- * Not emitted as a SARIF `fixes` entry: that requires an artifactChange with
- * the exact replacement text, and we would be guessing at how the version is
- * written in a manifest we have not parsed. A wrong patch offered as a fix is
- * worse than a sentence that is right.
+ * Describe a reported remedy. Do not emit SARIF fixes without an exact
+ * manifest artifactChange.
  */
 function remedyFor(
   entry: RankedFinding,
@@ -211,10 +187,7 @@ function remedyFor(
   const { finding } = entry;
   if (finding.fixedIn === undefined) return undefined;
 
-  // Direct and unreachable reads the same way here as transitive does: an
-  // `npm i` that other packages will not follow leaves the alert open, and a
-  // Security tab is the last place to send someone after a command that does
-  // nothing.
+  // Use the override path when parent ranges block a direct upgrade.
   if (finding.transitive || !reachesEveryCopy(finding.packageName, finding.fixedIn, installed)) {
     return (
       `arrives through another dependency; package.json ` +

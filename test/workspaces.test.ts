@@ -1,11 +1,6 @@
 /**
- * In a workspace, `npm i x@1` run at the root adds a root dependency and
- * leaves the package that declares the vulnerable range declaring it.
- *
- * We cannot say which workspace to fix: npm hoists, so every finding comes
- * back as `node_modules/x` regardless of which package asked for it. The
- * report says the command needs a `-w` instead of guessing — a command that is
- * quietly wrong is worse than one that says what it is missing.
+ * Root upgrade advice must identify the workspace requirement. Hoisted
+ * scanner paths alone do not identify which workspace declares the dependency.
  */
 
 import { mkdtemp, writeFile } from "node:fs/promises";

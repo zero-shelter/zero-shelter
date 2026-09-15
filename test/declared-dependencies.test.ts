@@ -1,15 +1,6 @@
 /**
- * A package the project asked for by name is a direct dependency.
- *
- * `osv-scanner` and pnpm's older report shape both decline to say whether a
- * finding is direct, and both decline to a source that knows. On yarn, on
- * pnpm, and in every ecosystem that is not npm, no such source runs — so the
- * placeholder became the answer, `upgradeActions` withheld every command, and
- * a project with one declared dependency was told to force it with
- * `resolutions`. See #186.
- *
- * Driven through the parsers and one real directory, because the whole point
- * is what happens when the manifest is and is not readable.
+ * Use manifest declarations when a scanner omits directness. Preserve
+ * scanner-supplied directness and the fallback for unreadable manifests. See #186.
  */
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

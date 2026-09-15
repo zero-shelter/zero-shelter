@@ -1,11 +1,6 @@
 /**
- * The docs have fallen behind the tool three times in two days: a test count
- * that drifted twice, a pnpm claim that was only true through --input, and two
- * skills that described a JSON shape the tool had stopped producing.
- *
- * Prose cannot be type-checked, but the surface it describes can be. This
- * checks the one thing that keeps going wrong: a command or flag exists and
- * nothing user-facing mentions it.
+ * Check that user documentation describes supported commands, options,
+ * formats, languages and agent interfaces.
  */
 
 import { readFileSync } from "node:fs";
@@ -87,7 +82,7 @@ describe("the docs describe the tool that exists", () => {
   });
 
   it("keeps every shipped skill described in both READMEs", () => {
-    // A skill nobody is told about is a skill nobody invokes.
+    // Document every shipped skill.
     for (const skill of ["setup", "explain", "fix", "baseline", "ci"]) {
       expect(docs["README.md"], `README.md never mentions ${skill}`).toContain(
         `zero-shelter:${skill}`,
@@ -203,7 +198,7 @@ describe("shipping in more than one language", () => {
     const usage = cli.slice(cli.indexOf("const USAGE"), cli.indexOf("export async function main"));
 
     for (const code of Object.keys(LANGUAGES)) {
-      // A language nobody is told about is a translation nobody can reach.
+      // List every supported report language in help.
       expect(usage, `--lang does not list ${code}`).toMatch(new RegExp(`\\b${code}\\b`));
     }
   });

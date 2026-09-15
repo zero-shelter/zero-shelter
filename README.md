@@ -51,6 +51,14 @@ and exits `1`. It is test data, not a scan of the checkout's dependencies:
 | `1` | New findings need review. |
 | `2` | A judgement could not be produced. Read the error; do not treat this as a pass. |
 
+On a clean run, the report also states the dependency-only boundary using only
+artifacts present in the project. It does not scan or judge those domains: for
+example, secrets are always outside this tool, while Dockerfiles, workflows,
+and infrastructure are mentioned only when the corresponding files exist.
+If an optional scope check cannot complete, JSON sets `unscanned.complete` to
+`false` and the human line says so; `false` or `0` then is not evidence that an
+artifact is absent.
+
 ## Install
 
 Run through `npx`, or install the CLI with `npm i -g zero-shelter`.

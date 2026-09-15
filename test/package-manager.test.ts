@@ -1,11 +1,5 @@
 /**
- * Advice in the wrong dialect does nothing and says nothing.
- *
- * pnpm ignores a top-level `overrides` key outright — no error, no effect. A
- * user pastes what we printed, re-runs, sees the finding still there, and the
- * only available conclusion is that the tool lied. Six of eight measured
- * repositories had no direct commands at all, so for those projects this block
- * is the entire remedy.
+ * Check package-manager detection, install commands and override syntax.
  */
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -59,7 +53,7 @@ describe("what to run", () => {
 });
 
 describe("where a forced version goes", () => {
-  it("nests pnpm's key, which is why a pasted npm block does nothing", () => {
+  it("nests pnpm overrides under pnpm", () => {
     expect(overrideSnippet("pnpm", "tar", "7.5.22")).toBe(
       '"pnpm": { "overrides": { "tar": "7.5.22" } }',
     );

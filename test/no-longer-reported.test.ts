@@ -1,11 +1,6 @@
 /**
- * Closing the loop: someone upgrades a package, re-runs, and finds out whether
- * it worked.
- *
- * The trap this guards against is claiming credit for a disappearance we did
- * not cause. A finding also vanishes when the scanner that found it stopped
- * running, and telling someone their vulnerability is gone when nobody looked
- * for it is the same failure as reporting an unscanned project clean.
+ * Report findings absent on rerun without assuming they were fixed,
+ * including when a previously used scanner did not run.
  */
 
 import { describe, expect, it } from "vitest";

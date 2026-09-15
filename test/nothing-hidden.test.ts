@@ -1,13 +1,5 @@
 /**
- * Two ways a surface can be quietly wrong about its own completeness.
- *
- * A stale baseline suppresses nothing, so every finding is reported as new.
- * `baseline.ts` says "the caller must show this" directly above the field, and
- * one caller was not showing it — the page listed the whole backlog with no
- * hint that the ratchet had not run, which reads as a regression nobody caused.
- *
- * And `--top` is a display limit. A Security tab that shows three alerts out of
- * eighty-two, with nothing in the file saying so, looks complete and is not.
+ * Keep stale-baseline warnings visible and expose SARIF display truncation.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

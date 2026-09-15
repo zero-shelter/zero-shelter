@@ -1,10 +1,6 @@
 /**
- * The single normalization gate.
- *
- * Everything that ends up in a fingerprint MUST pass through here first.
- * If two machines disagree about what a string is, they will disagree about
- * every fingerprint downstream — and a fingerprint that changes across
- * machines silently breaks dedup, baselines, and every number we report.
+ * Normalize fingerprint inputs consistently across hosts. Text, path and
+ * range normalization are explicit so platform differences do not change identity.
  */
 
 /** Strip BOM, normalize to NFC, and collapse CRLF/CR to LF. */
@@ -16,18 +12,9 @@ export function normalizeText(input: string): string {
 }
 
 /**
- * One spelling for a version range.
- *
- * `ingest/osv.ts` builds `< 0.2.4` from OSV's event list; npm writes `<0.2.4`
- * and we take it verbatim. Same range, two strings, one of them ours — and
- * `siblingKey` in merge.ts includes the range, so two findings describing an
- * identical range never matched as suspected duplicates. That is precisely
- * the case `possibleDuplicates` exists for.
- *
- * Syntactic, deliberately. This closes the gap after a comparison operator
- * and nothing else: it does not know that `>=1.0.0 <2.0.0` and `1.0.0 - 2.0.0`
- * describe the same versions, and deciding that needs a resolver we do not
- * have. `src/version-range.ts` is where that question lives.
+ * Remove spaces between comparison operators and versions, preserving spaces
+ * between clauses. This normalizes < 0.2.4 to <0.2.4 for sibling matching.
+ * It does not resolve semantically equivalent ranges.
  */
 export function normalizeRange(input: string): string {
   // The space between two clauses is meaningful and stays. Only the one
@@ -48,8 +35,7 @@ export function normalizePath(input: string): string {
   if (p.startsWith("file://")) p = p.slice("file://".length);
 
   p = p.replace(/\\/g, "/");
-  // ponytail: drive letters only appear on Windows scanner output; a regex
-  // beats pulling in a path library for one case.
+  // Normalize drive-letter prefixes from Windows scanner output.
   p = p.replace(/^[A-Za-z]:\//, "/");
   p = p.replace(/\/{2,}/g, "/");
 

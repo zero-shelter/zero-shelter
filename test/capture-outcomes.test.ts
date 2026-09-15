@@ -1,19 +1,7 @@
 /**
- * Absent, failed and timed out are three different facts.
- *
- * They used to be two messages. A scanner killed at the 120-second bound
- * reported "produced no report", and on Windows any failure without stdout
- * reported "not on PATH" — sending someone to install a tool they already
- * had. The run then proceeded with one source and exited 0. See #152.
- *
- * Driven through `classify` rather than real subprocesses. Two earlier
- * versions of this file used `sh -c` and then scripts run through
- * `process.execPath`, and both passed on macOS and Linux while failing on
- * Windows — because `capture` sets `shell: true` there, which is the whole
- * reason the branch under test exists. A platform-specific branch that can
- * only be tested on that platform is a branch nobody tests.
- *
- * The failure shapes below were measured from `execFile`, not invented.
+ * Distinguish absent commands, timeouts and failures through classify.
+ * The input shapes come from execFile; direct classification covers Windows
+ * behavior without requiring Windows subprocesses. See #152.
  */
 import { describe, expect, it } from "vitest";
 
