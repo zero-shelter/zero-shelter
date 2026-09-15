@@ -1,88 +1,71 @@
 ---
-description: Decide what to accept into the baseline and what to fix, and keep the accepted list honest over time. Use when someone asks about the baseline, wants to silence findings, has a build failing on old findings, or asks what has already been accepted. Korean requests look like 베이스라인 정리해줘, 이건 일단 넘어가자, 예전 취약점 때문에 빌드가 깨져.
+description: Review proposed baseline acceptances and maintain existing decisions with the project owner. Use when someone asks about the baseline, wants to silence findings, has a build failing on old findings, or asks what has already been accepted. Korean requests look like 베이스라인 정리해줘, 이건 일단 넘어가자, 예전 취약점 때문에 빌드가 깨져.
 ---
 
-# The accepted list
+# Review accepted findings
 
-Accepting a finding means it stops being reported. That is a decision about
-risk, and it belongs to whoever owns the project. Your job is to make the
-decision informed, never to make it for them.
+A baseline records the project owner's decision to accept findings. Your role
+is to explain the choices and apply the user's decision.
 
-## When someone wants the noise gone
-
-Show what would be accepted first:
+## Review before accepting
 
 ```bash
-npx --yes zero-shelter judge
+npx --yes zero-shelter judge --json
 ```
 
-Then ask which of these they mean. Two questions separate a reasonable accept
-from a bad one:
+Report current findings, available `upgrades`, `transitiveFixes`, and missing
+source warnings. Offer `/zero-shelter:fix` for supported upgrades. Ask the user
+to assess reachability when it matters; this tool cannot establish it.
 
-- **Is there a published fix?** If `fixedIn` is set and the package is direct,
-  the upgrade is usually cheaper than the conversation about accepting it. Offer
-  `/zero-shelter:fix` before offering the baseline.
-- **Is this reachable here?** Nothing in this tool knows that. If they have
-  looked and it is not reachable, accepting is a defensible call and worth
-  writing down.
-
-Only then:
+Only after the user authorizes acceptance:
 
 ```bash
 npx --yes zero-shelter judge --update-baseline
 ```
 
-It records everything currently outstanding. There is no way to accept one
-finding and leave another, which is deliberate: a per-finding allowlist becomes
-a place where things go to be forgotten.
+This command records the current findings, including all newly outstanding
+ones. It does not provide a per-finding selection flag. Show the complete set
+before the user decides; do not present the command as a single-item acceptance.
 
-## Commit it
+## Store the decision
 
-`.zero-shelter/baseline.json` belongs in the repository. Without it, CI has
-nothing to compare against and reports the whole backlog on every run, which is
-how the check gets switched off.
+Commit `.zero-shelter/baseline.json` if CI should use it. Without a baseline,
+CI compares against an empty accepted set. A baseline is optional; a project
+may choose to keep all findings outstanding.
 
-One accepted finding per line, sorted, each naming its package and advisory —
-so a pull request that changes it shows exactly what was accepted and by whom.
-Say that when someone asks why it is not in `.gitignore`.
+Entries are sorted and identify a package and advisory. Optional `reason`,
+`acceptedBy` and `expires` fields document the decision. Do not infer an author
+or rationale. Git history identifies a commit author; it does not prove who
+accepted a risk when `acceptedBy` is absent.
 
-An entry may also carry `reason`, `acceptedBy` and `expires`, written by hand.
-An expiry brings the finding back into the report on that date, which is what
-keeps an accepted list from being a place things go to be forgotten. Dates are
-`YYYY-MM-DD`; anything else is rejected rather than silently never expiring.
+Expiry dates use `YYYY-MM-DD`. An acceptance expires on that date and the
+finding returns to the outstanding set. A new expiry is a new risk decision.
+Before rewriting, preserve existing metadata and inspect the diff for loss;
+[#247](https://github.com/zero-shelter/zero-shelter/issues/247) tracks metadata
+and expiry loss when an entry matched through advisory aliases is rewritten.
 
-## Keeping it honest
+## Maintain an existing baseline
 
-Two things rot an accepted list.
+After a fix, re-run `judge` and review accepted findings no longer reported.
+Check that every earlier contributing scanner ran. “No longer reported” alone
+does not prove remediation.
 
-**Entries for findings nobody produces any more.** After a fix, a run says how
-many accepted findings are no longer reported. Re-record to drop them:
+Rewriting can remove obsolete entries, but also accepts newly outstanding
+findings. Explain both effects and get the user's decision before running
+`--update-baseline`. Do not renew dates or recreate decision metadata merely
+to clear the report.
 
-```bash
-npx --yes zero-shelter judge --update-baseline
-```
+A schema mismatch means the old baseline cannot be compared as usual.
+Report the warning and review migration or re-recording with the user; it is
+not evidence that all current findings are new regressions.
 
-Do this after fixes land, not before: re-recording while findings are
-outstanding accepts them.
+## CI and reporting
 
-**A baseline written by a different fingerprint recipe.** When the schema
-changes the run says so, and every finding is reported as new until it is
-re-recorded. That warning means the comparison is not possible, not that
-something regressed.
+When CI reports old findings, show them and distinguish proposed fixes from
+possible acceptances. A missing baseline is one possible cause, not proof that
+the project has no security problem.
 
-## What to say, and what not to
-
-- "No longer reported", not "fixed", unless a re-run confirms it and every
-  scanner that contributed before ran again.
-- Never run `--update-baseline` to end a task, to make a build green, or
-  because the list is long. If you find yourself reaching for it to finish
-  something, that is the moment to say the list is long and ask.
-- Never add it to a CI job. A baseline that re-records itself accepts every new
-  finding automatically, which removes the only thing the job does.
-
-## When the build is failing on old findings
-
-That is a project without a baseline, not a project with a problem. Show the
-findings, agree on which to fix now, fix those, and record the rest. The point
-of the ratchet is that tomorrow's build fails on what tomorrow's change
-introduced.
+- Never use `--update-baseline` to finish a task or make a build pass.
+- Never add automatic baseline updates to CI; that would accept new findings.
+- Say “no longer reported” unless a comparable re-run confirms remediation.
+- Keep human acceptance, agent assistance and automated test results distinct.
