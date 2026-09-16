@@ -73,6 +73,20 @@ $ npx zero-shelter judge
 `missingSources`가 같은 조건을 전달합니다. 전부 다시 돌았으면 없는 의심을 지어내지
 않습니다.
 
+## 프로젝트에 필요한 검사 보기
+
+추가할 도구를 고르기 전에 프로젝트의 단서와 `PATH`의 도구를 확인합니다.
+
+```console
+$ npx zero-shelter scanners
+```
+
+이 명령은 파일 이름과 실행 파일 metadata만 읽습니다. scanner를 실행하거나
+소스·secret 내용을 읽거나 git history를 조사하거나 network 요청을 보내지 않습니다.
+출력은 감지한 프로젝트 영역, 사용 가능한 도구, 검토할 도구를 나눠 보여줍니다.
+다른 도구에서 사용하려면 `--format json`을 붙이세요. 도구가 없다는 것은 안내이며
+판정 실패가 아닙니다.
+
 깨끗한 실행에서는 프로젝트에 실제로 있는 artifact만 사용해 의존성 판정의 경계도
 알립니다. 그 영역을 스캔하거나 깨끗하다고 판정하지 않습니다. 예를 들어 secret은
 항상 이 도구 밖에 있고, Dockerfile·workflow·infrastructure는 해당 파일이 있을 때만
@@ -261,6 +275,9 @@ $ npx zero-shelter judge --format html --output report.html
 
 `zero-shelter history [--json] [--last <n>]`은 실행 사이에 나타나거나 사라진
 Finding을 보여줍니다. `judge --record`를 요청한 경우에만 기록됩니다.
+
+`zero-shelter scanners [--cwd <dir>] [--format text|json]`은 scanner를 실행하거나
+무엇이든 설치하지 않고 프로젝트 단서를 조사합니다.
 
 `--explain`은 부여된 점수와 그 근거가 된 가중치 표를 전부 출력합니다. 랭킹을
 **믿는 대신 따질 수 있게** 하려는 것입니다.
