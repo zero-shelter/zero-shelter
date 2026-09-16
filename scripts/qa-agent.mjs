@@ -393,7 +393,7 @@ await check("the plugin manifest points at skills that exist", "5 skills", async
 await check("skill commands are supported by the CLI", "all reachable", async () => {
   const { readdirSync } = await import("node:fs");
   const help = (await cli(ROOT, ["--help"])).stdout;
-  const known = new Set(["judge", "history", "hook", "help", "version"]);
+  const known = new Set(["judge", "history", "hook", "scanners", "help", "version"]);
 
   const seen = new Set();
   for (const skill of readdirSync(join(ROOT, "skills"))) {
