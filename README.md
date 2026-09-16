@@ -72,6 +72,21 @@ contributed, so when one of them is missing this run, the line says which —
 and when JSON is the surface, `missingSources` carries the same qualification.
 When they all ran again, it does not manufacture doubt.
 
+## See what this project needs
+
+Before choosing additional tools, inspect the project signals and the tools on
+your `PATH`:
+
+```console
+$ npx zero-shelter scanners
+```
+
+This command reads filenames and executable metadata only. It does not run a
+scanner, read source or secret contents, inspect git history, or make network
+requests. The output separates detected project domains, available tools, and
+tools to consider. Use `--format json` when another tool will consume the
+inventory. A missing tool is advice, not a failed judgement.
+
 On a clean run, the report also states the dependency-only boundary using only
 artifacts present in the project. It does not scan or judge those domains: for
 example, secrets are always outside this tool, while Dockerfiles, workflows,
@@ -272,6 +287,9 @@ The existing `NO_COLOR` environment variable remains supported.
 
 `zero-shelter history [--json] [--last <n>]` shows the recorded changes between
 runs. Nothing is recorded unless `judge --record` is requested.
+
+`zero-shelter scanners [--cwd <dir>] [--format text|json]` inventories project
+signals without running scanners or installing anything.
 
 `--explain` prints every point awarded and the weights table it came from, so
 the ranking can be argued with rather than trusted.

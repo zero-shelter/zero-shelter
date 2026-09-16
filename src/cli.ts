@@ -35,6 +35,7 @@ import {
 import type { ScaFinding } from "./finding.js";
 import { versionOutput } from "./version.js";
 import { unscannedScope } from "./scope.js";
+import { discoverScanners, renderScannerJson, renderScannerText } from "./scanners.js";
 
 const USAGE = `zero-shelter judge — review dependency scanner findings
 
@@ -67,6 +68,10 @@ Agent integration
   npx zero-shelter hook [--input <file>]
   Print findings as agent context for editors with a prompt hook.
   Errors produce no context and exit 0. See docs/AGENT-HOOK.md.
+
+Scanner setup
+  npx zero-shelter scanners [--cwd <dir>] [--format text|json]
+  Inventory project signals and recommend checks without running a scanner.
 
   --version             print the installed package version
   --help                print this help
@@ -122,6 +127,9 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   const command = positionals[0] ?? "judge";
   if (command === "hook") return await hook(values.cwd, values.baseline, values.input);
+  if (command === "scanners") {
+    return scanners(resolve(values.cwd ?? "."), values.format, values.json === true);
+  }
   if (command === "history") {
     return await history(resolve(values.cwd ?? "."), values.json === true, values.last);
   }
@@ -285,6 +293,30 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   return result.fixNow.length > 0 ? 1 : 0;
+}
+
+/**
+ * `zero-shelter scanners` — inventory project signals without reading content
+ * or running a tool. A bounded, incomplete inventory is still printed before
+ * returning exit 2 so callers can inspect what was found.
+ */
+function scanners(cwd: string, formatFlag: string | undefined, jsonFlag: boolean): number {
+  const format = formatFlag ?? (jsonFlag ? "json" : "text");
+  if (format !== "text" && format !== "json") {
+    process.stderr.write(`scanners --format expects text or json, got ${format}\n`);
+    return 2;
+  }
+
+  let inventory;
+  try {
+    inventory = discoverScanners(cwd);
+  } catch (error) {
+    process.stderr.write(`${(error as Error).message}\n`);
+    return 2;
+  }
+
+  process.stdout.write(format === "json" ? renderScannerJson(inventory) : renderScannerText(inventory));
+  return inventory.complete ? 0 : 2;
 }
 
 /**

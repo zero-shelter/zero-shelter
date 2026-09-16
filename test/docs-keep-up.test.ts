@@ -41,7 +41,7 @@ const FLAGS = [
   "--help",
 ];
 
-const COMMANDS = ["judge", "hook", "history", "version"];
+const COMMANDS = ["judge", "hook", "history", "scanners", "version"];
 
 describe("the docs describe the tool that exists", () => {
   it("documents every flag in the usage text", () => {
