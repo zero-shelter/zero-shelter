@@ -249,8 +249,12 @@ export function discoverScanners(cwd: string, options: ScannerOptions = {}): Sca
   const detected = new Set(domainResults.filter((domain) => domain.applicability === "detected").map((d) => d.id));
   if (detected.has("dependencies-javascript")) {
     const jsPaths = evidence.get("dependencies-javascript")!;
-    if (jsPaths.some((path) => /(?:package-lock\.json|npm-shrinkwrap\.json|package\.json)$/i.test(path))) add("npm", ["JavaScript dependency analysis"]);
-    if (jsPaths.some((path) => /pnpm-lock\.yaml$/i.test(path))) add("pnpm", ["JavaScript dependency analysis"]);
+    const hasPnpmLock = jsPaths.some((path) => /pnpm-lock\.yaml$/i.test(path));
+    const hasNpmLock = jsPaths.some((path) => /(?:package-lock\.json|npm-shrinkwrap\.json)$/i.test(path));
+    if (hasPnpmLock) add("pnpm", ["JavaScript dependency analysis"]);
+    else if (hasNpmLock || jsPaths.some((path) => /package\.json$/i.test(path))) {
+      add("npm", ["JavaScript dependency analysis"]);
+    }
     add("osv-scanner", ["dependency analysis"]);
   }
   if (detected.has("dependencies-python") || detected.has("dependencies-go") || detected.has("dependencies-rust") || detected.has("dependencies-java")) {
