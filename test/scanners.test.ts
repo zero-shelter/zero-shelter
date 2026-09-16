@@ -64,6 +64,18 @@ describe("project-specific scanner guidance", () => {
     expect(renderScannerText(result)).toContain("Tools to consider");
   });
 
+  it("uses the detected JavaScript package manager when lockfile evidence is present", async () => {
+    const cwd = await temp();
+    await writeFile(join(cwd, "package.json"), "{}");
+    await writeFile(join(cwd, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+
+    const result = discoverScanners(cwd, { path: "" });
+    expect(result.recommendations.find((entry) => entry.tool === "pnpm")?.tasks).toContain(
+      "JavaScript dependency analysis",
+    );
+    expect(result.recommendations.find((entry) => entry.tool === "npm")).toBeUndefined();
+  });
+
   it("returns a bounded partial inventory when the entry limit is reached", async () => {
     const cwd = await temp();
     await Promise.all([writeFile(join(cwd, "package.json"), "{}"), writeFile(join(cwd, "go.mod"), "")]);
