@@ -78,11 +78,12 @@ describe("project-specific scanner guidance", () => {
     const cwd = await temp();
     await writeFile(join(cwd, "package-lock.json"), "{}");
     const bin = await temp();
-    const executable = join(bin, "osv-scanner");
-    await writeFile(executable, "#!/bin/sh\ntouch SHOULD_NOT_EXIST\n");
-    await chmod(executable, 0o755);
+    const windows = process.platform === "win32";
+    const executable = join(bin, windows ? "osv-scanner.exe" : "osv-scanner");
+    await writeFile(executable, windows ? "binary placeholder" : "#!/bin/sh\ntouch SHOULD_NOT_EXIST\n");
+    if (!windows) await chmod(executable, 0o755);
 
-    const result = discoverScanners(cwd, { path: bin, platform: "linux" });
+    const result = discoverScanners(cwd, { path: bin, platform: windows ? "win32" : "linux" });
     expect(result.tools.find((tool) => tool.id === "osv-scanner")?.availability).toBe("available");
   });
 
