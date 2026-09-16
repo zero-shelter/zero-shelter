@@ -266,7 +266,14 @@ export function discoverScanners(cwd: string, options: ScannerOptions = {}): Sca
   const platform = options.platform ?? process.platform;
   const tools = [...recommendationTasks.keys()]
     .sort(compare)
-    .map((id) => ({ id, availability: findAvailability(id, options.path ?? process.env.PATH ?? "", platform) } satisfies ScannerTool));
+    .map((id) => {
+      const result = findAvailability(id, options.path ?? process.env.PATH ?? "", platform);
+      if (result.availability === "unknown") {
+        const warning = `could not inspect executable metadata for ${id}`;
+        if (!warnings.includes(warning)) warnings.push(warning);
+      }
+      return { id, availability: result.availability } satisfies ScannerTool;
+    });
 
   const recommendations = [...recommendationTasks.keys()]
     .sort(compare)
@@ -344,7 +351,12 @@ function formatRecommendation(recommendation: ScannerRecommendation): string[] {
   ];
 }
 
-function findAvailability(id: string, pathValue: string, platform: NodeJS.Platform): Availability {
+interface AvailabilityResult {
+  readonly availability: Availability;
+  readonly unreadable: boolean;
+}
+
+function findAvailability(id: string, pathValue: string, platform: NodeJS.Platform): AvailabilityResult {
   const suffixes = platform === "win32" ? [".exe", ".cmd", ".bat", ""] : [""];
   let unreadable = false;
   for (const rawDirectory of pathValue.split(platform === "win32" ? ";" : ":")) {
@@ -354,14 +366,14 @@ function findAvailability(id: string, pathValue: string, platform: NodeJS.Platfo
       try {
         const stats = statSync(candidate);
         if (!stats.isFile()) continue;
-        if (platform === "win32" || (stats.mode & 0o111) !== 0) return "available";
+        if (platform === "win32" || (stats.mode & 0o111) !== 0) return { availability: "available", unreadable };
       } catch (error) {
         const code = errorCode(error);
         if (code !== "ENOENT" && code !== "ENOTDIR") unreadable = true;
       }
     }
   }
-  return unreadable ? "unknown" : "missing";
+  return { availability: unreadable ? "unknown" : "missing", unreadable };
 }
 
 function brewCommand(id: string, platform: NodeJS.Platform): string | undefined {
