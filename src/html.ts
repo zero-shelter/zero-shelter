@@ -15,6 +15,7 @@ import {
   overridesField,
   type PackageManager,
 } from "./package-manager.js";
+import type { Messages } from './messages.js';
 import type { JudgeResult } from "./report.js";
 import { WEIGHTS, type Reason } from "./triage.js";
 import { type Language, messagesFor } from "./messages.js";
@@ -408,7 +409,7 @@ function reasons(
   }
   if (finding.relatedTo.length > 0) {
     extras.push(
-      `<li><span class="num"></span>${escape(t.maybeDuplicate)}: ${finding.relatedTo.map((fingerprint) => `<code>${escape(duplicateName(fingerprint, byFingerprint))}</code>`).join(" ")}</li>`,
+      `<li><span class="num"></span>${escape(t.maybeDuplicate)}: ${finding.relatedTo.map((fingerprint) => `<code>${escape(duplicateName(fingerprint, byFingerprint, t))}</code>`).join(" ")}</li>`,
     );
   }
 
@@ -418,11 +419,12 @@ function reasons(
 function duplicateName(
   fingerprint: string,
   byFingerprint: ReadonlyMap<string, MergedFinding>,
+  t: Messages,
 ): string {
   const other = byFingerprint.get(fingerprint);
   if (other === undefined) return fingerprint;
 
-  return `${other.advisoryId}${other.fixedIn === undefined ? "" : ` (fixed in ${other.fixedIn})`}`;
+  return `${other.advisoryId}${other.fixedIn === undefined ? "" : t.duplicateFixedIn(other.fixedIn)}`;
 }
 
 /**

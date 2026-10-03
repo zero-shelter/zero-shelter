@@ -74,6 +74,7 @@ describe("the html report", () => {
     // Identifiers stay as the scanners wrote them; only the chrome translates.
     expect(korean).toContain(result.fixNow[0]!.finding.advisoryId);
     expect(korean).not.toContain("Run commands");
+    expect(korean).not.toContain("fixed in");
   });
 
   it("translates score reasons and weights with the rest of the Korean ledger", () => {

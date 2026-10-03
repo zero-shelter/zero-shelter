@@ -67,6 +67,7 @@ export interface Messages {
   readonly alsoKnownAs: string;
   readonly maybeDuplicate: string;
   readonly disagreedFix: (versions: string, chosen: string) => string;
+  readonly duplicateFixedIn: (version: string) => string;
   readonly reasonText: (reason: Reason) => string;
   readonly weights: string;
   readonly weightSeverity: (severity: Severity) => string;
@@ -172,6 +173,7 @@ const EN: Messages = {
   maybeDuplicate: "May duplicate",
   disagreedFix: (versions, chosen) =>
     `Sources named different fixes (${versions}). ${chosen} satisfies all of them.`,
+  duplicateFixedIn: (version) => ` (fixed in ${version})`,
   reasonText: englishReason,
   weights: "weights",
   weightSeverity: (severity) => `severity: ${severity}`,
@@ -284,6 +286,7 @@ const KO: Messages = {
   maybeDuplicate: "중복 가능성",
   disagreedFix: (versions, chosen) =>
     `스캐너가 보고한 수정 버전이 다릅니다(${versions}). ${chosen}이 모두 충족합니다.`,
+  duplicateFixedIn: (version) => ` (수정 버전 ${version})`,
   reasonText: koreanReason,
   weights: "가중치",
   weightSeverity: (severity) => `심각도: ${koreanSeverity[severity]}`,

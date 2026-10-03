@@ -54,3 +54,16 @@ describe("--top", () => {
     expect(json.fixNow).toHaveLength(1);
   });
 });
+
+describe("possibleDuplicates truncation", () => {
+  it("drops possibleDuplicates references that point outside the truncated set", () => {
+    const json = JSON.parse(renderJson(capped));
+    const returnedFingerprints = new Set(json.fixNow.map((f: any) => f.fingerprint));
+    
+    for (const row of json.fixNow) {
+      for (const dup of row.possibleDuplicates) {
+        expect(returnedFingerprints.has(dup)).toBe(true);
+      }
+    }
+  });
+});
