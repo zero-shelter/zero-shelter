@@ -35,6 +35,8 @@ export interface ScaFinding {
    */
   readonly fingerprint: string;
   readonly severity: Severity;
+  /** False when the source did not provide a severity band. */
+  readonly severityKnown?: boolean;
   readonly title: string;
 
   readonly ecosystem: string;

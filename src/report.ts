@@ -99,7 +99,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   );
 
   const rows = fixNow.map((entry) => ({
-    severity: entry.finding.severity,
+    severity: entry.finding.members.every((member) => member.severityKnown === false) ? "unknown" : entry.finding.severity,
     // Mark development-only findings; the scope does not affect ranking.
     name:
       scopeOf(entry.finding.packageName, result.installed) === "dev"
@@ -545,6 +545,7 @@ export function renderJson(result: JudgeResult): string {
         fingerprint: entry.finding.fingerprint,
         score: entry.score,
         severity: entry.finding.severity,
+        ...(entry.finding.members.every((member) => member.severityKnown === false) ? { severityKnown: false } : {}),
         ecosystem: entry.finding.ecosystem,
         package: entry.finding.packageName,
         advisory: entry.finding.advisoryId,

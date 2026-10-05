@@ -40,6 +40,7 @@ export type Reason =
   | {
       readonly kind: "severity";
       readonly severity: Severity;
+      readonly known: boolean;
       readonly points: number;
     }
   | {
@@ -84,7 +85,8 @@ function score(finding: MergedFinding): RankedFinding {
     {
       kind: "severity",
       severity: finding.severity,
-      points: WEIGHTS.severity[finding.severity],
+      known: finding.members.some((member) => member.severityKnown !== false),
+      points: finding.members.every((member) => member.severityKnown === false) ? 0 : WEIGHTS.severity[finding.severity],
     },
   ];
 

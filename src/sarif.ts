@@ -98,7 +98,9 @@ function toRule(entry: RankedFinding) {
     },
     helpUri: helpUriFor(finding.advisoryId),
     properties: {
-      security_severity: securitySeverity(finding.severity),
+      ...(finding.members.every((member) => member.severityKnown === false)
+        ? { severityKnown: false }
+        : { security_severity: securitySeverity(finding.severity) }),
       tags: ["security", "dependency", finding.ecosystem],
     },
   };

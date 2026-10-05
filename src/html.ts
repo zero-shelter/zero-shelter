@@ -333,7 +333,8 @@ function ledger(result: JudgeResult, t: ReturnType<typeof messagesFor>): string 
 
   const rows = result.fixNow.map((entry) => {
     const f = entry.finding;
-    const rank = SEVERITY_RANK[f.severity] ?? 1;
+    const rank = f.members.every((member) => member.severityKnown === false) ? 1 : (SEVERITY_RANK[f.severity] ?? 1);
+    const severityLabel = f.members.every((member) => member.severityKnown === false) ? t.severityUnknown : f.severity;
     // A package repeated down the column is one upgrade, not several problems.
     // Dimming the repeat lets the eye group them without a heading.
     const repeated = f.packageName === previousPackage;
@@ -345,9 +346,9 @@ function ledger(result: JudgeResult, t: ReturnType<typeof messagesFor>): string 
       "</span>";
 
     return [
-      `<details class="row sev--${escape(f.severity)}">`,
+      `<details class="row sev--${escape(f.members.every((member) => member.severityKnown === false) ? "unknown" : f.severity)}">`,
       "<summary>",
-      `<span class="c-sev">${meter}<span class="sev-word">${escape(f.severity)}</span></span>`,
+      `<span class="c-sev">${meter}<span class="sev-word">${escape(severityLabel)}</span></span>`,
       `<span class="c-pkg${repeated ? " repeat" : ""}"><code>${escape(f.packageName)}</code>` +
         `<span class="tag">${escape(f.transitive ? t.indirect : t.direct)}</span></span>`,
       `<span class="c-adv"><code>${escape(f.advisoryId)}</code>` +
