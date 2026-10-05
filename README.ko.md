@@ -262,6 +262,11 @@ $ npx zero-shelter judge --format html --output report.html
 `zero-shelter history [--json] [--last <n>]`은 실행 사이에 나타나거나 사라진
 Finding을 보여줍니다. `judge --record`를 요청한 경우에만 기록됩니다.
 
+새로 기록하는 행에는 outstanding finding의 패키지와 권고 이름도 남깁니다.
+history는 이를 이용해 무엇이 나타났고 무엇이 더 이상 보고되지 않는지
+표시합니다. 예전 행에 이름이 없으면 다음 실행에서 추측하지 않고 알 수
+없다고 표시합니다.
+
 `--explain`은 부여된 점수와 그 근거가 된 가중치 표를 전부 출력합니다. 랭킹을
 **믿는 대신 따질 수 있게** 하려는 것입니다.
 

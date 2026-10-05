@@ -11,6 +11,13 @@ import type { JudgeResult } from "./report.js";
 
 export const HISTORY_PATH = ".zero-shelter/history.jsonl";
 
+export interface HistoryFinding {
+  readonly fingerprint: string;
+  readonly package: string;
+  readonly advisory: string;
+  readonly severity: string;
+}
+
 export interface HistoryEntry {
   readonly v: string;
   /** ISO 8601, supplied by the caller. */
@@ -24,9 +31,20 @@ export interface HistoryEntry {
    * changed findings even when the total count is unchanged.
    */
   readonly outstanding: readonly string[];
+  /** Context for naming changes; absent on legacy rows. */
+  readonly outstandingDetails?: readonly HistoryFinding[];
 }
 
 export function entryFrom(result: JudgeResult, at: string): HistoryEntry {
+  const outstandingDetails = result.applied.fresh
+    .map(({ finding }) => ({
+      fingerprint: finding.fingerprint,
+      package: finding.packageName,
+      advisory: finding.advisoryId,
+      severity: finding.severity,
+    }))
+    .sort((a, b) => (a.fingerprint < b.fingerprint ? -1 : a.fingerprint > b.fingerprint ? 1 : 0));
+
   return {
     v: SCHEMA_VERSION,
     at,
@@ -39,13 +57,14 @@ export function entryFrom(result: JudgeResult, at: string): HistoryEntry {
     merged: result.merged,
     accepted: result.applied.suppressed.length,
     outstanding: result.applied.fresh.map((entry) => entry.finding.fingerprint).sort(),
+    ...(outstandingDetails.length === 0 ? {} : { outstandingDetails }),
   };
 }
 
 export function serializeEntry(entry: HistoryEntry): string {
   // Key order fixed by hand so two entries with the same content are the same
   // line, which is what makes the file diffable.
-  return `${JSON.stringify({
+  const serialized: Record<string, unknown> = {
     v: entry.v,
     at: entry.at,
     sources: entry.sources,
@@ -53,7 +72,9 @@ export function serializeEntry(entry: HistoryEntry): string {
     merged: entry.merged,
     accepted: entry.accepted,
     outstanding: entry.outstanding,
-  })}\n`;
+  };
+  if (entry.outstandingDetails !== undefined) serialized.outstandingDetails = entry.outstandingDetails;
+  return `${JSON.stringify(serialized)}\n`;
 }
 
 /**
@@ -124,6 +145,9 @@ export interface Change {
   readonly appeared: string[];
   /** Previously outstanding fingerprints that are not any more. */
   readonly gone: string[];
+  /** `null` means the row predates finding details; an empty array means no delta. */
+  readonly appearedFindings?: readonly HistoryFinding[] | null;
+  readonly goneFindings?: readonly HistoryFinding[] | null;
 }
 
 /**
@@ -137,7 +161,14 @@ export function changes(entries: readonly HistoryEntry[]): Change[] {
   return entries.map((entry, index) => {
     const previous = index === 0 ? undefined : entries[index - 1];
     if (previous === undefined) {
-      return { entry, appeared: [...entry.outstanding], gone: [] };
+      const appeared = [...entry.outstanding];
+      return {
+        entry,
+        appeared,
+        gone: [],
+        appearedFindings: detailsFor(entry, appeared),
+        goneFindings: [],
+      };
     }
 
     const before = new Set(previous.outstanding);
@@ -147,8 +178,26 @@ export function changes(entries: readonly HistoryEntry[]): Change[] {
       entry,
       appeared: entry.outstanding.filter((fingerprint) => !before.has(fingerprint)),
       gone: previous.outstanding.filter((fingerprint) => !after.has(fingerprint)),
+      appearedFindings: detailsFor(
+        entry,
+        entry.outstanding.filter((fingerprint) => !before.has(fingerprint)),
+      ),
+      goneFindings: detailsFor(
+        previous,
+        previous.outstanding.filter((fingerprint) => !after.has(fingerprint)),
+      ),
     };
   });
+}
+
+function detailsFor(
+  entry: HistoryEntry,
+  fingerprints: readonly string[],
+): readonly HistoryFinding[] | null {
+  if (fingerprints.length === 0) return [];
+  if (entry.outstandingDetails === undefined) return null;
+  const wanted = new Set(fingerprints);
+  return entry.outstandingDetails.filter((detail) => wanted.has(detail.fingerprint));
 }
 
 /** Entries whose schema no longer matches; their fingerprints mean nothing now. */
@@ -160,6 +209,11 @@ function isEntry(value: unknown): value is HistoryEntry {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
 
+  const details = record["outstandingDetails"];
+  const validDetails =
+    details === undefined ||
+    (Array.isArray(details) && details.every(isHistoryFinding));
+
   return (
     typeof record["v"] === "string" &&
     typeof record["at"] === "string" &&
@@ -168,6 +222,18 @@ function isEntry(value: unknown): value is HistoryEntry {
     typeof record["accepted"] === "number" &&
     Array.isArray(record["sources"]) &&
     Array.isArray(record["outstanding"]) &&
-    (record["outstanding"] as unknown[]).every((item) => typeof item === "string")
+    (record["outstanding"] as unknown[]).every((item) => typeof item === "string") &&
+    validDetails
+  );
+}
+
+function isHistoryFinding(value: unknown): value is HistoryFinding {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record["fingerprint"] === "string" &&
+    typeof record["package"] === "string" &&
+    typeof record["advisory"] === "string" &&
+    typeof record["severity"] === "string"
   );
 }

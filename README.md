@@ -273,6 +273,11 @@ The existing `NO_COLOR` environment variable remains supported.
 `zero-shelter history [--json] [--last <n>]` shows the recorded changes between
 runs. Nothing is recorded unless `judge --record` is requested.
 
+Recorded runs also retain the package and advisory names for outstanding
+findings. History uses them to name what appeared and what is no longer
+reported; older rows say when those names are unavailable instead of guessing
+from a later scan.
+
 `--explain` prints every point awarded and the weights table it came from, so
 the ranking can be argued with rather than trusted.
 
