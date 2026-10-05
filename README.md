@@ -273,6 +273,14 @@ The existing `NO_COLOR` environment variable remains supported.
 `zero-shelter history [--json] [--last <n>]` shows the recorded changes between
 runs. Nothing is recorded unless `judge --record` is requested.
 
+`zero-shelter why <package>` reads the local npm lockfile and prints every path
+from a direct dependency to each installed copy of that package. It also shows
+fixed-version context from scanner output when available. Pass `--input` one or
+more times for an offline, repeatable report; without it, the existing scanners
+are collected like `judge` and keep their existing subprocess/network boundary.
+The command never installs packages or adds a registry lookup of its own, and it
+reports only versions the lockfile can establish.
+
 `--explain` prints every point awarded and the weights table it came from, so
 the ranking can be argued with rather than trusted.
 

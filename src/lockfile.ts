@@ -15,6 +15,19 @@ export interface Requirement {
   readonly range: string;
 }
 
+/** One installed dependency edge, resolved to the package path in the lockfile. */
+export interface DependencyEdge {
+  readonly name: string;
+  readonly range: string;
+  readonly to: string;
+}
+
+/** A package path and the version npm installed there. */
+export interface InstalledPackage {
+  readonly name: string;
+  readonly version: string;
+}
+
 export interface InstalledVersions {
   /** Package name to every version present in the tree. */
   readonly versions: ReadonlyMap<string, ReadonlySet<string>>;
@@ -30,6 +43,12 @@ export interface InstalledVersions {
    * from vulnerability findings.
    */
   readonly installScripts: ReadonlySet<string>;
+  /** Root package ranges, when the lockfile carries the root entry. */
+  readonly direct?: ReadonlyMap<string, string>;
+  /** Resolved dependency edges keyed by the package path that declares them. */
+  readonly graph?: ReadonlyMap<string, readonly DependencyEdge[]>;
+  /** Installed package metadata keyed by lockfile path. */
+  readonly locations?: ReadonlyMap<string, InstalledPackage>;
 }
 
 /**
@@ -83,12 +102,16 @@ export function fromPackages(packages: Record<string, LockEntry>): InstalledVers
   const required = new Map<string, Requirement[]>();
   const scopes = new Map<string, Scope>();
   const installScripts = new Set<string>();
+  const direct = new Map<string, string>();
+  const graph = new Map<string, DependencyEdge[]>();
+  const locations = new Map<string, InstalledPackage>();
 
   for (const [key, entry] of Object.entries(packages)) {
     const at = key.lastIndexOf(MARKER);
     if (at !== -1 && typeof entry?.version === "string") {
       const name = key.slice(at + MARKER.length);
       if (name !== "") {
+        locations.set(key, { name, version: entry.version });
         const seen = versions.get(name);
         if (seen === undefined) versions.set(name, new Set([entry.version]));
         else seen.add(entry.version);
@@ -102,6 +125,18 @@ export function fromPackages(packages: Record<string, LockEntry>): InstalledVers
         if (entry.hasInstallScript === true) installScripts.add(name);
       }
     }
+
+    const fields = dependencyEntries(entry);
+    if (key === "") {
+      for (const [name, range] of fields) direct.set(name, range);
+    }
+
+    const edges: DependencyEdge[] = [];
+    for (const [name, range] of fields) {
+      const to = resolvePackagePath(key, name, packages);
+      if (to !== undefined) edges.push({ name, range, to });
+    }
+    if (edges.length > 0) graph.set(key, edges);
 
     // Only installed dependencies can pin a version out of reach. The root is
     // `""` and a workspace package is `packages/app` — both are package.json
@@ -118,7 +153,45 @@ export function fromPackages(packages: Record<string, LockEntry>): InstalledVers
     }
   }
 
-  return { versions, required, scopes, installScripts };
+  return { versions, required, scopes, installScripts, direct, graph, locations };
+}
+
+function dependencyEntries(entry: LockEntry | undefined): [string, string][] {
+  const entries: [string, string][] = [];
+  for (const field of DEPENDENCY_FIELDS) {
+    for (const [name, range] of Object.entries(entry?.[field] ?? {})) {
+      if (typeof range === "string") entries.push([name, range]);
+    }
+  }
+  return entries;
+}
+
+/** Resolve npm's nested node_modules lookup without consulting the filesystem. */
+function resolvePackagePath(
+  from: string,
+  name: string,
+  packages: Record<string, LockEntry>,
+): string | undefined {
+  let scope = from;
+  while (true) {
+    const candidate = scope === "" ? `${MARKER}${name}` : `${scope}/${MARKER}${name}`;
+    if (Object.prototype.hasOwnProperty.call(packages, candidate)) return candidate;
+
+    const nested = scope.lastIndexOf(`/${MARKER}`);
+    if (nested !== -1) {
+      scope = scope.slice(0, nested);
+      continue;
+    }
+    if (scope.startsWith(MARKER)) {
+      scope = "";
+      continue;
+    }
+    if (scope !== "") {
+      scope = "";
+      continue;
+    }
+    return undefined;
+  }
 }
 
 /**
