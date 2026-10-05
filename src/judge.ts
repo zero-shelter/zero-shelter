@@ -9,6 +9,7 @@ import type { ScaFinding } from "./finding.js";
 import type { JudgeResult } from "./report.js";
 import { rank } from "./triage.js";
 import type { UnscannedScope } from "./scope.js";
+import { attribute } from "./attribution.js";
 
 export interface JudgeOptions {
   readonly baseline: Baseline;
@@ -49,6 +50,7 @@ export function judge(
   return {
     raw: findings.length,
     merged: merged.length,
+    attribution: attribute(merged),
     applied,
     fixNow: applied.fresh.slice(0, top),
     skipped: [...(options.skipped ?? [])],

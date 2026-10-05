@@ -20,6 +20,7 @@ import { WEIGHTS, type Reason } from "./triage.js";
 import { type Language, messagesFor } from "./messages.js";
 import type { MergedFinding } from "./merge.js";
 import type { Change } from "./history.js";
+import { severityBreakdown } from "./attribution.js";
 
 export interface HtmlOptions {
   readonly language: Language;
@@ -64,6 +65,7 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   const body = [
     header(options, t),
     scannerStatus(result, t),
+    attribution(result, t),
     // Keep stale-baseline warnings visible before the summary.
     result.applied.warning === undefined
       ? ""
@@ -152,6 +154,22 @@ function scannerStatus(result: JudgeResult, t: ReturnType<typeof messagesFor>): 
     ? `${escape(t.sourcesUsed)}: ${sources.map(escape).join(", ")}`
     : escape(result.sources === undefined ? t.sourcesUnknown : t.sourcesNone);
   return `<p class="scanner-status">${status}</p>`;
+}
+
+function attribution(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
+  if (result.attribution.total === 0) return "";
+  const rows = result.attribution.unique.map((bucket) =>
+    `<li>${escape(t.attributionUnique(bucket.source, bucket.unique, severityBreakdown(bucket.severity)))}</li>`,
+  );
+  if (result.attribution.corroborated > 0) {
+    rows.push(
+      `<li>${escape(t.attributionCorroborated(
+        result.attribution.corroborated,
+        severityBreakdown(result.attribution.corroboratedSeverity),
+      ))}</li>`,
+    );
+  }
+  return `<section class="attribution"><h2>${escape(t.attributionHeading)}</h2><ul>${rows.join("")}</ul></section>`;
 }
 
 function summary(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
