@@ -53,7 +53,7 @@ const SEVERITY_RANK: Record<string, number> = {
 
 export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   const t = messagesFor(options.language);
-  const outstanding = result.applied.fresh;
+  const outstanding = result.policy?.visible ?? result.applied.fresh;
   const manager = result.packageManager ?? "npm";
   const actions = upgradeActions(outstanding, result.installed, manager);
   const indirect = transitiveFixes(outstanding, result.installed);
@@ -73,6 +73,9 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
       ? `<p class="caveat">${escape(t.resolvedDoubt(result.applied.missingSources.join(", ")))}</p>`
       : "",
     summary(result, t),
+    result.policy === undefined
+      ? ""
+      : `<p class="caveat">${escape(t.policy(result.policy.filtered.length, result.policy.config.minimumSeverity, result.policy.config.ignoreScopes))}</p>`,
     outstanding.length === 0
       ? verdict(result, t)
       : [
@@ -156,14 +159,15 @@ function scannerStatus(result: JudgeResult, t: ReturnType<typeof messagesFor>): 
 
 function summary(result: JudgeResult, t: ReturnType<typeof messagesFor>): string {
   const { raw, merged, applied, fixNow } = result;
+  const outstanding = result.policy?.visible.length ?? applied.fresh.length;
   const counts = [
     stat(String(raw), t.summaryReported),
     stat(String(merged), t.summaryMerged),
-    stat(String(applied.fresh.length), t.summaryOutstanding, true),
+    stat(String(outstanding), t.summaryOutstanding, true),
     applied.suppressed.length > 0
       ? stat(String(applied.suppressed.length), t.summaryAccepted)
       : "",
-    fixNow.length < applied.fresh.length ? stat(String(fixNow.length), t.summaryShown) : "",
+    fixNow.length < outstanding ? stat(String(fixNow.length), t.summaryShown) : "",
   ].filter((cell) => cell !== "").join("");
   return `<div class="counts">${counts}</div>\n${glossary(t)}`;
 }
