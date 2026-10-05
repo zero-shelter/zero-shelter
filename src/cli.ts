@@ -458,6 +458,8 @@ async function history(cwd: string, asJson: boolean, last: string | undefined): 
             accepted: change.entry.accepted,
             appeared: change.appeared.length,
             gone: change.gone.length,
+            appearedFindings: change.appearedFindings,
+            goneFindings: change.goneFindings,
             sources: change.entry.sources,
           })),
         },
@@ -476,13 +478,14 @@ async function history(cwd: string, asJson: boolean, last: string | undefined): 
       .filter((part) => part !== "")
       .join(" ");
 
-    return (
+    const line = (
       `  ${change.entry.at}  ` +
       `${change.entry.raw} reported → ${change.entry.merged} after merge → ` +
       `${String(change.entry.outstanding.length).padStart(4)} outstanding  ` +
       `${deltas.padEnd(9)}` +
       `${change.entry.accepted} accepted (baseline entries matched)`
     ).trimEnd();
+    return [line, ...historyFindingLines(change)].join("\n");
   });
 
   process.stdout.write(`${lines.join("\n")}\n`);
@@ -500,6 +503,25 @@ async function history(cwd: string, asJson: boolean, last: string | undefined): 
   }
 
   return 0;
+}
+
+function historyFindingLines(change: Change): string[] {
+  const lines: string[] = [];
+  if (change.appeared.length > 0) {
+    lines.push(...namedChangeLines("appeared", change.appearedFindings));
+  }
+  if (change.gone.length > 0) {
+    lines.push(...namedChangeLines("no longer reported", change.goneFindings));
+  }
+  return lines;
+}
+
+function namedChangeLines(
+  label: string,
+  findings: Change["appearedFindings"] | undefined,
+): string[] {
+  if (findings === undefined || findings === null) return [`    ${label}: names unavailable for this recorded run`];
+  return [`    ${label}: ${findings.map((finding) => `${finding.package} (${finding.advisory})`).join(", ")}`];
 }
 
 /**

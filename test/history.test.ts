@@ -41,6 +41,10 @@ describe("recording a run", () => {
     const entry = entryAt("2026-08-01T00:00:00.000Z", ["CVE-1", "CVE-2"]);
 
     expect(entry.outstanding).toHaveLength(2);
+    expect(entry.outstandingDetails).toEqual(expect.arrayContaining([
+      { fingerprint: fingerprintOf("CVE-1"), package: "lodash", advisory: "CVE-1", severity: "high" },
+      { fingerprint: fingerprintOf("CVE-2"), package: "lodash", advisory: "CVE-2", severity: "high" },
+    ]));
     expect(entry.at).toBe("2026-08-01T00:00:00.000Z");
     expect(entry.v).toBe(SCHEMA_VERSION);
   });
@@ -101,6 +105,12 @@ describe("what changed between runs", () => {
 
     expect(second!.appeared).toEqual([fingerprintOf("CVE-3")]);
     expect(second!.gone).toEqual([fingerprintOf("CVE-1")]);
+    expect(second!.appearedFindings).toEqual([
+      { fingerprint: fingerprintOf("CVE-3"), package: "lodash", advisory: "CVE-3", severity: "high" },
+    ]);
+    expect(second!.goneFindings).toEqual([
+      { fingerprint: fingerprintOf("CVE-1"), package: "lodash", advisory: "CVE-1", severity: "high" },
+    ]);
   });
 
   it("says nothing changed when nothing changed", () => {
@@ -112,5 +122,14 @@ describe("what changed between runs", () => {
 
     expect(second!.appeared).toEqual([]);
     expect(second!.gone).toEqual([]);
+    expect(second!.appearedFindings).toEqual([]);
+    expect(second!.goneFindings).toEqual([]);
+  });
+
+  it("does not invent names for a legacy row", () => {
+    const legacy = { ...entryAt("2026-08-01T00:00:00.000Z", ["CVE-1"]) };
+    delete (legacy as { outstandingDetails?: unknown }).outstandingDetails;
+    const [first] = changes([legacy]);
+    expect(first!.appearedFindings).toBeNull();
   });
 });
