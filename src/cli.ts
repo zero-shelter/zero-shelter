@@ -35,6 +35,7 @@ import {
 import type { ScaFinding } from "./finding.js";
 import { versionOutput } from "./version.js";
 import { unscannedScope } from "./scope.js";
+import { explainDependency, renderWhy, renderWhyJson } from "./why.js";
 
 const USAGE = `zero-shelter judge — review dependency scanner findings
 
@@ -62,6 +63,9 @@ Baseline and history
 
   npx zero-shelter history [--json] [--last <n>]
   Show findings added or no longer reported between recorded runs.
+
+  npx zero-shelter why <package> [options]
+  Explain dependency paths using the local npm lockfile.
 
 Agent integration
   npx zero-shelter hook [--input <file>]
@@ -124,6 +128,11 @@ export async function main(argv: readonly string[]): Promise<number> {
   if (command === "hook") return await hook(values.cwd, values.baseline, values.input);
   if (command === "history") {
     return await history(resolve(values.cwd ?? "."), values.json === true, values.last);
+  }
+  if (command === "why") {
+    const packageName = positionals[1];
+    const format = values.format ?? (values.json === true ? "json" : "text");
+    return await whyCommand(resolve(values.cwd ?? "."), packageName, format, values.input);
   }
   if (command !== "judge") {
     process.stderr.write(`unknown command: ${command}\n\n${USAGE}`);
@@ -285,6 +294,55 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   return result.fixNow.length > 0 ? 1 : 0;
+}
+
+async function whyCommand(
+  cwd: string,
+  packageName: string | undefined,
+  format: string,
+  inputs: readonly string[] | undefined,
+): Promise<number> {
+  if (packageName === undefined || packageName.trim() === "") {
+    process.stderr.write("why expects a package name\n");
+    return 2;
+  }
+  if (format !== "text" && format !== "json") {
+    process.stderr.write(`why --format expects text or json, got ${format}\n`);
+    return 2;
+  }
+
+  const lockfile = readInstalledVersions(cwd);
+  if (lockfile === undefined) {
+    const path = resolve(cwd, "package-lock.json");
+    process.stderr.write(`cannot explain ${packageName}: ${path} is missing or unreadable\n`);
+    return 2;
+  }
+
+  const findings: ScaFinding[] = [];
+  try {
+    if (inputs !== undefined && inputs.length > 0) {
+      for (const file of inputs) {
+        findings.push(...(await readInput(resolve(cwd, file), declaredDependencies(cwd))));
+      }
+    } else {
+      // Reuse the existing scanner collection path when the caller did not
+      // provide a stored report. A path-only answer still works if every
+      // scanner is skipped, but a live npm audit can supply fixedIn context.
+      findings.push(...(await collect({ cwd })).findings);
+    }
+  } catch (error) {
+    process.stderr.write(`${(error as Error).message}\n`);
+    return 2;
+  }
+
+  const result = explainDependency(packageName, lockfile, findings);
+  if (result.versions.length === 0) {
+    process.stderr.write(`${packageName} is not in ${resolve(cwd, "package-lock.json")}\n`);
+    return 2;
+  }
+
+  process.stdout.write(format === "json" ? renderWhyJson(result) : renderWhy(result));
+  return 0;
 }
 
 /**

@@ -262,6 +262,14 @@ $ npx zero-shelter judge --format html --output report.html
 `zero-shelter history [--json] [--last <n>]`은 실행 사이에 나타나거나 사라진
 Finding을 보여줍니다. `judge --record`를 요청한 경우에만 기록됩니다.
 
+`zero-shelter why <package>`는 로컬 npm lockfile을 읽어 직접 의존성에서 해당
+패키지의 설치된 각 사본까지 이어지는 모든 경로를 보여줍니다. 스캐너 출력이
+있으면 고정 버전 정보도 함께 표시합니다. 오프라인에서 반복 가능한 결과가
+필요하면 `--input`을 한 번 이상 넘기고, 생략하면 `judge`와 같은 기존
+스캐너를 수집하며 기존 scanner subprocess/network 경계를 그대로 따릅니다.
+패키지를 설치하거나 별도의 registry 조회를 추가하지 않으며, lockfile로
+확인할 수 있는 버전만 출력합니다.
+
 `--explain`은 부여된 점수와 그 근거가 된 가중치 표를 전부 출력합니다. 랭킹을
 **믿는 대신 따질 수 있게** 하려는 것입니다.
 
