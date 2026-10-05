@@ -14,6 +14,7 @@ import type { RankedFinding } from "./triage.js";
 import { WEIGHTS } from "./triage.js";
 import { messagesFor } from "./messages.js";
 import type { UnscannedScope } from "./scope.js";
+import type { AppliedPolicy } from "./policy.js";
 
 export interface JudgeResult {
   readonly raw: number;
@@ -40,6 +41,8 @@ export interface JudgeResult {
   readonly today?: string;
   /** Local project artifacts this dependency-only judgement leaves unread. */
   readonly unscanned?: UnscannedScope;
+  /** Policy context and the findings it removed from the review list. */
+  readonly policy?: AppliedPolicy;
 }
 
 const COLOR = {
@@ -78,8 +81,16 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   const { fixNow } = result;
 
   if (fixNow.length === 0) {
-    lines.push(paint("✓ no new findings", COLOR.green));
+    lines.push(
+      paint(
+        result.policy !== undefined && result.policy.filtered.length === result.applied.fresh.length && result.applied.fresh.length > 0
+          ? "✓ no findings to review"
+          : "✓ no new findings",
+        COLOR.green,
+      ),
+    );
     lines.push(summary(result, paint));
+    lines.push(...policyLines(result, paint));
     if (result.unscanned !== undefined) {
       lines.push(paint(unscannedLine(result.unscanned), COLOR.dim));
     }
@@ -90,8 +101,8 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 
   lines.push(
     paint(
-      result.fixNow.length < result.applied.fresh.length
-        ? `findings to review: ${result.applied.fresh.length} (top ${fixNow.length} shown)`
+      result.fixNow.length < (result.policy?.visible.length ?? result.applied.fresh.length)
+        ? `findings to review: ${result.policy?.visible.length ?? result.applied.fresh.length} (top ${fixNow.length} shown)`
         : `findings to review: ${fixNow.length}`,
       COLOR.bold,
     ),
@@ -135,7 +146,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   // Compute project totals and remediation from all findings, not the --top slice.
-  const outstanding = result.applied.fresh;
+  const outstanding = result.policy?.visible ?? result.applied.fresh;
   const manager = result.packageManager ?? "npm";
   // Only npm lockfiles support verified upgrade counts.
   const promises = canPromiseClears(manager);
@@ -200,6 +211,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   lines.push("", summary(result, paint));
+  lines.push(...policyLines(result, paint));
 
   lines.push(...resolvedLines(result, paint));
   lines.push(...ratchetLines(result, paint));
@@ -226,6 +238,19 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   return lines.join("\n");
+}
+
+function policyLines(
+  result: JudgeResult,
+  paint: (text: string, code: string) => string,
+): string[] {
+  const policy = result.policy;
+  if (policy === undefined) return [];
+  const rules: string[] = [];
+  if (policy.config.minimumSeverity !== undefined) rules.push(`below ${policy.config.minimumSeverity}`);
+  if (policy.config.ignoreScopes.length > 0) rules.push(`${policy.config.ignoreScopes.join(", ")} scope`);
+  const ruleText = rules.length === 0 ? "no filters" : rules.join("; ");
+  return [paint(`  policy: filtered ${policy.filtered.length} finding(s) (${ruleText})`, COLOR.dim)];
 }
 
 function unscannedLine(scope: UnscannedScope): string {
@@ -265,7 +290,7 @@ function scopeSplit(result: JudgeResult): string {
 
   let production = 0;
   let devOnly = 0;
-  for (const entry of result.applied.fresh) {
+  for (const entry of result.policy?.visible ?? result.applied.fresh) {
     if (scopeOf(entry.finding.packageName, result.installed) === "dev") devOnly += 1;
     else production += 1;
   }
@@ -380,7 +405,8 @@ function summary(
   paint: (text: string, code: string) => string,
 ): string {
   const { raw, merged, applied, fixNow } = result;
-  const outstanding = applied.fresh.length;
+  const filtered = result.policy?.filtered.length ?? 0;
+  const outstanding = applied.fresh.length - filtered;
   // Use all outstanding findings so --top cannot change the percentage.
   const removed = raw - outstanding;
   // Integer percentage: a float here would print differently across locales.
@@ -396,6 +422,7 @@ function summary(
         ? ""
         : `  (${percent}% fewer listed${lonely ? " — one source; no cross-scanner comparison" : ""})`) +
       (fixNow.length < outstanding ? `, showing ${fixNow.length}` : "") +
+      (filtered > 0 ? `, ${filtered} filtered by policy` : "") +
       (applied.suppressed.length > 0
         ? `, ${applied.suppressed.length} already accepted`
         : ""),
@@ -517,14 +544,25 @@ export function renderJson(result: JudgeResult): string {
       summary: {
         raw: result.raw,
         merged: result.merged,
-        fixNow: result.applied.fresh.length,
+        fixNow: result.policy?.visible.length ?? result.applied.fresh.length,
         shown: result.fixNow.length,
+        filtered: result.policy?.filtered.length ?? 0,
         accepted: result.applied.suppressed.length,
         noLongerReported: result.applied.noLongerReported.length,
       },
       noLongerReported: result.applied.noLongerReported,
       warning: result.applied.warning,
       skipped: result.skipped,
+      ...(result.policy === undefined
+        ? {}
+        : {
+            policy: {
+              version: result.policy.config.version,
+              minimumSeverity: result.policy.config.minimumSeverity,
+              ignoreScopes: result.policy.config.ignoreScopes,
+              filtered: result.policy.filtered.length,
+            },
+          }),
       ...(result.unscanned === undefined ? {} : { unscanned: result.unscanned }),
       missingSources: result.applied.missingSources,
       // The commands, so a caller does not have to re-derive them from the
@@ -532,7 +570,7 @@ export function renderJson(result: JudgeResult): string {
       workspaceRoot: result.workspaceRoot === true,
       // Use manager-specific commands and omit unverifiable clears counts.
       upgrades: upgradeActions(
-        result.applied.fresh,
+        result.policy?.visible ?? result.applied.fresh,
         result.installed,
         result.packageManager ?? "npm",
       ).map((action) =>
@@ -540,7 +578,7 @@ export function renderJson(result: JudgeResult): string {
           ? action
           : { packageName: action.packageName, upgradeTo: action.upgradeTo, command: action.command },
       ),
-      transitiveFixes: transitiveFixes(result.applied.fresh, result.installed),
+      transitiveFixes: transitiveFixes(result.policy?.visible ?? result.applied.fresh, result.installed),
       fixNow: result.fixNow.map((entry) => ({
         fingerprint: entry.finding.fingerprint,
         score: entry.score,

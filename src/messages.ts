@@ -18,6 +18,7 @@ export interface Messages {
   readonly summaryOutstanding: string;
   readonly summaryAccepted: string;
   readonly summaryShown: string;
+  readonly policy: (filtered: number, minimum: Severity | undefined, scopes: readonly string[]) => string;
   readonly sourcesUsed: string;
   readonly sourcesNone: string;
   readonly sourcesUnknown: string;
@@ -109,6 +110,10 @@ const EN: Messages = {
   summaryOutstanding: "outstanding",
   summaryAccepted: "already accepted",
   summaryShown: "shown here",
+  policy: (filtered, minimum, scopes) =>
+    `Policy filtered ${filtered} finding(s)` +
+    (minimum === undefined ? "" : ` below ${minimum}`) +
+    (scopes.length === 0 ? "" : ` in ${scopes.join(", ")} scope`),
   sourcesUsed: "Sources",
   sourcesNone: "No scanner produced a report.",
   sourcesUnknown: "Scanner run status was not provided.",
@@ -221,6 +226,10 @@ const KO: Messages = {
   summaryOutstanding: "검토할 항목",
   summaryAccepted: "수용한 항목",
   summaryShown: "표시한 항목",
+  policy: (filtered, minimum, scopes) =>
+    `policy가 ${filtered}개 항목을 필터링했습니다` +
+    (minimum === undefined ? "" : ` (${minimum} 미만)`) +
+    (scopes.length === 0 ? "" : ` (${scopes.join(", ")} 범위)`),
   sourcesUsed: "보고서를 낸 스캐너",
   sourcesNone: "보고서를 낸 스캐너가 없습니다.",
   sourcesUnknown: "스캐너 실행 정보가 없습니다.",

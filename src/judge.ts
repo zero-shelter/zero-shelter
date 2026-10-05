@@ -9,6 +9,7 @@ import type { ScaFinding } from "./finding.js";
 import type { JudgeResult } from "./report.js";
 import { rank } from "./triage.js";
 import type { UnscannedScope } from "./scope.js";
+import { applyPolicy, type AppliedPolicy, type Policy } from "./policy.js";
 
 export interface JudgeOptions {
   readonly baseline: Baseline;
@@ -31,6 +32,8 @@ export interface JudgeOptions {
   readonly installed?: InstalledVersions;
   /** Local artifacts this dependency-only judgement leaves unread. */
   readonly unscanned?: UnscannedScope;
+  /** Optional project-level reporting filters. */
+  readonly policy?: Policy;
 }
 
 import type { InstalledVersions } from "./lockfile.js";
@@ -43,6 +46,8 @@ export function judge(
   const merged = mergeFindings(findings);
   const ranked = rank(merged);
   const applied = applyBaseline(ranked, options.baseline, options.sources, options.today);
+  const policy = applyPolicy(applied.fresh, options.policy, options.installed);
+  const reviewable = policy?.visible ?? applied.fresh;
 
   const top = options.top ?? Number.POSITIVE_INFINITY;
 
@@ -50,7 +55,7 @@ export function judge(
     raw: findings.length,
     merged: merged.length,
     applied,
-    fixNow: applied.fresh.slice(0, top),
+    fixNow: reviewable.slice(0, top),
     skipped: [...(options.skipped ?? [])],
     baselineExists: options.baselineExists ?? true,
     workspaceRoot: options.workspaceRoot ?? false,
@@ -59,5 +64,6 @@ export function judge(
     ...(options.packageManager === undefined ? {} : { packageManager: options.packageManager }),
     ...(options.today === undefined ? {} : { today: options.today }),
     ...(options.unscanned === undefined ? {} : { unscanned: options.unscanned }),
+    ...(policy === undefined ? {} : { policy }),
   };
 }
