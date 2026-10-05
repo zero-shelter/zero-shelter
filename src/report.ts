@@ -43,6 +43,8 @@ export interface JudgeResult {
   readonly today?: string;
   /** Local project artifacts this dependency-only judgement leaves unread. */
   readonly unscanned?: UnscannedScope;
+  /** One context-sensitive setup hint, when local metadata supports one. */
+  readonly nextStep?: string;
 }
 
 const COLOR = {
@@ -87,6 +89,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
     if (result.unscanned !== undefined) {
       lines.push(paint(unscannedLine(result.unscanned), COLOR.dim));
     }
+    if (result.nextStep !== undefined) lines.push(paint(`  next step: ${result.nextStep}`, COLOR.dim));
     lines.push(...resolvedLines(result, paint));
     lines.push(...ratchetLines(result, paint));
     return lines.join("\n");
@@ -205,6 +208,8 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
 
   lines.push("", summary(result, paint));
   lines.push(...attributionLines(result, paint));
+
+  if (result.nextStep !== undefined) lines.push(paint(`  next step: ${result.nextStep}`, COLOR.dim));
 
   lines.push(...resolvedLines(result, paint));
   lines.push(...ratchetLines(result, paint));
@@ -553,6 +558,7 @@ export function renderJson(result: JudgeResult): string {
       noLongerReported: result.applied.noLongerReported,
       warning: result.applied.warning,
       skipped: result.skipped,
+      ...(result.nextStep === undefined ? {} : { nextStep: result.nextStep }),
       ...(result.unscanned === undefined ? {} : { unscanned: result.unscanned }),
       missingSources: result.applied.missingSources,
       attribution: result.attribution,
