@@ -153,6 +153,12 @@ fallback으로 유지합니다. zero-shelter가 부동소수점 연산으로 sco
 SARIF에는 이 파일을 쓴 zero-shelter 패키지 버전도 표시하고, scanner가 제공한 경우
 scanner 버전도 보존합니다.
 
+advisory source가 심각도 구간을 표시하지 않는 경우도 있습니다. 이때 zero-shelter는
+호환성을 위해 `info` 값을 유지하고 JSON에 `severityKnown: false`를 추가하며, 사람이
+보는 터미널에는 `unknown`, HTML에는 "소스가 심각도를 표시하지 않음"이라고 씁니다.
+이 항목에는 심각도 구간 점수를 주지 않습니다. SARIF에서도 숫자형
+`security_severity` fallback을 만들지 않습니다.
+
 여기엔 짚어 둘 만한 아이러니가 있습니다. 이 프로젝트는 서로 다른 도구의 SARIF를
 그걸 받는 도구들이 맞대지 못하기 때문에 존재합니다. 그런 우리가 SARIF를 내보내는
 건 모순이 아닙니다. 받는 쪽이 가져가는 것은 맞대는 데 실패할 원시 실행 네 개가 아니라

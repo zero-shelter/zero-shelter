@@ -158,6 +158,12 @@ no numeric score; zero-shelter does not derive one with floating-point math.
 SARIF also identifies the zero-shelter package version and preserves scanner
 versions when a source provides them.
 
+Some advisory sources do not state a severity band. In that case zero-shelter
+keeps the compatibility value `info`, adds `severityKnown: false` to JSON, and
+shows `unknown` in the terminal and “severity not stated by source” in HTML. It
+gives that finding no severity-band ranking points. SARIF omits the numeric
+`security_severity` fallback for it instead of inventing a score.
+
 There is an irony here worth naming: this project exists because SARIF from
 different tools cannot be reconciled by the tools that consume it. Emitting
 SARIF is not a contradiction — downstream receives one already-judged run

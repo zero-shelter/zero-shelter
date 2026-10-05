@@ -95,6 +95,7 @@ export interface Messages {
   readonly reproduceBody: string;
   readonly deterministic: string;
   readonly severityRank: string;
+  readonly severityUnknown: string;
 }
 
 const EN: Messages = {
@@ -207,6 +208,7 @@ const EN: Messages = {
   deterministic:
     "The same judgement and the same recorded runs produce a byte-identical page. Nothing here is read from a clock while rendering; the dates above come from the history file.",
   severityRank: "Rank",
+  severityUnknown: "severity not stated by source",
 };
 
 const KO: Messages = {
@@ -318,6 +320,7 @@ const KO: Messages = {
   deterministic:
     "같은 판정과 같은 기록이면 바이트 단위로 같은 페이지가 나옵니다. 렌더링 중에 시계를 읽지 않습니다. 위의 날짜는 기록 파일에서 가져옵니다.",
   severityRank: "순위",
+  severityUnknown: "소스가 심각도를 표시하지 않음",
 };
 
 export const LANGUAGES = { en: EN, ko: KO } as const;
@@ -335,7 +338,7 @@ export function messagesFor(language: Language): Messages {
 function englishReason(reason: Reason): string {
   switch (reason.kind) {
     case "severity":
-      return `severity: ${reason.severity}`;
+      return reason.known ? `severity: ${reason.severity}` : "severity not stated by source";
     case "direct":
       return "direct dependency";
     case "fixAvailable":
@@ -358,7 +361,7 @@ const koreanSeverity: Record<Severity, string> = {
 function koreanReason(reason: Reason): string {
   switch (reason.kind) {
     case "severity":
-      return `심각도: ${koreanSeverity[reason.severity]}`;
+      return reason.known ? `심각도: ${koreanSeverity[reason.severity]}` : "소스가 심각도를 표시하지 않음";
     case "direct":
       return "직접 의존성";
     case "fixAvailable":

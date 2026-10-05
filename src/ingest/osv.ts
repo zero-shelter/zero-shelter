@@ -89,6 +89,7 @@ function findingsForPackage(
       kind: "SCA",
       fingerprint: fingerprint([ecosystem, packageName, advisoryId]),
       severity: severityOf(vuln),
+      ...(severityWordOf(vuln) === undefined ? { severityKnown: false } : {}),
       title: normalizeText(
         asString(vuln["summary"]) ?? `Vulnerability in ${packageName}`,
       ),
@@ -220,6 +221,11 @@ function fixedVersionOf(
  * parser is how two sources start disagreeing about the same advisory.
  */
 function severityOf(vuln: Record<string, unknown>): Severity {
+  return severityWordOf(vuln) ?? "info";
+}
+
+/** Return a normalized source severity, or undefined when the source did not state one. */
+function severityWordOf(vuln: Record<string, unknown>): Severity | undefined {
   const specific = isRecord(vuln["database_specific"]) ? vuln["database_specific"] : {};
   const word = asString(specific["severity"])?.toLowerCase();
 
@@ -233,8 +239,10 @@ function severityOf(vuln: Record<string, unknown>): Severity {
       return "moderate";
     case "low":
       return "low";
-    default:
+    case "info":
       return "info";
+    default:
+      return undefined;
   }
 }
 
