@@ -210,6 +210,13 @@ must not imply otherwise.
 `format` is one of `osv`, `sarif`, `npm-audit`. `install` follows the wording
 `scan.ts` already uses: name the way out, not only the problem.
 
+The [scanner survey](../scanner-survey.md) confirms that SARIF is a container,
+not a shared dependency-vulnerability schema. Native JSON is the first adapter
+target for trivy, grype, pip-audit, govulncheck, and cargo-audit; each needs a
+tool-specific parser and fixture. A SARIF manifest must declare where package,
+version, advisory, and remediation fields come from, and missing range, CVSS,
+or publication data stays missing.
+
 Built-in manifests load first, then `.zero-shelter/adapters/`. **Manifests are
 sorted by `id` before execution** and ecosystem is case-folded through
 `src/normalize.ts` — see [Security](#security-and-privacy) and #129 for why both
