@@ -273,6 +273,12 @@ The existing `NO_COLOR` environment variable remains supported.
 `zero-shelter history [--json] [--last <n>]` shows the recorded changes between
 runs. Nothing is recorded unless `judge --record` is requested.
 
+`zero-shelter history --expiring` turns the baseline into a review queue. It
+shows accepted findings expiring in the next 30 days, grouped by `acceptedBy`,
+then lists already expired and unbounded entries separately. Use `--days <n>`
+to choose another positive window and `--json` for a scheduled job. The command
+does not renew or edit the baseline.
+
 `--explain` prints every point awarded and the weights table it came from, so
 the ranking can be argued with rather than trusted.
 

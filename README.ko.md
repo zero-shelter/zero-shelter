@@ -262,6 +262,12 @@ $ npx zero-shelter judge --format html --output report.html
 `zero-shelter history [--json] [--last <n>]`은 실행 사이에 나타나거나 사라진
 Finding을 보여줍니다. `judge --record`를 요청한 경우에만 기록됩니다.
 
+`zero-shelter history --expiring`은 baseline을 검토 큐로 보여 줍니다. 기본
+30일 안에 만료되는 수용 항목을 `acceptedBy`별로 묶고, 이미 만료된 항목과
+만료일이 없는 항목은 따로 표시합니다. 양의 정수인 `--days <n>`으로 기간을
+바꾸고 `--json`으로 작업에서 읽을 수 있습니다. baseline을 갱신하거나
+수정하지 않습니다.
+
 `--explain`은 부여된 점수와 그 근거가 된 가중치 표를 전부 출력합니다. 랭킹을
 **믿는 대신 따질 수 있게** 하려는 것입니다.
 

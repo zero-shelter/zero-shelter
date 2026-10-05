@@ -9,6 +9,9 @@ import {
   type BaselineNote,
   parseBaseline,
   serializeBaseline,
+  upcomingExpirations,
+  type ExpiryQueue,
+  type ExpiringAcceptance,
 } from "./baseline.js";
 import { judge } from "./judge.js";
 import type { JudgeResult } from "./report.js";
@@ -62,6 +65,8 @@ Baseline and history
 
   npx zero-shelter history [--json] [--last <n>]
   Show findings added or no longer reported between recorded runs.
+  npx zero-shelter history --expiring [--days <n>] [--json]
+  Show accepted findings approaching their expiry date.
 
 Agent integration
   npx zero-shelter hook [--input <file>]
@@ -96,6 +101,8 @@ export async function main(argv: readonly string[]): Promise<number> {
         "update-baseline": { type: "boolean" },
         record: { type: "boolean" },
         last: { type: "string" },
+        expiring: { type: "boolean" },
+        days: { type: "string" },
         baseline: { type: "string" },
         cwd: { type: "string" },
         "no-color": { type: "boolean" },
@@ -123,7 +130,14 @@ export async function main(argv: readonly string[]): Promise<number> {
   const command = positionals[0] ?? "judge";
   if (command === "hook") return await hook(values.cwd, values.baseline, values.input);
   if (command === "history") {
-    return await history(resolve(values.cwd ?? "."), values.json === true, values.last);
+    return await history(
+      resolve(values.cwd ?? "."),
+      values.json === true,
+      values.last,
+      values.expiring === true,
+      values.days,
+      values.baseline,
+    );
   }
   if (command !== "judge") {
     process.stderr.write(`unknown command: ${command}\n\n${USAGE}`);
@@ -410,7 +424,17 @@ async function record(cwd: string, result: JudgeResult): Promise<string | undefi
 /**
  * `zero-shelter history` — what happened, in the order it happened.
  */
-async function history(cwd: string, asJson: boolean, last: string | undefined): Promise<number> {
+async function history(
+  cwd: string,
+  asJson: boolean,
+  last: string | undefined,
+  expiring: boolean,
+  days: string | undefined,
+  baselineFlag: string | undefined,
+): Promise<number> {
+  if (expiring) {
+    return await expiryHistory(cwd, asJson, days, baselineFlag);
+  }
   const path = resolve(cwd, HISTORY_PATH);
 
   let raw: string;
@@ -500,6 +524,95 @@ async function history(cwd: string, asJson: boolean, last: string | undefined): 
   }
 
   return 0;
+}
+
+async function expiryHistory(
+  cwd: string,
+  asJson: boolean,
+  daysRaw: string | undefined,
+  baselineFlag: string | undefined,
+): Promise<number> {
+  const days = daysRaw === undefined ? 30 : Number(daysRaw);
+  if (!Number.isInteger(days) || days < 1) {
+    process.stderr.write(`--days expects a positive integer, got ${daysRaw}\n`);
+    return 2;
+  }
+
+  const baselinePath = resolve(cwd, baselineFlag ?? BASELINE_PATH);
+  let loaded;
+  try {
+    loaded = await loadBaseline(baselinePath, (note) => process.stderr.write(`${note}\n`));
+  } catch (error) {
+    process.stderr.write(`${(error as Error).message}\n`);
+    return 2;
+  }
+
+  const asOf = new Date().toISOString().slice(0, 10);
+  const queue = upcomingExpirations(loaded.baseline, asOf, days);
+  if (asJson) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          baseline: baselinePath,
+          baselineExists: loaded.exists,
+          ...queueJson(queue),
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return 0;
+  }
+
+  process.stdout.write(renderExpiry(queue, baselinePath, loaded.exists));
+  return 0;
+}
+
+function queueJson(queue: ExpiryQueue) {
+  return {
+    asOf: queue.asOf,
+    days: queue.days,
+    until: queue.until,
+    expiring: queue.expiring.map(({ entry, daysRemaining }) => ({ ...entry, daysRemaining })),
+    expired: queue.expired,
+    unbounded: queue.unbounded,
+  };
+}
+
+function renderExpiry(queue: ExpiryQueue, baselinePath: string, baselineExists: boolean): string {
+  if (!baselineExists) {
+    return `no baseline at ${baselinePath}\nRun \`zero-shelter judge --update-baseline\` after reviewing findings.\n`;
+  }
+
+  const lines = [`as of ${queue.asOf}, showing acceptances through ${queue.until}`];
+  if (queue.expiring.length === 0) {
+    lines.push("no acceptances expire in this window");
+  } else {
+    const byOwner = new Map<string, ExpiringAcceptance[]>();
+    for (const item of queue.expiring) {
+      const owner = item.entry.acceptedBy ?? "unassigned";
+      const list = byOwner.get(owner);
+      if (list === undefined) byOwner.set(owner, [item]);
+      else list.push(item);
+    }
+    lines.push(`${queue.expiring.length} acceptance(s) expire in the next ${queue.days} days`);
+    for (const owner of [...byOwner.keys()].sort()) {
+      lines.push(`  ${owner}`);
+      for (const { entry } of byOwner.get(owner)!) {
+        lines.push(`    ${entry.expires}  ${entry.package}  ${entry.advisory}`);
+      }
+    }
+  }
+  if (queue.expired.length > 0) {
+    lines.push("", `${queue.expired.length} acceptance(s) already expired`);
+    for (const entry of queue.expired) {
+      lines.push(`  ${entry.expires}  ${entry.acceptedBy ?? "unassigned"}  ${entry.package}  ${entry.advisory}`);
+    }
+  }
+  if (queue.unbounded.length > 0) {
+    lines.push("", `${queue.unbounded.length} acceptance(s) have no expiry`);
+  }
+  return `${lines.join("\n")}\n`;
 }
 
 /**

@@ -265,6 +265,76 @@ function isRealDate(value: string): boolean {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
 }
 
+export interface ExpiringAcceptance {
+  readonly entry: AcceptedFinding;
+  readonly daysRemaining: number;
+}
+
+export interface ExpiryQueue {
+  readonly asOf: string;
+  readonly until: string;
+  readonly days: number;
+  readonly expiring: readonly ExpiringAcceptance[];
+  readonly expired: readonly AcceptedFinding[];
+  readonly unbounded: readonly AcceptedFinding[];
+}
+
+/** Partition accepted entries into the review queue for an explicit UTC date. */
+export function upcomingExpirations(
+  baseline: Baseline,
+  asOf: string,
+  days: number,
+): ExpiryQueue {
+  if (!isRealDate(asOf)) throw new Error(`${asOf} is not a real YYYY-MM-DD date`);
+  if (!Number.isInteger(days) || days < 1) {
+    throw new Error(`expiry window expects a positive integer, got ${days}`);
+  }
+
+  const start = dateValue(asOf);
+  const until = new Date(start + days * 86_400_000).toISOString().slice(0, 10);
+  const end = dateValue(until);
+  const expiring: ExpiringAcceptance[] = [];
+  const expired: AcceptedFinding[] = [];
+  const unbounded: AcceptedFinding[] = [];
+
+  for (const entry of baseline.accepted) {
+    if (entry.expires === undefined) {
+      unbounded.push(entry);
+      continue;
+    }
+    const expiry = dateValue(entry.expires);
+    if (expiry < start) {
+      expired.push(entry);
+    } else if (expiry <= end) {
+      expiring.push({ entry, daysRemaining: Math.round((expiry - start) / 86_400_000) });
+    }
+  }
+
+  const byEntry = (left: AcceptedFinding, right: AcceptedFinding): number =>
+    (left.expires ?? "") < (right.expires ?? "")
+      ? -1
+      : (left.expires ?? "") > (right.expires ?? "")
+        ? 1
+        : left.package < right.package
+          ? -1
+          : left.package > right.package
+            ? 1
+            : left.fingerprint < right.fingerprint
+              ? -1
+              : left.fingerprint > right.fingerprint
+                ? 1
+                : 0;
+
+  expiring.sort((left, right) => byEntry(left.entry, right.entry));
+  expired.sort(byEntry);
+  unbounded.sort(byEntry);
+  return { asOf, until, days, expiring, expired, unbounded };
+}
+
+function dateValue(value: string): number {
+  return Date.parse(`${value}T00:00:00Z`);
+}
+
 /**
  * One accepted finding per line, sorted to keep diffs readable.
  */
