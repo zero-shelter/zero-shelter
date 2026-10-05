@@ -35,6 +35,7 @@ import {
 import type { ScaFinding } from "./finding.js";
 import { versionOutput } from "./version.js";
 import { unscannedScope } from "./scope.js";
+import { suggestNextStep } from "./next-step.js";
 
 const USAGE = `zero-shelter judge — review dependency scanner findings
 
@@ -200,6 +201,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   const installed = readInstalledVersions(cwd);
+  const nextStep = await suggestNextStep(cwd, baseline, baselineExists);
   // Injected rather than read inside the judgement, the same rule history
   // follows: an acceptance that expires today must not make the same input
   // produce a different answer depending on when it ran.
@@ -215,6 +217,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     ...(sources === undefined ? {} : { sources }),
     ...(top === undefined ? {} : { top }),
     unscanned: unscannedScope(cwd),
+    ...(nextStep === undefined ? {} : { nextStep }),
   });
 
   if (values["update-baseline"] === true) {
