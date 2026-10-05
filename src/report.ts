@@ -138,7 +138,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   const outstanding = result.applied.fresh;
   const manager = result.packageManager ?? "npm";
   // Only npm lockfiles support verified upgrade counts.
-  const promises = canPromiseClears(manager);
+  const promises = canPromiseClears(manager, result.installed);
   const actions = upgradeActions(outstanding, result.installed, manager);
   if (actions.length > 0) {
     lines.push("");
@@ -536,7 +536,7 @@ export function renderJson(result: JudgeResult): string {
         result.installed,
         result.packageManager ?? "npm",
       ).map((action) =>
-        canPromiseClears(result.packageManager ?? "npm")
+        canPromiseClears(result.packageManager ?? "npm", result.installed)
           ? action
           : { packageName: action.packageName, upgradeTo: action.upgradeTo, command: action.command },
       ),

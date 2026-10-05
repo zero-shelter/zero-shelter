@@ -32,7 +32,7 @@ export function hookContext(result: JudgeResult): string | undefined {
   const manager = result.packageManager ?? "npm";
   const everyCommand = upgradeActions(result.fixNow, result.installed, manager);
   // Only npm lockfile ranges support verified upgrade counts.
-  const promises = canPromiseClears(manager);
+  const promises = canPromiseClears(manager, result.installed);
   const commands = everyCommand.slice(0, LIMIT);
   const remedy =
     commands.length === 0

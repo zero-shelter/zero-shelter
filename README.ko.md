@@ -126,6 +126,11 @@ pnpm 프로젝트도 그대로 됩니다. `pnpm-lock.yaml`이 있으면 `pnpm au
 선택할 수 있을 때까지 명령을 만들지 않고, `<0.0.0>`은 계속 "공개된 수정 버전
 없음"으로 처리합니다.
 
+lockfile reader는 pnpm이 생성한 패키지 연결도 사용해 설치된 버전, production/dev
+범위, 의존성이 막는 업그레이드, 설치 스크립트를 표시합니다. YAML 의존성을 추가하지
+않고 lockfile 5.x·6.x·9.x를 지원하며, 읽을 수 없거나 더 새로운 형식이면 추측하지
+않고 lockfile이 필요한 주장을 보류합니다. Yarn은 이 reader의 범위 밖입니다.
+
 yarn은 `osv-scanner` 없이는 두 번째 소스도 첫 번째 소스도 없습니다 — `npm audit`이
 `yarn.lock`을 못 읽고, yarn v1은 NDJSON이라 이 도구가 파싱하지 않습니다.
 `osv-scanner`가 `yarn.lock`을 직접 읽으니, yarn에서는 그것이 유일한 소스입니다.
