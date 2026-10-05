@@ -14,10 +14,13 @@ import type { RankedFinding } from "./triage.js";
 import { WEIGHTS } from "./triage.js";
 import { messagesFor } from "./messages.js";
 import type { UnscannedScope } from "./scope.js";
+import { severityBreakdown, type Attribution } from "./attribution.js";
 
 export interface JudgeResult {
   readonly raw: number;
   readonly merged: number;
+  /** How the merged findings partition across contributing scanner sources. */
+  readonly attribution: Attribution;
   readonly applied: AppliedBaseline;
   readonly fixNow: readonly RankedFinding[];
   readonly skipped: readonly string[];
@@ -80,6 +83,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   if (fixNow.length === 0) {
     lines.push(paint("✓ no new findings", COLOR.green));
     lines.push(summary(result, paint));
+    lines.push(...attributionLines(result, paint));
     if (result.unscanned !== undefined) {
       lines.push(paint(unscannedLine(result.unscanned), COLOR.dim));
     }
@@ -200,6 +204,7 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   lines.push("", summary(result, paint));
+  lines.push(...attributionLines(result, paint));
 
   lines.push(...resolvedLines(result, paint));
   lines.push(...ratchetLines(result, paint));
@@ -226,6 +231,29 @@ export function renderHuman(result: JudgeResult, color: boolean): string {
   }
 
   return lines.join("\n");
+}
+
+function attributionLines(
+  result: JudgeResult,
+  paint: (text: string, code: string) => string,
+): string[] {
+  if (result.attribution.total === 0) return [];
+  const lines = ["", paint("  source attribution", COLOR.dim)];
+  for (const bucket of result.attribution.unique) {
+    const breakdown = severityBreakdown(bucket.severity);
+    lines.push(
+      `  ${bucket.source} is the only source for ${bucket.unique} finding(s)` +
+        (breakdown === "" ? "" : ` (${breakdown})`),
+    );
+  }
+  if (result.attribution.corroborated > 0) {
+    const breakdown = severityBreakdown(result.attribution.corroboratedSeverity);
+    lines.push(
+      `  ${result.attribution.corroborated} finding(s) are reported by multiple sources` +
+        (breakdown === "" ? "" : ` (${breakdown})`),
+    );
+  }
+  return lines;
 }
 
 function unscannedLine(scope: UnscannedScope): string {
@@ -527,6 +555,7 @@ export function renderJson(result: JudgeResult): string {
       skipped: result.skipped,
       ...(result.unscanned === undefined ? {} : { unscanned: result.unscanned }),
       missingSources: result.applied.missingSources,
+      attribution: result.attribution,
       // The commands, so a caller does not have to re-derive them from the
       // findings and get the version comparison subtly wrong.
       workspaceRoot: result.workspaceRoot === true,

@@ -21,6 +21,9 @@ export interface Messages {
   readonly sourcesUsed: string;
   readonly sourcesNone: string;
   readonly sourcesUnknown: string;
+  readonly attributionHeading: string;
+  readonly attributionUnique: (source: string, count: number, breakdown: string) => string;
+  readonly attributionCorroborated: (count: number, breakdown: string) => string;
 
   readonly actNow: string;
   readonly actNowHow: string;
@@ -112,6 +115,11 @@ const EN: Messages = {
   sourcesUsed: "Sources",
   sourcesNone: "No scanner produced a report.",
   sourcesUnknown: "Scanner run status was not provided.",
+  attributionHeading: "Source attribution",
+  attributionUnique: (source, count, breakdown) =>
+    `${source} only: ${count} finding(s)${breakdown === "" ? "" : ` (${breakdown})`}`,
+  attributionCorroborated: (count, breakdown) =>
+    `${count} finding(s) reported by multiple sources${breakdown === "" ? "" : ` (${breakdown})`}`,
 
   actNow: "Run commands",
   actNowHow:
@@ -224,6 +232,11 @@ const KO: Messages = {
   sourcesUsed: "보고서를 낸 스캐너",
   sourcesNone: "보고서를 낸 스캐너가 없습니다.",
   sourcesUnknown: "스캐너 실행 정보가 없습니다.",
+  attributionHeading: "소스별 기여",
+  attributionUnique: (source, count, breakdown) =>
+    `${source}만 보고: ${count}건${breakdown === "" ? "" : ` (${breakdown})`}`,
+  attributionCorroborated: (count, breakdown) =>
+    `둘 이상의 소스가 보고: ${count}건${breakdown === "" ? "" : ` (${breakdown})`}`,
 
   actNow: "명령 실행",
   actNowHow:

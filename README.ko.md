@@ -394,6 +394,10 @@ Node 20 이상.
 
 [![Star history](https://api.star-history.com/svg?repos=zero-shelter/zero-shelter&type=Date)](https://star-history.com/#zero-shelter/zero-shelter&Date)
 
+리포트에는 소스별 기여도도 표시됩니다. 한 스캐너만 보고한 finding은 심각도별
+건수와 함께, 여러 소스가 보고한 finding은 별도로 셉니다. 이는 실행 결과에
+대한 사실이며 점수나 스캐너 추천이 아닙니다.
+
 ## 라이선스
 
 [Apache-2.0](./LICENSE)

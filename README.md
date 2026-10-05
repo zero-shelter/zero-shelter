@@ -411,6 +411,11 @@ issue saying why is worth more.
 
 [![Star history](https://api.star-history.com/svg?repos=zero-shelter/zero-shelter&type=Date)](https://star-history.com/#zero-shelter/zero-shelter&Date)
 
+The report also includes source attribution: findings unique to one scanner are
+listed with severity counts, while findings reported by multiple sources are
+counted separately. These are run facts, not a score or a recommendation about
+which scanner is correct.
+
 ## License
 
 [Apache-2.0](./LICENSE)
