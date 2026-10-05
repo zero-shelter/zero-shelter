@@ -80,6 +80,16 @@ $ npx zero-shelter judge
 선택적인 범위 확인을 끝내지 못하면 JSON의 `unscanned.complete`가 `false`가 되고
 사람용 문장에도 표시합니다. 이때 `false`나 `0`은 artifact가 없다는 증거가 아닙니다.
 
+반복해서 적용할 보고 규칙은 `.zero-shelter/policy.json`으로 커밋할 수 있습니다.
+
+```json
+{"version":1,"minimumSeverity":"moderate","ignoreScopes":["dev"]}
+```
+
+policy는 검토 목록만 거릅니다. raw와 merge 수에는 항목이 남고, 터미널과 JSON이 적용된
+규칙과 필터링 수를 표시합니다. `mixed` 의존성은 무시하지 않습니다. policy 파일이
+없으면 아무것도 바뀌지 않으며, 잘못된 파일은 종료 코드 2로 실행을 멈춥니다.
+
 ## 설치
 
 두 개를 설치합니다. 두 번째는 선택이 아닙니다.

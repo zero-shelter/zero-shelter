@@ -36,6 +36,7 @@ import type { ScaFinding } from "./finding.js";
 import { versionOutput } from "./version.js";
 import { unscannedScope } from "./scope.js";
 import { explainDependency, renderWhy, renderWhyJson } from "./why.js";
+import { loadPolicy, POLICY_PATH } from "./policy.js";
 
 const USAGE = `zero-shelter judge — review dependency scanner findings
 
@@ -208,6 +209,14 @@ export async function main(argv: readonly string[]): Promise<number> {
     return 2;
   }
 
+  let policy;
+  try {
+    policy = await loadPolicy(resolve(cwd, POLICY_PATH));
+  } catch (error) {
+    process.stderr.write(`${(error as Error).message}\n`);
+    return 2;
+  }
+
   const installed = readInstalledVersions(cwd);
   // Injected rather than read inside the judgement, the same rule history
   // follows: an acceptance that expires today must not make the same input
@@ -224,6 +233,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     ...(sources === undefined ? {} : { sources }),
     ...(top === undefined ? {} : { top }),
     unscanned: unscannedScope(cwd),
+    ...(policy === undefined ? {} : { policy }),
   });
 
   if (values["update-baseline"] === true) {
@@ -592,6 +602,7 @@ async function hook(
     const { baseline, exists } = await loadBaseline(
       resolve(cwd, baselineFlag ?? BASELINE_PATH),
     );
+    const policy = await loadPolicy(resolve(cwd, POLICY_PATH));
     // Use lockfile facts for hook advice just as for the human report.
     const installed = readInstalledVersions(cwd);
     const context = hookContext(
@@ -605,6 +616,7 @@ async function hook(
         today: new Date().toISOString().slice(0, 10),
         ...(installed === undefined ? {} : { installed }),
         unscanned: unscannedScope(cwd),
+        ...(policy === undefined ? {} : { policy }),
       }),
     );
     if (context !== undefined) process.stdout.write(hookOutput(context));
