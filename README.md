@@ -129,6 +129,12 @@ lower bound, zero-shelter passes that version through to the package-manager
 command. Exclusive, prerelease, and compound ranges remain without a command
 until they can be selected safely; `<0.0.0>` remains "no published fix".
 
+The lockfile reader also uses pnpm's generated package edges to report installed
+versions, production/dev scope, dependency blockers, and install scripts. It
+supports lockfile versions 5.x, 6.x, and 9.x without adding a YAML dependency;
+an unreadable or newer format withholds lockfile-dependent claims rather than
+guessing. Yarn remains outside this reader.
+
 yarn has no second source without `osv-scanner` and no first source either —
 `npm audit` cannot read `yarn.lock`, and yarn v1 writes NDJSON, which this tool
 does not parse. `osv-scanner` reads `yarn.lock` directly, so for yarn it is the
