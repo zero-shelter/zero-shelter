@@ -1,4 +1,6 @@
-import { writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -28,19 +30,29 @@ describe("pnpm lockfile context", () => {
 
   it("reads importer dependency metadata from pnpm 9", () => {
     const raw = `lockfileVersion: '9.0'\n\nimporters:\n  .:\n    dependencies:\n      demo:\n        specifier: ^1.0.0\n        version: 1.2.3\n    devDependencies:\n      test-runner:\n        specifier: ^2.0.0\n        version: 2.1.0\n\npackages:\n  demo@1.2.3:\n    resolution: {}\n  test-runner@2.1.0:\n    resolution: {}\n\nsnapshots:\n  demo@1.2.3: {}\n  test-runner@2.1.0: {}\n`;
-    const path = "/tmp/zero-shelter-pnpm-importer.yaml";
+    const directory = mkdtempSync(join(tmpdir(), "zero-shelter-pnpm-"));
+    const path = join(directory, "importer.yaml");
     // The parser is pure with respect to the lockfile path; use the fixture
     // reader contract by writing a temporary capture through Node's standard
     // filesystem only in this focused shape test.
-    writeFileSync(path, raw);
-    const tree = readPnpmLockfile(path)!;
-    expect(scopeOf("demo", tree)).toBe("prod");
-    expect(scopeOf("test-runner", tree)).toBe("dev");
+    try {
+      writeFileSync(path, raw);
+      const tree = readPnpmLockfile(path)!;
+      expect(scopeOf("demo", tree)).toBe("prod");
+      expect(scopeOf("test-runner", tree)).toBe("dev");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it("rejects unsupported versions instead of guessing", () => {
-    const path = "/tmp/zero-shelter-pnpm-unsupported.yaml";
-    writeFileSync(path, "lockfileVersion: '10.0'\npackages: {}\n");
-    expect(readPnpmLockfile(path)).toBeUndefined();
+    const directory = mkdtempSync(join(tmpdir(), "zero-shelter-pnpm-"));
+    const path = join(directory, "unsupported.yaml");
+    try {
+      writeFileSync(path, "lockfileVersion: '10.0'\npackages: {}\n");
+      expect(readPnpmLockfile(path)).toBeUndefined();
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
