@@ -59,7 +59,7 @@ export function renderHtml(result: JudgeResult, options: HtmlOptions): string {
   const indirect = transitiveFixes(outstanding, result.installed);
   // Only npm lockfiles support verified counts; hide both counts and any
   // count-related instructions for other managers.
-  const promises = canPromiseClears(manager);
+  const promises = canPromiseClears(manager, result.installed);
 
   const body = [
     header(options, t),

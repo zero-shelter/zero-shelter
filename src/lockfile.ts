@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { accepts, compare, lowestMentioned } from "./version-range.js";
+import { readPnpmLockfile } from "./pnpm-lockfile.js";
 
 /** One package's declared need for another. */
 export interface Requirement {
@@ -58,6 +59,9 @@ export interface LockEntry {
 
 /** `undefined` when there is no lockfile to read — callers fall back to name-level advice. */
 export function readInstalledVersions(cwd: string): InstalledVersions | undefined {
+  const pnpmPath = join(cwd, "pnpm-lock.yaml");
+  if (existsSync(pnpmPath)) return readPnpmLockfile(pnpmPath);
+
   const path = join(cwd, "package-lock.json");
   if (!existsSync(path)) return undefined;
 

@@ -13,6 +13,7 @@ import {
   overrideBlock,
   overrideSnippet,
 } from "../src/package-manager.js";
+import { fromPackages } from "../src/lockfile.js";
 
 const projectWith = (file: string, contents: string): string => {
   const dir = mkdtempSync(join(tmpdir(), "zs-pm-"));
@@ -78,14 +79,14 @@ describe("where a forced version goes", () => {
 });
 
 /**
- * The 0.0.7 promise rests on reading dependents' required ranges out of
- * package-lock.json. There is no reader for the other two, so the check answers
- * yes by default and the guarantee is quietly off.
+ * The 0.0.7 promise rests on reading dependents' required ranges out of a
+ * supported lockfile. pnpm is eligible only when that context was read.
  */
 describe("when clears can be promised at all", () => {
   it("only where there is a lockfile we can read", () => {
     expect(canPromiseClears("npm")).toBe(true);
     expect(canPromiseClears("pnpm")).toBe(false);
+    expect(canPromiseClears("pnpm", fromPackages({ "node_modules/tar": { version: "6.2.1" } }))).toBe(true);
     expect(canPromiseClears("yarn")).toBe(false);
     expect(canPromiseClears("yarn-classic")).toBe(false);
   });
