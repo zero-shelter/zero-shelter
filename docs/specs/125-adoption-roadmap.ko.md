@@ -194,6 +194,11 @@ npm audit만 보는 판정 2건
 `format`은 `osv`, `sarif`, `npm-audit` 중 하나다. `install`은 `scan.ts`가 이미 쓰는
 방식을 따른다. 문제만 말하지 않고 빠져나갈 길을 알려준다.
 
+[스캐너 조사](../scanner-survey.ko.md) 결과 SARIF는 공통 의존성 취약점 스키마가
+아니라 결과 컨테이너입니다. trivy·grype·pip-audit·govulncheck·cargo-audit는 각자
+native JSON 어댑터와 fixture가 필요하며, SARIF manifest는 패키지·버전·advisory·조치
+필드의 위치를 명시해야 합니다. 범위·CVSS·공개일이 없으면 그대로 비워 둡니다.
+
 내장 manifest가 먼저, 그다음 `.zero-shelter/adapters/`. **manifest는 실행 전에 `id`로
 정렬**하고 ecosystem은 `src/normalize.ts`를 거쳐 대소문자를 접는다 — 둘 다 정돈이
 아니라 하중을 받는 이유는 [보안](#보안과-프라이버시)과 #129에 있다.
