@@ -287,6 +287,11 @@ are collected like `judge` and keep their existing subprocess/network boundary.
 The command never installs packages or adds a registry lookup of its own, and it
 reports only versions the lockfile can establish.
 
+Recorded runs also retain the package and advisory names for outstanding
+findings. History uses them to name what appeared and what is no longer
+reported; older rows say when those names are unavailable instead of guessing
+from a later scan.
+
 `--explain` prints every point awarded and the weights table it came from, so
 the ranking can be argued with rather than trusted.
 
