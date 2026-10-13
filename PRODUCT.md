@@ -1,116 +1,89 @@
 # Product
 
-## Register
+[한국어](./PRODUCT.ko.md) · [Roadmap](./docs/ROADMAP.md)
 
-product
+zero-shelter turns dependency scanner reports into a ranked review list,
+upgrade commands where supported, and a record of accepted findings. Developers
+can act on the report directly or pass its commands and evidence to a coding agent.
 
-## Users
+## Users and workflow
 
-Developers who run **more than one** dependency scanner on projects they
-maintain. Coverage is why they added the second one; the cost is that the two
-describe the same vulnerability under different identifiers, and nothing
-downstream reconciles them. Adding a scanner made the reading longer without
-making the project safer, so they stopped opening the reports.
+The product is intended for developers responsible for a repository's dependency
+security, including those without a dedicated security team. Maintainers use
+the same evidence to review proposed dependency changes.
 
-This is the shape the tool is built around, and it is worth being blunt about
-what follows from it. With one source there is nothing to reconcile: the
-reduction is zero and the value is ranking alone. Measured on uptime-kuma, npm
-audit by itself reports 71 and leaves 71; add osv-scanner and it is 142 in and
-71 out. **The second source is the premise, not an optional extra**, and the
-install instructions should stop calling it one.
+The workflow is to collect supported scanner reports, review the findings and
+available remedies, apply an agreed change, then compare the next run. A
+baseline records decisions to accept findings; history records changes between
+runs. Neither substitutes for checking that the application still works.
 
-The job: decide what to do next about dependency findings that arrived from
-several tools at once, and be able to check that decision rather than take it
-on faith.
+The [README](./README.md) covers installation, direct use, AI integration and CI.
 
-Secondary reader: the same person a week later, asking whether things are
-getting better or worse.
+## Current capabilities
 
-Getting them to the second scanner is our job, not somebody else's. This was
-excluded once, on the grounds that teaching a first scan is a different product.
-That was written for a world where onboarding means a human reading docs, and it
-was already contradicted by our own package: `skills/setup` exists and its whole
-job is the first run. It also gave away the thing that creates our value — a
-reader with one source gets 0% from us, so declaring the step that produces our
-user to be out of scope was declaring ourselves out of scope.
+- Read supported npm/pnpm audit and OSV reports, merge shared identifiers, and
+  rank findings using the weights printed by `--explain`.
+- Provide direct upgrade commands and separate indirect dependency advice where
+  supported. Package-manager, workspace and ecosystem limits apply.
+- Record accepted findings and compare later runs. Entries support decision
+  metadata and expiry. [#247](https://github.com/zero-shelter/zero-shelter/issues/247)
+  records a known issue: rewriting an acceptance matched through an advisory
+  alias can lose its metadata and expiry.
+- Produce terminal, JSON, HTML and SARIF reports, and optionally record history.
+  The [current-state table](./docs/ROADMAP.md#current-state) separates the npm
+  release from changes merged later.
 
-An agent doing the install changes the arithmetic. The setup skill installs the
-second scanner, verifies it produced a report rather than assuming, and shows
-the one-source and two-source numbers on the reader's own project — which is the
-argument, and it is theirs rather than ours.
+One supported source provides ranking, available remediation advice and
+baseline comparison. Additional sources may contribute findings or fixed
+versions, corroborate findings, and allow reconciliation of overlapping
+identifiers. The [benchmark](./bench/README.md) measures these effects on pinned
+captures; it does not establish ranking precision or a preferred scanner set
+for every project.
 
-Still not this reader: someone who wants to be taught what a vulnerability is.
-`npm install` already prints a count at them, and the gap there is not
-knowledge, it is that nothing makes the count actionable.
+## Limits
 
-> Written 2026-08-22 while designing the HTML report, and it showed: the
-> original text described the person looking at *that page* — mid-task, browser
-> tab among many — and was then read as the product's user for weeks. It sent
-> the demo video and the report intro after a reader the product was never
-> shaped for. Rewritten 2026-08-27 against what the code actually does.
+The current judgement domain is dependency vulnerabilities. The tool does not
+provide complete SAST, secret, container, infrastructure or workflow inspection,
+or determine whether a vulnerable path is reachable. It cannot infer a VEX
+justification or decide whether the user should accept a risk.
 
-## Product Purpose
+A shorter report, an accepted baseline or an installed scanner does not prove
+that a project is safe. “No longer reported” must retain any qualification about
+missing sources. There are no measured adoption, time-to-action or retention
+results yet; proposed usability work is in the [roadmap](./docs/ROADMAP.md).
 
-Everything here is a judgement layer, not a scanner. Other tools find things;
-this one decides which of them matter now, reconciles what two scanners each
-called by a different name, and stays quiet about what has already been
-accepted.
+Judgement is local, with no runtime LLM or telemetry. Invoked scanners may use
+the network and repository configuration. See [Security](./SECURITY.md) for the
+trust boundary and [#217](https://github.com/zero-shelter/zero-shelter/issues/217)
+for the related documentation work.
 
-The reporting surfaces are three views of one judgement:
+## Presentation
 
-- the terminal, for the person who just ran it
-- an agent reading the JSON, for the person who would rather be told
-- a static HTML file, for the person who wants to look at it themselves
+Show what ran, which findings need review, the supported actions, and the reason
+for each action. Keep warnings visible. Direct commands and agent prompts must
+use the same remediation advice. Renderers must preserve the judgement's order
+and unresolved possible duplicates.
 
-Success is that a reader finds the next action in seconds and can trace why it
-is the next action.
+Use concrete descriptions and reproducible examples. Distinguish completed
+checks, estimates and missing evidence. Do not add a composite security score,
+alarm decoration or celebration effects. Use severity labels as well as color,
+keyboard controls, readable contrast, reduced-motion support and layouts that
+accommodate translations.
 
-## Brand Personality
+Human-readable wording can change within the [compatibility contract](./docs/STABILITY.md).
+Ranking, fingerprints, baseline semantics and security boundaries follow the
+review requirements in [Governance](./GOVERNANCE.md).
 
-Exact, unhurried, plainly spoken. It says what it measured and what it did not:
-"fewer items", not "the right items", until labels exist to say otherwise. It
-never congratulates itself, and it does not decorate a number to make it feel
-larger.
+## Product decisions
 
-Three words: evidential, deliberate, quiet.
+The Owner is responsible for positioning and roadmap order. Maintainers manage
+issue triage and release readiness. GitHub issues track status and assignees;
+[the roadmap](./docs/ROADMAP.md) records delivery order, and individual specs
+define interfaces.
 
-Professional in the sense a lab result is professional: someone else could
-check it.
-
-## Anti-references
-
-- **The security dashboard.** Dark navy chrome, donut charts, gauges, a "risk
-  score" of 87 with nothing behind it. Every score in this product must be
-  traceable to a rule and a number the reader can argue with; an invented
-  composite is the exact opposite of what this tool sells.
-- **Alarm design.** Red banners, sirens, "CRITICAL" in 48px. The findings are
-  usually a version bump, and dressing them as an emergency is how people learn
-  to close the tab.
-- **Vendor marketing inside a tool.** Upsell blocks, logos, "powered by".
-- **Cheerful emptiness.** Confetti, "You're all clear!", mascots. When nothing
-  is outstanding, say so once and stop.
-
-## Strategic Design Principles
-
-1. **Show the evidence next to the claim.** Any number that ranks or summarises
-   must sit within reach of what produced it.
-2. **The next action is the headline.** A command someone can run outranks a
-   description of a vulnerability.
-3. **Severity is never encoded in colour alone.** Rank, position and label
-   carry it; colour only reinforces.
-4. **Nothing invented in the presentation layer.** The HTML shows what the
-   judgement produced. No re-ranking, no synthesised scores, no rounding that
-   flatters.
-5. **Quiet by default, dense on demand.** The first screen answers "what now";
-   the detail is present but does not compete.
-6. **Legible outside English.** The report is read in several countries; its
-   strings are translatable and its layout survives longer words.
-
-## Accessibility
-
-- Severity distinguishable without colour (rank word, order, numeric score).
-- Text contrast at WCAG AA or better against its own background.
-- Respect `prefers-reduced-motion`; no motion is required to understand
-  anything.
-- Keyboard-reachable interactive elements, visible focus.
-- Print styling is not a goal yet.
+The project does not adopt a composite posture score or public project
+leaderboard. The [historical design](./docs/specs/adoption-roadmap.md#rejected-designs)
+records the reasons. The scoped badge proposal
+[#134](https://github.com/zero-shelter/zero-shelter/issues/134) remains deferred
+and is distinct from those rejected designs. [#249](https://github.com/zero-shelter/zero-shelter/issues/249)
+records the product and roadmap review.
