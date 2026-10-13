@@ -287,6 +287,12 @@ are collected like `judge` and keep their existing subprocess/network boundary.
 The command never installs packages or adds a registry lookup of its own, and it
 reports only versions the lockfile can establish.
 
+`zero-shelter history --expiring` turns the baseline into a review queue. It
+shows accepted findings expiring in the next 30 days, grouped by `acceptedBy`,
+then lists already expired and unbounded entries separately. Use `--days <n>`
+to choose another positive window and `--json` for a scheduled job. The command
+does not renew or edit the baseline.
+
 `--explain` prints every point awarded and the weights table it came from, so
 the ranking can be argued with rather than trusted.
 
