@@ -1,8 +1,6 @@
 # Notes for coding agents
 
-Read this if you are an agent working in a repository that uses zero-shelter,
-or in this one. The plugin ships skills that say the same things in more
-detail; this file is for when it is not installed.
+Use these instructions when running zero-shelter in a project. Repository contribution rules follow below.
 
 ## Running it
 
@@ -10,68 +8,41 @@ detail; this file is for when it is not installed.
 npx --yes zero-shelter judge --json
 ```
 
-Exit codes are the answer, not decoration:
+Use the exit code to distinguish findings from a failed inspection:
 
 | Code | Meaning | What to do |
 |---|---|---|
-| 0 | Scanned, nothing new | Say so and stop |
-| 1 | New findings | Work through them |
-| 2 | **Could not judge** | Never report this as clean. The message says why — usually a missing lockfile |
+| 0 | Scanned, nothing new | Report that result and stop |
+| 1 | New findings | Review the findings and available actions |
+| 2 | Could not judge | Report the reason; never describe this as clean |
 
-## Use `upgrades`, do not rebuild it
+## Remediation commands
 
-The JSON carries `upgrades`: commands, already grouped by package and already
-version-compared. Run those.
+Use the JSON `upgrades` commands, which are grouped by package and compared using version rules. Do not derive commands from `fixedIn`: string comparison, for example, can put `4.9.0` above `4.10.0` and select an insufficient version.
 
-Deriving your own from `fixedIn` gets it wrong in a way that is easy to miss:
-comparing versions as strings puts `4.17.21` above `4.18.1`, which sends someone
-to an older release than the one they need.
+`transitiveFixes` requires a different approach. Installing an indirect dependency at the top level can leave the vulnerable copy in place. Propose the project's package-manager-specific override or resolution and explain that forcing a version may break the parent dependency. Do not apply it without the user's decision. The [install notes](./README.md#install) explain package-manager selection.
 
-`transitiveFixes` is a different list on purpose. Those packages arrive through
-someone else's dependency, so `npm i` adds a top-level entry nobody asked for
-and leaves the vulnerable copy in place. Use the project's
-package-manager-specific override or resolution mechanism; the
-[install notes](./README.md#install) explain how the lockfile selects that
-package manager. Forcing a transitive version can break the parent that pinned
-the old version — propose it, name the risk, do not apply it silently.
+## Verify the result
 
-## Verify with this tool, not with `npm audit`
+Re-run zero-shelter to verify remediation. `npm audit` does not apply or reconcile the zero-shelter baseline, so its result cannot replace this check.
 
-They answer different questions. `npm audit` does not know the baseline, so it
-calls a project clean while accepted findings are still outstanding, and it
-reconciles nothing. Quoting its "0 vulnerabilities" as the result of your work
-is quoting a different tool.
+Say **no longer reported** unless a re-run confirms remediation. A finding may also disappear because it was accepted into the baseline or its scanner did not run.
 
-Say **no longer reported**, not fixed, unless a re-run confirms it: a finding
-also disappears when it is accepted into the baseline, and when the scanner that
-found it did not run. The CLI hedges for that reason; keep the hedge.
+## Preserve the judgement
 
-## Do not re-rank, re-score, or re-merge
+Keep the reported order, scores, and merge decisions. `--explain` prints the weights; if a ranking looks wrong, identify the finding and explain the concern for review.
 
-The order comes from a weights table you can print with `--explain`. It is
-reproducible; your reconstruction of it is not. If the ranking looks wrong, say
-which finding and why so the weights can be argued with, rather than quietly
-sorting the list differently on the way to the screen.
+The `(dev)` scope label and age column are context, not scoring inputs. Do not reorder production and development dependencies or older and newer findings unless the printed weights require it.
 
-The `(dev)` scope label and the age column are context, not hidden score inputs.
-Do not re-rank production packages above development packages, or older findings
-above newer ones, unless the printed weights say so.
+`possibleDuplicates` are unresolved suspected duplicates. Do not merge them without the identifier evidence required by the tool.
 
-`possibleDuplicates` means "suspected same, not merged". Report them as
-unresolved. Merging on a hunch is how a real vulnerability ends up hidden behind
-an unrelated one.
+## Decisions reserved for the user
 
-## Things that are the human's decision
+- `--update-baseline` accepts risk. Never use it to silence output or finish a task.
+- Package-manager-specific override or resolution entries.
+- Removing a dependency or pinning an older version.
 
-- `--update-baseline` — accepting a finding is a judgement about risk. Never run
-  it to make output quiet, and never as a way to finish a task.
-- Package-manager-specific override or resolution entries, for the reason above.
-- Removing a dependency, or pinning to an older version.
-
-## What this tool cannot tell you
-
-Whether the vulnerable code path is reachable in this project. Nothing here
-knows that. Say so when asked rather than estimating.
+The tool does not determine whether a vulnerable code path is reachable in this project. State that limitation when asked.
 
 ## Repository contribution rules
 
@@ -135,3 +106,7 @@ or install behavior. For package or CLI changes, also inspect
 Review every changed file as a human contributor and report anything that was
 not verified. Update the English canonical documentation and Korean translation
 when user-visible behavior changes.
+
+### Public writing
+
+Follow the [writing guidance](./CONTRIBUTING.md#writing-documentation-and-public-records). Describe verified behavior and its limits. Preserve technical evidence, chronology, and attribution when editing records. Distinguish automated checks and agent review from human approval; never present agent review as a human decision.

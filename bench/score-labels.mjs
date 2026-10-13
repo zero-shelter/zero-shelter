@@ -1,20 +1,9 @@
 #!/usr/bin/env node
 /**
- * Grade the judge against what two people said, and say how much they agreed.
- *
- * Two people label the same sheets without seeing each other's answers. This
- * reads both, reports Cohen's kappa so the reader can tell a real agreement
- * from two people guessing the same way, and scores our decisions only on the
- * rows where they actually agreed.
- *
- * The disagreements are not thrown away. They are printed, because a row two
- * careful people read differently is the most interesting row on the sheet and
- * the record of how it was settled belongs in the repository.
- *
- * Nothing here fills a label in. An answer key produced by the tool being
- * graded is not an answer key.
- *
- *   node bench/score-labels.mjs
+ * Compare two independently completed human label sheets. Report agreement,
+ * Cohen's kappa, decisions on agreed rows, and disagreements for recorded review.
+ * This script does not generate labels.
+ * Usage: node bench/score-labels.mjs
  */
 
 import { readFile, readdir } from "node:fs/promises";
@@ -24,12 +13,7 @@ import { fileURLToPath } from "node:url";
 const benchDir = dirname(fileURLToPath(import.meta.url));
 const labelDir = join(benchDir, "labels");
 
-/**
- * `<sheet>.<login>.tsv`, and never the template.
- *
- * The login is in the filename so the two files are visibly from two people,
- * and the commit history shows they arrived from two accounts.
- */
+/** Read <sheet>.<login>.tsv files, excluding unfilled templates. */
 async function sheetsFor(sheet) {
   const files = (await readdir(labelDir)).filter(
     (f) => f.startsWith(`${sheet}.`) && f.endsWith(".tsv") && !f.includes(".template."),
@@ -52,9 +36,7 @@ function parse(text) {
   const rows = new Map();
   for (const line of lines) {
     const cells = line.split("\t");
-    // Identity is every cell the labeller did not write in. Comparing on a row
-    // number instead would silently mispair the two files the moment one of
-    // them is sorted or an empty line is removed.
+    // Match on immutable input cells so row reordering does not pair different inputs.
     const key = cells.slice(0, labelAt).join("\t");
     const label = (cells[labelAt] ?? "").trim().toLowerCase();
     if (label !== "") rows.set(key, label);
@@ -62,14 +44,7 @@ function parse(text) {
   return rows;
 }
 
-/**
- * Cohen's kappa.
- *
- * Raw agreement flatters: if 90% of rows are obviously one answer, two people
- * agreeing 90% of the time have told you nothing. Kappa subtracts the
- * agreement you would expect from chance given how often each person used each
- * label. Below about 0.6 the labels are not a foundation to put a number on.
- */
+/** Cohen's kappa adjusts observed agreement for label-frequency agreement. */
 function kappa(a, b, shared) {
   const labels = [...new Set([...shared].flatMap((k) => [a.get(k), b.get(k)]))];
   const n = shared.length;
@@ -85,9 +60,7 @@ function kappa(a, b, shared) {
     expected += pa * pb;
   }
 
-  // Perfect agreement with one label used throughout: chance explains all of
-  // it, and the formula divides by zero. Saying "undefined" is honest; saying
-  // 1.0 would be the sheet flattering itself.
+  // A single label throughout gives a zero denominator; return null.
   const value = expected === 1 ? null : (observed - expected) / (1 - expected);
   return { kappa: value, agreed, n, observed };
 }
@@ -97,13 +70,13 @@ const SHEETS = {
     question: "did these reports describe one advisory?",
     // We joined them. So "same" means we were right.
     weRight: "same",
-    wrongMeans: "a false join — the second advisory disappeared behind the first",
+    wrongMeans: "a false join: distinct advisories combined",
   },
   holds: {
     question: "should these two have been joined?",
     // We did NOT join them. So "different" means we were right.
     weRight: "different",
-    wrongMeans: "caution cost a duplicate — they were one advisory and we showed two",
+    wrongMeans: "a retained duplicate: one advisory shown twice",
   },
 };
 
@@ -121,14 +94,12 @@ for (const [sheet, spec] of Object.entries(SHEETS)) {
   console.log(`\n## ${sheet} — ${spec.question}\n`);
 
   if (sheets.length === 1) {
-    // Deliberately not scored. One person is a reading, not a benchmark, and
-    // printing a precision figure from it would be the circularity this bench
-    // exists to avoid wearing a different hat.
+    // Require two labellers before scoring, per the benchmark protocol.
     const [only] = sheets;
     console.log(
       `Only **${only.labeller}** has labelled this (${only.rows.size} rows). ` +
         "A second, independent labeller is required before any figure is reported — " +
-        "one person's reading is not ground truth.",
+        "see the independent-labelling protocol in bench/README.md.",
     );
     continue;
   }
@@ -158,14 +129,14 @@ for (const [sheet, spec] of Object.entries(SHEETS)) {
 
   console.log(
     `\nOn the ${graded} rows both agreed on and neither marked unsure: ` +
-      `**${correct} of ${graded}** went our way` +
+      `**${correct} of ${graded}** matched the tool decision` +
       (graded > 0 ? ` (${Math.round((correct / graded) * 100)}%)` : ""),
   );
   console.log(`Each of the other ${graded - correct} is ${spec.wrongMeans}.`);
 
   const disputed = shared.filter((key) => a.rows.get(key) !== b.rows.get(key));
   if (disputed.length > 0) {
-    console.log(`\n### The ${disputed.length} they read differently\n`);
+    console.log(`\n### Disagreements (${disputed.length})\n`);
     for (const key of disputed) {
       const columns = key.split("\t");
       console.log(
@@ -174,8 +145,8 @@ for (const [sheet, spec] of Object.entries(SHEETS)) {
       );
     }
     console.log(
-      "\nSettle these in a recorded session and commit the outcome. The row two " +
-        "careful readers disagree about is the one worth writing down.",
+      "\nResolve these in a recorded session and commit the outcome. " +
+        "Keep the disputed labels and the decision rationale.",
     );
   }
 }

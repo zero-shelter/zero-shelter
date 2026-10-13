@@ -1,32 +1,10 @@
 #!/usr/bin/env node
 /**
- * Sheets for the decisions this tool actually makes.
- *
- * The per-finding sheets ask whether each raw finding is worth fixing. That is
- * a question about the scanners: they produced the list, and a labeller working
- * through 645 of them is grading npm audit and osv-scanner rather than us.
- *
- * We make two decisions of our own, and they are the ones a benchmark should
- * be able to grade:
- *
- *   join   — these two reports are one advisory, so they became one finding.
- *            Getting this wrong is the expensive direction: a false join hides
- *            a real vulnerability behind an unrelated one, and the reader never
- *            learns it was there.
- *
- *   hold   — these two look like the same thing and share no identifier, so
- *            they were left separate and flagged. This is the most argued line
- *            in the design. A labeller saying "those were obviously the same"
- *            is telling us the caution costs more than it saves.
- *
- * There are 62 holds across the four repositories, which is a census two people
- * can finish. Joins are sampled, because 308 is not.
- *
- * Labelling is human-only, for the same reason it always was: an answer key our
- * own tool produced cannot grade our own tool, and it is the first thing anyone
- * reading this will check.
- *
- *   node bench/make-decision-sheets.mjs
+ * Generate human-labelling sheets for joins and suspected duplicate pairs.
+ * A join combines reports as one advisory; a hold keeps suspected duplicates
+ * separate. The saved benchmark has 62 holds and 308 joins; joins are sampled.
+ * Two people label the sheets independently, without model-generated answers.
+ * Usage: node bench/make-decision-sheets.mjs
  */
 
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
@@ -42,13 +20,7 @@ const benchDir = dirname(fileURLToPath(import.meta.url));
 const outDir = join(benchDir, "labels");
 await mkdir(outDir, { recursive: true });
 
-/**
- * How many joins to ask about per repository.
- *
- * Every one would be better and nobody would finish it. Stated here rather than
- * buried: this is a sample, the sheet says so, and any precision figure drawn
- * from it carries that caveat.
- */
+/** Maximum sampled joins per repository; report the sampling limit. */
 const JOIN_SAMPLE = 20;
 
 const cell = (value) => String(value ?? "").replace(/[\t\n]/g, " ");
@@ -78,9 +50,7 @@ for (const name of (await readdir(join(benchDir, "captures"))).sort()) {
 
   const joins = merged.filter((f) => f.members.length > 1);
   for (const finding of sample(joins, JOIN_SAMPLE)) {
-    // What the sources each called it, which is the whole question. The
-    // labeller is asked whether these describe one advisory, not whether our
-    // merge was clever.
+    // Expose source identifiers for the advisory-equivalence judgement.
     const reported = [
       ...new Set(finding.members.map((m) => `${m.sources[0]?.tool}:${m.advisoryId}`)),
     ].sort();
@@ -102,8 +72,7 @@ for (const name of (await readdir(join(benchDir, "captures"))).sort()) {
   const seen = new Set();
   for (const finding of holds) {
     for (const other of finding.relatedTo) {
-      // One row per pair, not per side. Asking the same question twice with
-      // the arguments swapped is how a labeller loses faith in a sheet.
+      // Deduplicate unordered pairs.
       const key = [finding.fingerprint, other].sort().join(" ");
       if (seen.has(key)) continue;
       seen.add(key);
@@ -131,7 +100,7 @@ for (const name of (await readdir(join(benchDir, "captures"))).sort()) {
 const joinSheet =
   "# Did these reports describe ONE advisory?\n" +
   "# label: same (one advisory, joining was right) | different (two advisories, joining hid one) | unsure\n" +
-  "# A false join is the expensive mistake: the second finding disappears and nobody learns it existed.\n" +
+  "# A false join combines distinct advisories and hides a separate finding.\n" +
   "# Sampled, not a census — see the sheet count in bench/README.md.\n" +
   "repo\tfingerprint\tpackage\treported_as\tmembers\ttitle\tlabel\tnotes\n" +
   joinRows.join("\n") +
@@ -139,8 +108,8 @@ const joinSheet =
 
 const holdSheet =
   "# These two share no advisory id, so they were NOT joined and were flagged instead.\n" +
-  "# label: same (they were one advisory — the caution cost a duplicate) | different (leaving them apart was right) | unsure\n" +
-  "# Every hold is here. This is the census, and it is the most argued line in the design.\n" +
+  "# label: same (one advisory shown twice) | different (distinct advisories) | unsure\n" +
+  "# All suspected duplicate pairs from the saved captures are included.\n" +
   "repo\tpackage\tadvisories\ttitle_a\ttitle_b\trange\tlabel\tnotes\n" +
   holdRows.join("\n") +
   "\n";
@@ -157,5 +126,5 @@ console.log(
   "\nEach labeller: copy to <sheet>.<your-github-login>.tsv, fill the label column,\n" +
     "commit from your own account. Do not look at the other labeller's file, and do\n" +
     "not run `zero-shelter judge` on these repositories while labelling — the sheets\n" +
-    "are deliberately free of our verdict so that yours is independent of it.",
+    "omit the tool verdict to avoid influencing your judgement.",
 );

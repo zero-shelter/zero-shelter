@@ -1,27 +1,34 @@
 # Changelog
 
+Entries describe behavior and measurements at each release. Later fixes may supersede these descriptions; use the README for current instructions.
+
 ## 0.0.10
 
 [Korean release notes](./docs/releases/0.0.10.ko.md)
 
-**More of the evidence behind a judgement is visible.** History now shows the
+Correction, 2026-09-09: the emitted field is `security_severity`; an earlier version of these notes spelled it with a hyphen. The output itself is unchanged.
+
+### Judgement evidence
+ History now shows the
 raw report count and the count after merging alongside outstanding findings.
 It explains that `accepted` counts baseline entries matched by that run, so a
 falling accepted count is not mistaken for a shrinking baseline. Both text and
 JSON expose the stored counts (#232).
 
 SARIF results preserve the advisory's exact CVSS vector when present, in
-`properties.cvssVector`. The numeric `security-severity` remains the existing
+`properties.cvssVector`. The numeric `security_severity` remains the existing
 coarse severity-band fallback; zero-shelter does not calculate a CVSS score from
 the vector (#226). HTML duplicate references show advisory names when the
 sibling is displayed, with the fingerprint retained when it is absent (#211).
 
-**The source of a baseline is visible when it is written.** `--update-baseline`
+### Baseline sources
+ `--update-baseline`
 prints skipped-scanner notes before its confirmation and names the sources
 recorded in the file. A supported one-scanner run still succeeds; it no longer
 writes the permanent record without disclosing the missing scanner (#227).
 
-**Advice follows the project's package manager.** Declared packages are now
+### Package-manager advice
+ Declared packages are now
 recognized as direct dependencies when the scanner does not supply that fact,
 including the older npm/pnpm shape and OSV. Direct upgrade commands can then
 appear when a source also supplies a fixed version (#195). A yarn project is
@@ -37,8 +44,13 @@ prerelease and compound ranges intentionally do not produce an install target
 (#233). Korean HTML score reasons and the weights table are translated while
 English terminal and SARIF reason strings are preserved (#240).
 
-**Recording and version selection survive their edge cases.** An interrupted
-history write no longer swallows every subsequent entry (#199). Unknown
+### History and version handling
+
+Correction, 2026-09-09: the earlier text overstated this as loss of every later
+record. The fix protects the record appended after an incomplete line.
+
+After an interrupted history write, the next appended record is separated from
+the incomplete line so it remains readable (#199). Unknown
 baseline entry keys are named as warnings, including misspellings such as
 `expiress`; judging continues for forward compatibility (#200). Prerelease
 versions are ordered against one another, including numeric identifiers beyond
@@ -46,7 +58,9 @@ JavaScript's safe integer range, and a leading `v` no longer makes a release
 compare below older versions (#170). An osv-scanner exit indicating no package
 sources is distinguished from a scanner failure (#190).
 
-**Contributing and checking an install are easier to follow.** The contributor
+### Contribution and install checks
+
+The contributor
 guides and PR templates explain when fork CI is waiting for maintainer approval
 (#220). The CI example pins osv-scanner and verifies its checksum (#221).
 Installation QA bounds its subprocesses, gives the CLI headroom above scanner
@@ -58,7 +72,8 @@ now includes manifest context in both acquisition paths (#238). A dedicated
 Node 20 job tests the declared support floor using a checksum-pinned runtime
 (#241).
 
-**Compatibility and limits.** Existing judge exit codes, fingerprint recipes,
+### Compatibility and limits
+ Existing judge exit codes, fingerprint recipes,
 ranking weights and baseline acceptance semantics are unchanged. The history
 JSON fields and optional SARIF vector are additive; human-readable output has
 changed. A finding is still described as *no longer reported*, not necessarily
@@ -69,7 +84,8 @@ The Korean HTML duplicate suffix still
 has the English `fixed in` wording tracked by #218. This release does not add a
 new scanner, and does not include the proposed `scanners` command (#163).
 
-**Contributors to this release.** These are merged contributions since v0.0.9;
+### Contributors
+ These are merged contributions since v0.0.9;
 review and discussion are also appreciated.
 
 | Contributor | Contributions |
@@ -83,326 +99,111 @@ review and discussion are also appreciated.
 
 ## 0.0.9
 
-**Five people from outside the team fixed something here.** Every contribution
-below came from someone who found an issue, read the file, and sent a change:
-manager-specific transitive advice (#143), a rendering defect in it (#155), the
-action pins in the CI example plus a check that keeps them pinned (#157), the
-scope of what a first run actually covers along with which scanner to reach for
-per domain and under which licence (#177), and one flag a space out of line in
-all three places the option list is written, with a test that now catches the
-next one (#162).
+Contributions from five people outside the team added manager-specific transitive advice (#143), corrected its rendering (#155), pinned CI example actions and tested those pins (#157), explained the first-run scope and scanner choices by domain and license (#177), and aligned one flag across all three option lists with a regression test (#162).
 
-**A scanner that crashed is not a scanner that is missing.** Three facts were
-two messages, and neither said "timed out". A scanner ended at our own
-120-second bound reported "produced no report", which reads as its fault rather
-than ours; on Windows, where a missing command surfaces as an exit code instead
-of `ENOENT`, any failure without output reported "not on PATH" and answered it
-with install instructions for a tool that was already installed. Both then left
-the run with one source and an exit code of 0. Absent, timed out and failed are
-now distinguishable, and only the first earns install advice.
+Scanner diagnostics now distinguish an absent executable, a timeout, and a failed execution. Previously the 120-second scanner timeout reported “produced no report.” On Windows, failures without output could be reported as “not on PATH” even when the tool was installed. Only an absent executable now receives install advice; a run with another successful source can still exit `0`.
 
-**One range written two ways is one range.** We built `< 0.2.4` from OSV's
-event list and took `<0.2.4` verbatim from npm, then showed both as though the
-sources disagreed about which versions were affected. On the pinned captures
-that was every finding on three of four projects — 173 of 173 on NodeGoat, 51
-of 51 on dvna, 11 of 11 on hackathon-starter. It also meant two findings with an
-identical range could not match as suspected duplicates, which is the one thing
-`possibleDuplicates` exists to do.
+Equivalent ranges such as OSV's `< 0.2.4` and npm's `<0.2.4` are normalized. Previously these appeared as conflicting ranges and prevented suspected-duplicate matching. The pinned captures showed this on all findings in three projects: 173 on NodeGoat, 51 on dvna, and 11 on hackathon-starter.
 
-**An acceptance dated `9999-99-99` never expired.** The date check accepted
-anything shaped like a date, and a string that sorts above every real one stays
-accepted forever while the file looks like it has a deadline on it — which is
-the exact failure the check's own comment says it was written to prevent. Real
-dates only now, leap years included.
+Baseline expiry validation now checks real calendar dates, including leap years. Previously `9999-99-99` matched the date pattern and could remain accepted indefinitely.
 
-**The baseline records which versions were installed.** Nothing held the
-version actually in the tree: `vulnerableRange` is a range and `fixedIn` is the
-fix. It is the one piece of context a reader cannot recover later, and the one
-a PURL needs. Recorded, not scoped — an acceptance still applies after the tree
-moves, so a bump from one vulnerable version to another does not resurface a
-decision somebody already made.
+Baselines record installed versions in addition to `vulnerableRange` and `fixedIn`, preserving context needed for later inspection and PURLs. Acceptance remains independent of installed version: moving between vulnerable versions does not itself resurface an accepted finding.
 
-**Smaller things that were quietly wrong.** The plugin manifest still said
-0.0.1 six releases on, and a check now keeps it in step. The committed baseline
-is pinned to LF, so a Windows checkout no longer turns a one-line diff into a
-whole file. `docs/STABILITY.md` is now linked from the README, from
-`CONTRIBUTING.md` and from the CI skill — it existed since 0.0.8 and nothing a
-reader follows pointed at it. The contract test asserts the last frozen key it
-was not checking. And a CI comment claiming a gap was tracked, by an issue that
-did not exist, now points at #154 and carries the measurement instead.
+The plugin manifest version is checked against the package version. The committed baseline uses LF to avoid whole-file line-ending diffs on Windows. `docs/STABILITY.md` is linked from the README, CONTRIBUTING, and CI skill; the contract test now checks the remaining frozen key. A CI comment with a nonexistent issue reference now links #154 and includes the measurement.
 
 ## 0.0.8
 
-**The ratchet survives a second scanner.** README says the second source is the
-premise rather than an optional extra, and following that advice used to turn a
-quiet build red: accept 73 findings with npm audit alone, add osv-scanner, and
-79 came back as new while 70 were announced as no longer reported. They had not
-gone anywhere. A fingerprint is derived after merge and merge output depends on
-who contributed, so the recorded key stops existing — 73 fingerprints with one
-source, 82 with two, 3 shared. Accepted entries now carry the alias set the two
-scanners agreed on, and a finding is matched on the exact fingerprint first and
-a shared alias within the same package second. The same measurement now reports
-9, and those 9 are real: findings only osv-scanner sees. A rescue by alias is
-printed rather than done quietly.
+Baseline matching now survives a change in scanner sources by checking an exact fingerprint first, then shared advisory aliases within the same package. In the measured case, accepting 73 npm findings and adding OSV previously produced 79 new findings and 70 “no longer reported” entries. The single-source and combined runs had 73 and 82 fingerprints respectively, with only 3 shared. Alias matching reduced the new count to the 9 findings reported only by OSV, and the output states when alias matching was used.
 
-**The baseline can be read by the person who has to defend it.** It was a list
-of hex strings. Each acceptance now names its package, advisory and severity,
-and may carry `reason`, `acceptedBy` and `expires` written by hand. An expired
-acceptance returns to the report, which is what keeps an accepted list from
-being a place things go to be forgotten. One entry per line, sorted, so a diff
-moves one line.
+Each baseline acceptance now includes package, advisory, and severity, with optional handwritten `reason`, `acceptedBy`, and `expires`. Expired acceptances return to the report. Entries are sorted and stored one per line for readable diffs.
 
-**Every surface speaks the project's own dialect.** pnpm ignores a top-level
-`overrides` key outright and yarn wants `resolutions`, so a pasted npm snippet
-did nothing at all rather than failing loudly. Terminal, HTML, SARIF, JSON, the
-copy-paste agent prompts and the hook now all write the remedy the way this
-project reads it. Six repositories out of eight had no direct commands at all,
-which makes that block the only advice those projects ever get.
+Terminal, HTML, SARIF, JSON, agent prompts, and hook output use package-manager-specific forced-version syntax: npm `overrides`, `pnpm.overrides`, or yarn `resolutions`. Six of the eight measured repositories had no direct upgrade commands and depended on this guidance. `clears N` is withheld for pnpm and yarn because the range reader only supports `package-lock.json`.
 
-**`clears N` is withheld where it cannot be checked.** The promise rests on
-reading dependents' required ranges out of `package-lock.json`, and there is no
-reader for `pnpm-lock.yaml` or `yarn.lock`. The number is left out and the
-reason is printed.
+Findings carry development/production scope from the lockfile's `dev` flag, and the summary shows the split. `hasInstallScript` also identifies packages with install-time code; the uptime-kuma measurement contained 13. Both are contextual labels and do not affect ranking.
 
-**Two things the lockfile knows and no scanner reports.** A high in a test
-runner and a high in something serving requests arrived with the same score,
-side by side; findings now carry a scope read off the lockfile's own `dev` flag
-and the summary splits the denominator. And `hasInstallScript` marks the
-packages that execute code before any test runs — 13 of them on uptime-kuma —
-which has no CVE and which nothing else surfaces. Both are labels. Neither
-touches the score.
+Advisory `published` values and CVSS vectors are preserved and displayed without affecting scores. The captures contained publication dates on 453 findings and vectors on 424 of those 453; zero-shelter does not calculate a CVSS score from a vector.
 
-**How long a finding has been public.** Severity is assigned when an advisory is
-written and never moves again, so it could say a finding was critical and could
-not say anyone had eight years to act. `published` and the CVSS vector were
-arriving on 453 and 424 of 453 findings and being discarded; they are carried
-verbatim now, shown beside the finding, and kept out of the score — a CVSS
-number is float arithmetic over a vector we did not compute.
+Scanner provenance is recorded from the run instead of inferred from outstanding findings, so a run whose findings are all accepted still records its sources. Single-source output explains why cross-source reduction is zero.
 
-**Which scanners ran is a fact about the run.** It used to be recovered from the
-outstanding findings, so a run where everything was accepted recorded that no
-scanner had run at all — precisely on the days the scan was healthy. A run with
-one source now says why the reduction is zero rather than leaving `(0% less
-noise)` to read as a broken tool.
+`docs/STABILITY.md` documents the exit codes and top-level JSON shape frozen below 1.0, with contract tests against rendered output.
 
-**Interfaces a pipeline can bet on.** `docs/STABILITY.md` states what is frozen
-below 1.0 — the exit codes, and the top-level shape of `--format json` — with a
-contract test that asserts it against real output rather than restating it.
+`zero-shelter hook --input` supports saved reports for offline checks. The hook also receives package-manager context, withholds unverified remediation counts, and recognizes expired baseline acceptances.
 
-**`zero-shelter hook --input`.** The surface an agent reads on every prompt was
-the only one that could not be exercised offline. It also had not learned the
-package manager, was still printing a count it could not verify, and could not
-see an expired acceptance that `judge` was failing the build over.
+A `--record` write failure is reported on stderr while preserving the completed judgement's exit code. It no longer changes a successful judgement into “could not judge.”
 
-**A history that cannot be written no longer sinks the run.** `--record` was
-discarding a finished judgement and returning the code that means "could not
-judge". Recording is bookkeeping: the failure is named on stderr and the run
-keeps the exit code it earned.
-
-**The onboarding skill stopped calling the second scanner optional**, and the
-command it offered for checking that osv-scanner had actually run answered
-backwards — `skipped` names the scanner when it is *missing*, so a failed
-install counted as success.
+The onboarding skill at this release recommended a second scanner and corrected its installation check: membership in `skipped` indicates a missing source, not successful execution.
 
 ## 0.0.7
 
-**`clears 12` cleared nothing.** uptime-kuma has `tar@~6.2.1` in its
-package.json, so npm audit calls tar direct and we printed `npm i tar@7.5.22
-clears 12`. Running it changed 71 findings to 71. `cacache`, `node-gyp`,
-`@louislam/sqlite3` and `@mapbox/node-pre-gyp` each require `tar@^6`, no `^6`
-range accepts a 7, and npm gave them their own copy of the old version. The
-count of copies in the lockfile does not catch this, because the copies only
-split apart once the upgrade runs.
+Upgrade commands now check whether every dependent range accepts the proposed version. In the measured uptime-kuma case, `tar@~6.2.1` was direct, so the report suggested `npm i tar@7.5.22` with `clears 12`. However, `cacache`, `node-gyp`, `@louislam/sqlite3`, and `@mapbox/node-pre-gyp` required `tar@^6`; npm retained separate vulnerable copies, and the finding count stayed at 71.
 
-The lockfile does say who requires what, so we read it. A command is only
-offered when every dependent's range accepts the fix; the rest move to the
-`overrides` path they always needed. On uptime-kuma that is ten commands down to
-three, and those three now clear exactly the eleven they promise — 71 to 60, in
-66 lockfile lines. `npm audit fix --force` moves 3,489 and leaves eight behind.
+Reading dependent ranges reduced the commands from ten to three. Those commands removed the eleven findings indicated by their counts, taking 71 to 60 with 66 lockfile lines changed. The recorded comparison with `npm audit fix --force` changed 3,489 lines and left eight findings. These measurements describe that dependency tree and capture, not a general guarantee.
 
-**And it says why.** "Use overrides instead" was advice you had to take on
-faith. The report now names the packages holding the old version, so the reason
-is something you can check rather than trust.
-
-**The agent hook and SARIF were still handing them out.** The report had
-stopped, but the hook never read the lockfile and SARIF's remedy had nothing to
-check against, so both kept printing `npm i tar@7.5.22   # clears 12`. These are
-the two worst places for it: an agent runs what it is given, and a Security tab
-alert stays open after the command that was supposed to close it. Both go
-through the same check now.
+When a command cannot reach all copies, the report names the blocking packages and provides override guidance. The hook and SARIF now use the same check; they had continued suggesting the tar command after the human report stopped doing so.
 
 ## 0.0.6
 
-**Nothing is dropped quietly.** The report showed the last twelve recorded runs
-out of however many exist, the prompt for findings with no published fix named
-eight packages out of however many there were, and the agent hook listed five
-commands out of nine. An agent handed 8 of 324 works through eight and reports
-the job done. All three now say the number they did not show and where the rest
-are, and stay quiet when nothing is hidden.
+Truncated output states how many entries were omitted and where to find them. This covers the last twelve recorded runs, eight packages in the no-fix prompt, and five hook commands. Previously those limits could leave the reader unaware of the rest, such as eight shown packages out of 324 or five commands out of nine.
 
-**The contrast we promised.** PRODUCT.md says text meets WCAG AA; the faint ink
-behind labels and column headers sat at 3.11 against paper, where 4.5 is the
-bar. It is 4.56 now, and a test measures all eight pairs rather than trusting
-the claim.
+Text contrast for muted labels and column headers changed from 3.11 to 4.56 against the background, exceeding the 4.5 WCAG AA threshold used by the report. A test checks all eight color pairs.
 
-**Copying works where the report is opened.** The button assumed a clipboard
-API, which browsers refuse or omit for pages opened from disk — the report's
-whole purpose. It falls back to execCommand, and then to selecting the text and
-saying so.
+Copy buttons fall back from the clipboard API to `execCommand`, then to text selection with an explanation. This supports reports opened from local files when the clipboard API is unavailable or denied.
 
-**Ready for a language neither of us speaks.** The layout used physical CSS
-properties, so a right-to-left translation would have arrived with its numbers
-and indents on the wrong side. It uses logical properties now, direction
-follows the language, and CONTRIBUTING says the three steps for adding a
-catalogue in both languages.
+The HTML layout uses logical CSS properties and sets direction from the language. The contribution guide describes how to add a language in English and Korean.
 
-**Claims that had no check now have one:** that the tool opens no sockets, that
-a run writes nothing to the repository unless asked, that scoring is integer
-arithmetic, and that the verdict is never a count of things "fixed". One claim
-was corrected instead — the invariant about hashing secrets describes a
-capability v1 does not have, and now says so.
+Tests now check that zero-shelter itself opens no sockets, writes no project files unless requested, uses integer ranking arithmetic, and does not describe the verdict as a count of findings fixed. Documentation was corrected to state that secret hashing is outside v1's capabilities.
 
 ## 0.0.5
 
-**The report says what to do about it.** The command block explains what a line
-does before listing any, so "clears 7" reads as a consequence. Under it, three
-prompts generated from the actual findings — upgrade the direct ones, show what
-an `overrides` entry would look like for the transitive ones, check reachability
-for the ones with no published fix — each ending by re-judging, because an agent
-told only to upgrade reports the upgrade rather than the result. Every command
-and prompt has a copy button. A folded glossary says what reported, after merge,
-outstanding, accepted and the rest actually mean.
+The HTML action section explains commands and generates three finding-specific prompts: upgrade direct dependencies, propose forced versions for indirect dependencies, and investigate reachability where no fix version is reported. Each prompt requires re-running judgement. Commands and prompts have copy buttons, and a collapsible glossary explains report counts and baseline terms. Workspace prompts direct the agent to the manifest that declares the dependency.
 
-In a workspace the generated prompt sends the agent to find the package.json
-that declared the range, because pasting the plain command at the root installs
-into the root.
+`/zero-shelter:baseline` gathers the user's acceptance reason and decision. It prohibits using acceptance to finish a task or make a build pass without a risk decision.
 
-**A skill for the baseline.** Accepting a finding is the decision this tool is
-most likely to be misused for. `/zero-shelter:baseline` asks the two questions
-that separate a reasonable accept from a lazy one, and says plainly that
-recording is never a way to end a task or green a build.
-
-**Plainer sentences, in both languages.** Two English messages were three
-clauses strung together with dashes. The Korean went through a detector and two
-reviewers: a comma after a connective ending appeared 24 times, 3.7x what
-Korean prose does, and one contrastive frame carried 13 of the document's
-turns. Both are down, and the five contrasts that survived are the ones where
-the contrast is the claim.
-
-The reviews caught two failures in opposite directions — a rewrite that quietly
-dropped the precision disclaimer this project has promised never to drop, and
-one that removed every comma a person would also have written. Both corrected.
+English and Korean report wording was revised. Review restored a precision limitation omitted by one draft and corrected excessive punctuation removal in another. These were editorial checks, not evidence of ranking accuracy.
 
 ## 0.0.4
 
-**A page to look at.** `judge --format html --output report.html` writes one
-self-contained file: the commands to run first, then every finding with the
-score that put it there and the weights table underneath, so a reader who
-disagrees with the order can point at a row. No network, no build step, light
-and dark both switchable without JavaScript, and Korean with `--lang ko`.
+`judge --format html --output report.html` writes a self-contained report with commands, findings, score reasons, and the weights table. It supports light and dark themes and Korean with `--lang ko`, without a build step or external network resources. The report does not add a composite risk score or other judgement data in presentation.
 
-Deliberately not a dashboard. No donut charts, no composite risk score — both
-would be inventions of the presentation layer, and inventing there would undo
-the property this tool sells.
+`judge --record` appends run records to `.zero-shelter/history.jsonl`. `zero-shelter history` reports findings that appeared or stopped being reported. Records retain fingerprints to distinguish changes that leave total counts unchanged. Nothing is recorded unless requested, and stored history stays local.
 
-**A history.** `judge --record` appends one line per run to
-`.zero-shelter/history.jsonl`, and `zero-shelter history` says what appeared and
-what stopped being reported between runs. It keeps fingerprints rather than
-counts, because counts cannot tell "two fixed and two appeared" from "nothing
-changed". Nothing is recorded unless asked, and the report grows a section once
-two runs exist.
-
-It says *no longer reported*, never *fixed*: a finding also leaves the list when
-it is accepted into the baseline, and when the scanner that found it did not
-run.
-
-**Two more skills.** `/zero-shelter:fix` applies the upgrades and re-judges to
-confirm they landed — including the transitive ones `npm i` cannot reach.
-`/zero-shelter:ci` puts the gate in a pipeline, baseline first, so the build
-fails on what a change introduced rather than on the backlog it inherited. Both
-were rewritten after watching an agent verify a fix with `npm audit` and skip
-the CI skill entirely.
+`/zero-shelter:fix` uses the CLI's action list and re-runs judgement, including for transitive dependencies that a direct install cannot reach. At this release, `/zero-shelter:ci` guided baseline setup before installing a CI gate. Both skills were revised after an observed agent used `npm audit` to verify remediation and skipped the CI skill.
 
 ## 0.0.3
 
-**A second scanner no longer deletes the advice.** npm audit names the version
-it would install; osv-scanner names the release that patched the advisory. The
-merge saw two answers, called it a disagreement and withheld both — so
-installing the second source this project tells everyone to install removed
-every upgrade command from the report. It now reports the highest claimed
-version, which satisfies all of them, and `--explain` shows that they differed.
+Different fix versions from npm audit and OSV no longer suppress all upgrade advice. The merge selects the highest reported version, and `--explain` shows the disagreement.
 
-**The report says what to run.** Seven findings on one package are one upgrade,
-and the report listed them seven times sorted by severity. Now:
+Upgrade commands are grouped by package. The release's output example was:
 
-```
+```text
 npm i lodash@4.18.1   clears 7
 35 finding(s) in 11 package(s) have a published fix but arrive through another
 dependency — package.json "overrides" forces one, at the risk of breaking
 whatever pinned it
 ```
 
-Transitive packages are counted rather than commanded: `npm i` on one adds a
-top-level entry and leaves the vulnerable copy alone. In a workspace the report
-says the command needs a `-w`, because hoisting hides which workspace declared
-the range.
+Transitive packages receive separate advice because adding them at the top level may leave the vulnerable copy under a parent. Workspace output warns that the command needs a `-w` target; hoisting does not identify the declaring workspace.
 
-**`--top` is a display limit again.** It was deciding what the report claimed:
-`--top 3` on a project with 82 outstanding findings announced "3 to fix (98%
-less noise)". The counts, the percentage and the advice are about the project;
-`--top` decides how many rows are printed.
+`--top` limits displayed rows without changing project totals, reduction, or actions. Previously `--top 3` on a project with 82 outstanding findings announced “3 to fix (98% less noise).”
 
-**pnpm projects work.** The lockfile decides which audit runs, so a
-`pnpm-lock.yaml` no longer ends in "nothing was scanned". yarn works through
-osv-scanner, which reads `yarn.lock`; without it, the run says so and points at
-the shortest way out.
+The lockfile selects the audit command, adding pnpm support. Yarn lockfiles use OSV; when it is unavailable, the report explains the limitation.
 
-**Merging got fast.** Sibling detection compared every finding with every other
-one: 7,500 findings took a second, and a large tree produces more than that.
-One grouping pass instead — 30ms for the same input, 151ms for 37,400.
+Suspected-duplicate detection uses a grouping pass instead of comparing every pair. The recorded timings were one second reduced to 30 ms for 7,500 findings, and 151 ms for 37,400 findings. These are measurements from that change, not performance guarantees for other machines.
 
-**Published from CI.** Releases go out through GitHub Actions with OIDC
-trusted publishing — no token exists to leak, and every tarball carries
-provenance tying it to the commit and the run that built it.
+Releases use GitHub Actions with OIDC trusted publishing and provenance linking each tarball to its source commit and build run, without a stored npm publishing token.
 
-**Smaller things.** `zero-shelter hook` hands agents the commands, not just the
-diagnosis, and honours `--baseline`. SARIF alerts carry the remedy into the
-Security tab. `--explain` prints the weights as a table to argue with, and
-names possible duplicates by advisory instead of by fingerprint. A broken
-baseline, an unwritable `--output`, and this tool's own SARIF passed to
-`--input` all get answers instead of stack traces or puzzlement.
+The hook includes commands and honors `--baseline`; SARIF includes remediation guidance. `--explain` shows the weights table and names possible duplicates by advisory. Unusable baselines, unwritable output paths, and zero-shelter SARIF supplied to `--input` receive explicit errors.
 
 ## 0.0.2
 
-**A project nobody scanned no longer reports clean.** In a directory with no
-lockfile, `npm audit` fails, and the run used to continue with zero findings —
-printing `✓ nothing new to fix` and exiting 0. In CI that turns a project the
-scanners never opened green, which is worse than a crash because a passing
-build gets no attention. It now exits 2 and repeats npm's own explanation
-(`This command requires an existing lockfile. Try creating one first with: npm
-i --package-lock-only`) instead of our parser's complaint about missing keys.
-Scanned-and-found-nothing still exits 0.
+A run with no readable scanner report exits `2`. Previously a directory without a lockfile could print `✓ nothing new to fix` and exit `0` after npm audit failed. The error now includes npm's lockfile explanation instead of a parser error. A successful scan with no findings still exits `0`.
 
-**An old Node says so.** `engines` only makes npm warn at install time. Running
-on Node 18 produced a stack trace pointing into our files, which reads as our
-bug; it now names the version needed and the one running, and exits 2.
+Unsupported Node versions now receive the required and running versions with exit `2`; Node 18 previously produced a stack trace. `--version` and `version` identify the installed package.
 
-**`--version` and `version`.** Bug reports can name a version.
+The Claude Code plugin introduced `setup` and `explain` via `/plugin marketplace add zero-shelter/zero-shelter`. They guide the first scan, CI and hook setup, and report interpretation, while preserving the CLI's ranking and unresolved duplicates.
 
-**Claude Code plugin.** `/plugin marketplace add zero-shelter/zero-shelter`
-installs two skills: `setup` runs the first scan and offers the CI and hook
-wiring, `explain` reads a run and says what to fix first. Both are presentation
-only — they are instructed not to re-rank, filter, or merge anything the CLI
-left flagged, because the judgement has to stay where the same input produces
-the same checkable answer.
-
-**Dropped yarn v1** from the report formats we claim to read. We parse the
-`advisories` shape pnpm and npm 6 emit; yarn v1 writes NDJSON, which we do not
-read.
+Yarn v1 was removed from the claimed input formats. The parser accepts the `advisories` shape from pnpm and npm 6, but not yarn v1 NDJSON.
 
 ## 0.0.1
 
-First preview. `judge` runs npm audit and osv-scanner, reconciles what they
-both found, ranks it, and reports only what is new since the recorded baseline.
-Text, JSON and SARIF output. `hook` hands the current findings to a coding
-agent.
+First preview. `judge` runs npm audit and OSV, combines shared advisories, ranks findings, and compares them with the recorded baseline. It provides text, JSON, and SARIF output. `hook` supplies current findings to a coding agent.

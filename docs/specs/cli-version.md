@@ -1,5 +1,7 @@
 # Feature specification: CLI version
 
+[한국어](./cli-version.ko.md). This document records the design for the linked issue.
+
 ## Issue and lifecycle metadata
 
 - Issue/Discussion: [Discussion #41](https://github.com/zero-shelter/zero-shelter/discussions/41)
