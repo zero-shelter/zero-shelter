@@ -4,6 +4,7 @@
  */
 import { closeSync, existsSync, openSync, readSync } from "node:fs";
 import { join } from "node:path";
+import type { InstalledVersions } from "./lockfile.js";
 
 export type PackageManager = "npm" | "pnpm" | "yarn" | "yarn-classic";
 
@@ -127,9 +128,13 @@ export function overrideBlock(
 }
 
 /**
- * Only npm has the lockfile range reader needed to verify upgrade counts.
- * pnpm and Yarn omit counts because reachesEveryCopy defaults to true for them.
+ * npm and a successfully read pnpm lockfile have the context needed to verify
+ * upgrade counts. Yarn still omits counts because reachesEveryCopy defaults to
+ * true without a lockfile reader.
  */
-export function canPromiseClears(manager: PackageManager): boolean {
-  return manager === "npm";
+export function canPromiseClears(
+  manager: PackageManager,
+  installed?: InstalledVersions,
+): boolean {
+  return manager === "npm" || (manager === "pnpm" && installed !== undefined);
 }
