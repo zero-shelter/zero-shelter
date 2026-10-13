@@ -10,6 +10,7 @@ import { emptyBaseline } from "../src/baseline.js";
 import { judge } from "../src/judge.js";
 import { parseNpmAudit } from "../src/ingest/npm-audit.js";
 import { renderHuman, renderJson } from "../src/report.js";
+import { renderSarif } from "../src/sarif.js";
 
 const findings = parseNpmAudit(
   readFileSync(fileURLToPath(new URL("./fixtures/npm-audit.json", import.meta.url)), "utf8"),
@@ -52,5 +53,33 @@ describe("--top", () => {
     expect(json.summary.fixNow).toBe(all.applied.fresh.length);
     expect(json.summary.shown).toBe(1);
     expect(json.fixNow).toHaveLength(1);
+  });
+});
+
+describe("possibleDuplicates truncation", () => {
+  it("drops possibleDuplicates references that point outside the truncated set", () => {
+    const json = JSON.parse(renderJson(capped));
+    const returnedFingerprints = new Set(json.fixNow.map((f: any) => f.fingerprint));
+    
+    for (const row of json.fixNow) {
+      for (const dup of row.possibleDuplicates) {
+        expect(returnedFingerprints.has(dup)).toBe(true);
+      }
+    }
+  });
+
+  it("drops possibleDuplicates references outside the SARIF result set", () => {
+    const sarif = JSON.parse(renderSarif(capped));
+    const returnedFingerprints = new Set(
+      sarif.runs[0].results.map((entry: { partialFingerprints: { zeroShelter: string } }) =>
+        entry.partialFingerprints.zeroShelter,
+      ),
+    );
+
+    for (const entry of sarif.runs[0].results) {
+      for (const duplicate of entry.properties.possibleDuplicates) {
+        expect(returnedFingerprints.has(duplicate)).toBe(true);
+      }
+    }
   });
 });
