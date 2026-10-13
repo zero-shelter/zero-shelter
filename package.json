@@ -29,6 +29,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "third-party": "node scripts/third-party.mjs",
+    "contributors": "node scripts/contributors.mjs",
     "qa": "node scripts/qa-install.mjs",
     "qa:agent": "node scripts/qa-agent.mjs",
     "bench:sheets": "node bench/make-decision-sheets.mjs",
@@ -40,6 +41,9 @@
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "source-map-js": "1.2.2"
   },
   "repository": {
     "type": "git",
