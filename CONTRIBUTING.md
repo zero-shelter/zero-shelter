@@ -89,7 +89,7 @@ Contributors should mention the expected labels and assignee in the Issue. Maint
 
 The spec is the contract between the contributor, reviewers, maintainers, and coding agents. It must cover the problem, included/excluded scope, interface, affected layer/files, compatibility, normal/invalid/empty/boundary cases, data flow, privacy impact, and decisions.
 
-An agent may draft a spec, but the human contributor owns its accuracy and approves it before implementation.
+An agent may draft and review a spec within the explicitly requested scope. The human contributor remains accountable for its accuracy; separate teammate approval is not required.
 
 ## Definition of done
 
@@ -100,14 +100,14 @@ An agent may draft a spec, but the human contributor owns its accuracy and appro
 - Documentation and examples are updated.
 - Security and privacy checks are complete.
 - Affected files, interfaces, conflicts, and breaking changes are stated.
-- A human Owner reviewed every changed file, including agent-assisted edits.
+- Every changed file was reviewed, including agent-assisted edits, and unverified scope is stated.
 - No unrelated changes remain in the diff.
 
 Use [`docs/qa-checklist.md`](./docs/qa-checklist.md) and the PR template.
 
 ## Security and privacy
 
-Read [`SECURITY.md`](./SECURITY.md) before changing security behavior. Unless an Owner-approved design decision says otherwise:
+Read [`SECURITY.md`](./SECURITY.md) before changing security behavior. Unless the user explicitly authorizes a documented design decision otherwise:
 
 - no runtime LLM calls;
 - no project data, prompts, findings, or secrets sent to third parties by default;
@@ -145,7 +145,7 @@ Use `Fixes #123` only when the merged change should close the Issue. Keep the PR
 
 Try a failing input, inspect the changed boundary, and state what was checked. Security-control changes also require review of data flow, logs, subprocesses, permissions, and failure behavior.
 
-At least one Maintainer must approve a merge. Owner approval is additionally required for public API breaking changes, deterministic/fingerprint invariants, new network/LLM/telemetry/data-retention behavior, npm release, and repository-wide governance changes.
+Separate Maintainer, Owner, or team approval is not required. Follow the evidence and authorization requirements in [`GOVERNANCE.md`](./GOVERNANCE.md), including explicit user approval for the specific PR before an agent merges it.
 
 ## Validation commands
 

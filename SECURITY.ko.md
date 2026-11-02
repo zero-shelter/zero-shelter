@@ -44,4 +44,4 @@ scanner 자체에는 network 동작이 있을 수 있습니다. 그 경계를 �
 
 현재 v1은 dependency scanning·판정·baseline ratchet·SARIF 출력·비차단 agent hook을 제공합니다. 완전한 SAST·secret scanning·prompt intent detection·privacy compliance 자체를 보장하지는 않습니다.
 
-향후 제어 기능은 명시적 명세·threat model·테스트·Owner 승인을 거쳐 추가합니다.
+향후 제어 기능은 명시적 명세·위협 모델·테스트와 사용자의 구체적 허가를 갖춰 추가합니다. 허가받은 범위에서는 별도 팀원 승인을 요구하지 않습니다.

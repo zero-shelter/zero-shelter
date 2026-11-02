@@ -16,7 +16,8 @@
 판정 계약(`src/triage.ts`, `src/merge.ts`, `src/fingerprint.ts`,
 `src/baseline.ts`)이나 공개 경계(`src/cli.ts`, `src/report.ts`,
 `src/sarif.ts`, `src/hook.ts`, `package.json`, `.github/`, `skills/`)를
-바꾸려면 명시적인 범위와 거버넌스에서 정한 리뷰가 필요합니다.
+바꾸려면 명시적인 범위와 거버넌스에서 정한 검토 근거가 필요합니다.
+이미 허가된 범위에서는 별도 팀원 승인을 요구하지 않습니다.
 
 테스트나 리포트를 보기 좋게 만들기 위해 ranking 가중치, fingerprint,
 baseline 의미, exit code, output schema, hook 동작을 바꾸지 않습니다.
@@ -52,5 +53,7 @@ npm run build
 package나 설치 동작을 바꾼 경우, 해당 script가 있으면 `npm run qa`도 실행합니다.
 CLI나 package 변경이면 `npm pack --dry-run`과 배포 package smoke test도 확인합니다.
 
-사람 기여자는 모든 변경 파일을 검토하고, 확인하지 못한 내용을 보고합니다.
+모든 변경 파일을 검토하고 확인하지 못한 내용을 보고합니다. 에이전트 검증을
+사람의 검토로 표시하지 않습니다. 에이전트가 병합하려면 해당 PR에 대한 사용자의
+명시적 승인이 필요합니다.
 사용자에게 보이는 동작이 바뀌면 영어 정본 문서와 한국어 번역도 함께 갱신합니다.

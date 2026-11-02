@@ -80,7 +80,7 @@ GitHub metadata를 workflow 상태의 정본으로 사용합니다.
 
 명세는 기여자·리뷰어·maintainer·coding agent 사이의 계약입니다. 문제, 포함/제외 범위, interface, 영향 layer/파일, 호환성, 정상·오류·빈 입력·경계 조건, data-flow, 개인정보 영향, 결정 사항을 포함해야 합니다.
 
-Agent가 초안을 작성할 수는 있지만 정확성에 대한 책임과 최종 승인은 사람 기여자에게 있습니다.
+에이전트는 명시적으로 요청한 범위에서 명세를 작성하고 검토할 수 있습니다. 정확성에 대한 책임은 사람 기여자에게 있으며, 별도 팀원 승인을 요구하지 않습니다.
 
 ## 완료 기준
 
@@ -91,14 +91,14 @@ Agent가 초안을 작성할 수는 있지만 정확성에 대한 책임과 최�
 - 문서·예시가 갱신됨
 - 보안·개인정보 확인 완료
 - 영향 파일·interface·충돌·breaking change를 기록함
-- Agent가 수정한 내용을 포함해 사람이 모든 변경 파일을 검토함
+- 에이전트가 수정한 내용을 포함해 모든 변경 파일을 검토하고 미확인 범위를 적음
 - diff에 범위 밖의 변경이 남아 있지 않음
 
 [`docs/qa-checklist.ko.md`](./docs/qa-checklist.ko.md)와 PR template을 최종 체크리스트로 사용합니다.
 
 ## 보안·개인정보
 
-[`SECURITY.md`](./SECURITY.md)를 먼저 읽습니다. Owner가 승인한 별도 결정이 없다면 실행 중 LLM·기본 외부 전송·secret 원문 기록·문서화되지 않은 network/telemetry를 추가하지 않습니다. 보안 제어는 fail-open/fail-closed와 공격 입력 테스트를 명시합니다.
+[`SECURITY.md`](./SECURITY.md)를 먼저 읽습니다. 사용자가 구체적으로 허가하고 기록한 별도 설계 결정이 없다면 실행 중 LLM·기본 외부 전송·secret 원문 기록·문서화되지 않은 network/telemetry를 추가하지 않습니다. 보안 제어는 fail-open/fail-closed와 공격 입력 테스트를 명시합니다.
 
 실제 secret·개인정보·내부 URL·미공개 취약점을 public Issue·PR·fixture·capture에 넣지 않습니다.
 
@@ -125,7 +125,7 @@ Refs #123
 
 **변경을 깨뜨리는 입력을 말하지 못한 리뷰어는 승인하지 않습니다.**
 
-깨지는 입력·변경 경계·보안 영향·실패 동작을 직접 확인합니다. 최소 한 명의 Maintainer가 승인해야 하며, public API breaking change·불변식·새 network/LLM/telemetry/data retention·npm release·governance 변경은 Owner 승인이 추가로 필요합니다.
+깨지는 입력·변경 경계·보안 영향·실패 동작을 직접 확인합니다. 별도 Maintainer·Owner·팀 승인은 요구하지 않습니다. [`GOVERNANCE.ko.md`](./GOVERNANCE.ko.md)의 근거와 권한 요건을 따릅니다. 에이전트가 병합하려면 해당 PR에 대한 사용자의 명시적 승인이 필요합니다.
 
 ## 검증 명령
 
