@@ -1,5 +1,80 @@
 # Changelog
 
+## 0.0.11
+
+**Review candidate — publication blocked.** Do not tag or publish this candidate
+until [#247](https://github.com/zero-shelter/zero-shelter/issues/247) is resolved
+and re-verified. Re-recording an alias-rematched acceptance can drop its original
+expiry and other decision metadata, extending a time-limited exception. Passing
+tests and a clean dependency scan do not establish baseline integrity.
+
+[Korean release notes](./docs/releases/0.0.11.ko.md) ·
+[Candidate QA report](./docs/qa/reports/2026-11-03.md)
+
+**Dependency paths and source contributions are visible.**
+`zero-shelter why <package>` explains installed paths from an npm lockfile and
+can read stored scanner reports with `--input`. When those reports name a fix,
+it shows compatible direct packages already present in that lockfile or the
+blocking ranges. It does not look up registry versions or apply an upgrade
+([#140](https://github.com/zero-shelter/zero-shelter/issues/140)).
+Text, JSON and HTML now partition merged findings into source-unique and
+multiple-source counts with severity breakdowns. The counts describe the run;
+they do not change scores or establish that a scanner is more accurate
+([#142](https://github.com/zero-shelter/zero-shelter/issues/142)).
+
+**Unknown severity is distinguished from explicit informational severity.**
+An OSV finding without a recognized severity band carries
+`severityKnown: false`; JSON retains `severity: "info"` for compatibility.
+Unknown severity contributes zero severity points, while explicitly stated
+informational severity retains its existing points. Terminal and HTML explain
+the missing band, and SARIF omits an invented numeric severity fallback
+([#137](https://github.com/zero-shelter/zero-shelter/issues/137)).
+
+**The report states what was and was not checked.** A clean dependency run
+names present container, workflow and infrastructure artifacts left unread and
+states that secrets were not checked. JSON exposes the same `unscanned` facts.
+This is bounded local metadata discovery, not an additional security scan
+([#246](https://github.com/zero-shelter/zero-shelter/pull/246)).
+SARIF preserves supplied scanner versions in `properties.toolVersions`
+([#244](https://github.com/zero-shelter/zero-shelter/pull/244)), and JSON exposes
+`missingSources` when a source recorded in the baseline did not contribute
+([#245](https://github.com/zero-shelter/zero-shelter/pull/245)).
+Report wording separates findings to review, available actions and scanner
+status; baseline advice makes clear that recording also accepts current findings
+([#253](https://github.com/zero-shelter/zero-shelter/pull/253)).
+README and benchmark guidance now qualify the actionability counts from pinned
+captures rather than presenting them as ranking accuracy
+([#239](https://github.com/zero-shelter/zero-shelter/pull/239)).
+
+**The development toolchain is refreshed within existing ranges.** Vitest is
+locked to 4.1.12, Vite to 8.3.5, PostCSS to 8.5.32 and source-map-js to 1.2.2.
+The previous nine findings are no longer reported by the same npm audit and
+osv-scanner acquisition path, with neither source skipped. No forced override
+or runtime dependency was added
+([#270](https://github.com/zero-shelter/zero-shelter/pull/270)).
+Package, lockfile and plugin versions agree on 0.0.11.
+
+**Compatibility and limits.** Judge exit codes, fingerprint recipes, the
+weights table and baseline file format are unchanged. Unknown severity
+has the explicit scoring behavior described above. New JSON context is
+additive, and human-readable output changes. `why` currently requires a readable
+npm lockfile; it does not establish reachability or exploitability. Missing
+source data remains missing rather than guessed. The proposed `scanners`
+command, project policy, pnpm dependency-context reader and history extensions
+are not included. The Korean duplicate suffix (#218) and truncated duplicate
+references (#198) remain tracked. `why` can repeat equivalent displayed paths
+([#272](https://github.com/zero-shelter/zero-shelter/issues/272)); read those paths
+once. See the QA report for workarounds and scope.
+
+**Contributors to this release.** The following GitHub authors and co-authors
+are credited for the included commits since v0.0.10.
+
+| Contributor | Contributions |
+|---|---|
+| [@Groot-Gabia](https://github.com/Groot-Gabia) | Co-authored the dependency-only scope, SARIF provenance, missing-source JSON and actionability documentation changes (#246, #244, #245, #239). |
+| [@msnodeve](https://github.com/msnodeve) | Dependency-only scope, SARIF provenance, missing-source JSON and actionability documentation (#246, #244, #245, #239). |
+| [@PresentJay](https://github.com/PresentJay) | Dependency paths, source attribution, unknown severity, report wording and the development-toolchain refresh (#140, #142, #137, #253, #270). |
+
 ## 0.0.10
 
 [Korean release notes](./docs/releases/0.0.10.ko.md)

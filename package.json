@@ -1,6 +1,6 @@
 {
   "name": "zero-shelter",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Combine dependency scanner reports, rank findings, and track accepted risk locally.",
   "license": "Apache-2.0",
   "contributors": [

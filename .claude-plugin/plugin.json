@@ -1,7 +1,7 @@
 {
   "name": "zero-shelter",
   "description": "Review dependency scanner findings, supported upgrades, and accepted risks locally.",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "author": {
     "name": "zero-shelter"
   },
