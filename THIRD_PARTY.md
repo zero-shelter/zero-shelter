@@ -11,7 +11,7 @@ Transitive dependencies and GitHub Actions are intentionally excluded.
 |---|---|---|---|---|---|
 | 1 | @types/node | 22.20.1 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped | Development and build tooling |
 | 2 | typescript | 5.9.3 | Apache-2.0 | https://github.com/microsoft/TypeScript | Development and build tooling |
-| 3 | vitest | 4.1.11 | MIT | https://github.com/vitest-dev/vitest | Development and build tooling |
+| 3 | vitest | 4.1.12 | MIT | https://github.com/vitest-dev/vitest | Development and build tooling |
 
 ## External executables
 
