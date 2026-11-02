@@ -220,9 +220,22 @@ direct versus transitive; missing that context silently turns declared
 dependencies into override advice (see #186):
 
 ```ts
-if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw, declared);
-if ("results" in record) return parseOsv(raw, undefined, declared);
+if ("vulnerabilities" in record || "advisories" in record) {
+  const findings = parseNpmAudit(raw, declared);
+  onSource?.("npm-audit");
+  return findings;
+}
+if ("results" in record) {
+  const findings = parseOsv(raw, undefined, declared);
+  onSource?.("osv-scanner");
+  return findings;
+}
 ```
+
+Source identity is reported only after parsing succeeds. `judge --input` keeps
+that source separately from findings, so a readable empty report still counts.
+The format identifies a supplied report; it does not establish when or where
+that report was generated.
 
 A parser wired only into `scan.ts` is unreachable from `--input`, which is the
 path CI and offline users take. A parser that does not receive `declared` can

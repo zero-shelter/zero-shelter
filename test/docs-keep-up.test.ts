@@ -182,12 +182,21 @@ describe("the docs describe the tool that exists", () => {
 
 describe("contributor documentation", () => {
   it("keeps the architecture dispatch snippet aligned with the CLI", () => {
+    const normalized = (text: string) => text.split("\n").map((line) => line.trim()).join("\n");
     for (const dispatch of [
-      'if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw, declared);',
-      'if ("results" in record) return parseOsv(raw, undefined, declared);',
+      `if ("vulnerabilities" in record || "advisories" in record) {
+        const findings = parseNpmAudit(raw, declared);
+        onSource?.("npm-audit");
+        return findings;
+      }`,
+      `if ("results" in record) {
+        const findings = parseOsv(raw, undefined, declared);
+        onSource?.("osv-scanner");
+        return findings;
+      }`,
     ]) {
-      expect(cli, `CLI no longer contains: ${dispatch}`).toContain(dispatch);
-      expect(architecture, `architecture.md is stale: ${dispatch}`).toContain(dispatch);
+      expect(normalized(cli), `CLI no longer contains: ${dispatch}`).toContain(normalized(dispatch));
+      expect(normalized(architecture), `architecture.md is stale: ${dispatch}`).toContain(normalized(dispatch));
     }
   });
 });

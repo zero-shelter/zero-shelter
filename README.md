@@ -271,6 +271,13 @@ would take that away.
 --help                print this help
 ```
 
+A successfully parsed `--input` report contributes its source even when it
+contains zero findings. This applies to npm audit (current and legacy shapes)
+and OSV reports, including mixed and repeated inputs. The source set is kept
+in report qualifications and `--record` history. It identifies the supplied
+report's format; it does not prove when or where that report was produced.
+Malformed inputs still fail before a judgment or history entry is written.
+
 `--no-color` affects human-readable text only and overrides `FORCE_COLOR`.
 The existing `NO_COLOR` environment variable remains supported.
 
