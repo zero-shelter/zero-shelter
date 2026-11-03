@@ -21,6 +21,19 @@ Read the exit code — it is the answer, not decoration:
 Requires Node 20+. If it prints a Node version message, that is the whole
 problem; do not try to work around it.
 
+Before asking someone to install a scanner, offer the project-specific inventory:
+
+```bash
+npx --yes zero-shelter scanners
+npx --yes zero-shelter scanners --format json
+```
+
+This is metadata-only and opt-in. It reads bounded filename signals and PATH
+metadata, never runs a candidate, reads file contents or git history, or makes a
+network request. `inspection: "not-run"` is always explicit. A missing tool is
+advice; it is not a failed dependency judgement. Ask before installing or
+running any recommendation.
+
 Scope: this skill covers dependency vulnerabilities only (`npm audit` and
 `osv-scanner`). Dockerfiles, Terraform/IaC, Actions workflows, secrets, and
 first-party source are out of scope — a clean dependency run does not mean
