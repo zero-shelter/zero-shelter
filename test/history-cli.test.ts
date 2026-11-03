@@ -78,6 +78,8 @@ describe("history output", () => {
         accepted: 7,
         appeared: 0,
         gone: 0,
+        appearedFindings: [],
+        goneFindings: [],
         sources: ["npm audit", "osv-scanner"],
       },
       {
@@ -88,8 +90,35 @@ describe("history output", () => {
         accepted: 2,
         appeared: 0,
         gone: 0,
+        appearedFindings: [],
+        goneFindings: [],
         sources: ["npm audit", "osv-scanner"],
       },
+    ]);
+  });
+
+  it("names changed findings when the recorded rows carry details", async () => {
+    const first = {
+      ...entry("2026-08-20T09:14:02.118Z", 1, 1, 0, ["old"]),
+      outstandingDetails: [{ fingerprint: "old", package: "lodash", advisory: "CVE-old", severity: "high" }],
+    };
+    const second = {
+      ...entry("2026-08-21T11:02:55.700Z", 1, 1, 0, ["new"]),
+      outstandingDetails: [{ fingerprint: "new", package: "tar", advisory: "CVE-new", severity: "critical" }],
+    };
+    const cwd = await historyFile([first, second]);
+
+    const text = await run(["history", "--cwd", cwd]);
+    expect(text.output).toContain("appeared: tar (CVE-new)");
+    expect(text.output).toContain("no longer reported: lodash (CVE-old)");
+
+    const json = await run(["history", "--cwd", cwd, "--json"]);
+    const report = JSON.parse(json.output) as { runs: Array<{ appearedFindings: unknown[]; goneFindings: unknown[] }> };
+    expect(report.runs[1]!.appearedFindings).toEqual([
+      { fingerprint: "new", package: "tar", advisory: "CVE-new", severity: "critical" },
+    ]);
+    expect(report.runs[1]!.goneFindings).toEqual([
+      { fingerprint: "old", package: "lodash", advisory: "CVE-old", severity: "high" },
     ]);
   });
 });
