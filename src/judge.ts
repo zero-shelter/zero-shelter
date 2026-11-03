@@ -32,6 +32,8 @@ export interface JudgeOptions {
   readonly installed?: InstalledVersions;
   /** Local artifacts this dependency-only judgement leaves unread. */
   readonly unscanned?: UnscannedScope;
+  /** One context-sensitive setup hint, computed by the CLI when requested. */
+  readonly nextStep?: string;
 }
 
 import type { InstalledVersions } from "./lockfile.js";
@@ -61,5 +63,6 @@ export function judge(
     ...(options.packageManager === undefined ? {} : { packageManager: options.packageManager }),
     ...(options.today === undefined ? {} : { today: options.today }),
     ...(options.unscanned === undefined ? {} : { unscanned: options.unscanned }),
+    ...(options.nextStep === undefined ? {} : { nextStep: options.nextStep }),
   };
 }

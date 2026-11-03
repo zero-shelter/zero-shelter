@@ -80,6 +80,13 @@ If an optional scope check cannot complete, JSON sets `unscanned.complete` to
 `false` and the human line says so; `false` or `0` then is not evidence that an
 artifact is absent.
 
+Once a baseline exists, a clean run can add one context-sensitive `next step:`
+line. It points to the first missing piece among history recording, a CI
+workflow that runs `zero-shelter judge`, and documentation for accepted risk
+(`reason`, `acceptedBy`, and `expires`). It reads only those local metadata
+files, makes no changes, and stays silent when the setup is complete. The same
+hint is available as `nextStep` in JSON; SARIF and HTML are unchanged.
+
 ## Install
 
 Two things, and the second one is not optional.

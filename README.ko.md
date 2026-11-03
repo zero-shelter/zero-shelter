@@ -80,6 +80,12 @@ $ npx zero-shelter judge
 선택적인 범위 확인을 끝내지 못하면 JSON의 `unscanned.complete`가 `false`가 되고
 사람용 문장에도 표시합니다. 이때 `false`나 `0`은 artifact가 없다는 증거가 아닙니다.
 
+baseline이 있는 실행에서는 깨끗한 결과에 상황에 맞는 `next step:` 한 줄이 붙을 수
+있습니다. history 기록, `zero-shelter judge`를 실행하는 CI workflow, 수용한 위험의
+`reason`·`acceptedBy`·`expires` 기록 중 아직 없는 첫 항목을 안내합니다. 이 메타데이터만
+읽고 파일을 바꾸지 않으며, 준비가 끝나면 조용히 넘어갑니다. JSON에는 같은 안내가
+`nextStep`으로 들어가고 SARIF와 HTML은 바뀌지 않습니다.
+
 ## 설치
 
 두 개를 설치합니다. 두 번째는 선택이 아닙니다.
