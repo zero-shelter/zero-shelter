@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
 import { main, renderSkippedNotes } from "../src/cli.js";
+import type { Baseline } from "../src/baseline.js";
 import { SCHEMA_VERSION } from "../src/fingerprint.js";
 import { HISTORY_PATH } from "../src/history.js";
 
@@ -112,6 +113,73 @@ describe("stored scanner reports", () => {
     expect(sarif.version).toBe("2.1.0");
     expect(sarif.runs).toHaveLength(1);
     expect(sarif.runs[0].results.length).toBeGreaterThan(0);
+  });
+});
+
+describe("rewriting baseline decisions through the CLI", () => {
+  const decision = {
+    reason: "synthetic first risk decision",
+    acceptedBy: "fixture-owner-one",
+    recordedAt: "2000-01-01",
+    expires: "2000-01-02",
+  };
+
+  async function acceptedReports() {
+    const files = await reports();
+    const baselinePath = join(files.cwd, "baseline.json");
+    const args = ["judge", "--cwd", files.cwd, "--input", files.npm, "--baseline", "baseline.json"];
+    expect((await run([...args, "--update-baseline"])).code).toBe(0);
+    const baseline: Baseline = JSON.parse(await readFile(baselinePath, "utf8"));
+    const accepted = baseline.accepted.find((entry) => entry.package === "minimist");
+    expect(accepted).toBeDefined();
+    return { ...files, args, baselinePath, baseline, accepted: accepted! };
+  }
+
+  it("preserves the original decision and expiry after another scanner changes the fingerprint", async () => {
+    const { args, osv, baselinePath, baseline, accepted } = await acceptedReports();
+    await writeFile(baselinePath, JSON.stringify({
+      ...baseline,
+      accepted: baseline.accepted.map((entry) => entry === accepted ? { ...entry, ...decision } : entry),
+    }));
+
+    const rewritten = await run([...args, "--input", osv, "--update-baseline"]);
+    expect(rewritten.code).toBe(0);
+    const after: Baseline = JSON.parse(await readFile(baselinePath, "utf8"));
+    const rematched = after.accepted.find((entry) => entry.package === "minimist");
+    expect(rematched?.fingerprint).not.toBe(accepted.fingerprint);
+    expect(rematched).toMatchObject(decision);
+
+    const rerun = await run([...args, "--input", osv, "--json"]);
+    expect(rerun.code).toBe(1);
+    expect(JSON.parse(rerun.output).fixNow.some((entry: { package: string }) => entry.package === "minimist")).toBe(true);
+  });
+
+  it.each(["alias", "same fingerprint"])("refuses conflicting %s records without changing the file", async (kind) => {
+    const { args, baselinePath, baseline, accepted } = await acceptedReports();
+    const first = { ...accepted, ...decision };
+    const second = {
+      ...first,
+      fingerprint: kind === "alias" ? "synthetic-prior-fingerprint" : first.fingerprint,
+      reason: "synthetic second risk decision",
+      acceptedBy: "fixture-owner-two",
+      expires: "2001-01-02",
+    };
+
+    for (const accepted of [[first, second], [second, first]]) {
+      await writeFile(baselinePath, `${JSON.stringify({ ...baseline, accepted }, null, 2)}\n`);
+      const before = await readFile(baselinePath);
+      const result = await run([...args, "--update-baseline"]);
+
+      expect(result.code).toBe(2);
+      expect(result.output).toBe("");
+      expect(result.error).toMatch(/conflict/i);
+      expect(result.error).toContain(first.fingerprint);
+      for (const field of ["reason", "acceptedBy", "expires"]) expect(result.error).toContain(field);
+      for (const value of [first.reason, first.acceptedBy, second.reason, second.acceptedBy]) {
+        expect(result.error).not.toContain(value);
+      }
+      expect(await readFile(baselinePath)).toEqual(before);
+    }
   });
 });
 

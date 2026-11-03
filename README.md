@@ -53,6 +53,15 @@ $ npx zero-shelter judge
   dependencies only — 2 workflow files and anything to do with secrets went unread
 ```
 
+Re-recording preserves an existing acceptance's `reason`, `acceptedBy`,
+`expires`, and original `recordedAt`, including when a changed fingerprint
+matches through shared aliases. It does not renew an expired acceptance. If
+previous records for the same finding disagree on those fields, the command
+exits `2` before writing the baseline. Review the conflicting records and resolve them to the intended
+risk decision before retrying; do not remove an expiry just to clear the error.
+See the [rewrite rules](./docs/specs/247-preserve-baseline-decisions.md) for
+matching boundaries, date/version fallback, and file-write limits.
+
 Exit code is `1` when anything is new, so CI fails on the regression this change
 introduced rather than on the backlog it inherited.
 

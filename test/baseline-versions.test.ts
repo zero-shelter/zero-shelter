@@ -71,6 +71,38 @@ describe("recording what was installed", () => {
 
     expect(after.accepted[0]?.versions).toEqual(["4.17.11"]);
   });
+
+  it("keeps a sorted unique union of covering versions without current lockfile facts", () => {
+    const current = ranked("lodash");
+    const first = baselineFrom([current]);
+    const accepted = first.accepted[0]!;
+    const previous = {
+      ...first,
+      accepted: [
+        { ...accepted, versions: ["4.17.11", "4.17.10"] },
+        { ...accepted, versions: ["4.17.21", "4.17.11"] },
+      ],
+    };
+    const forward = baselineFrom([current], undefined, undefined, previous);
+    const reverse = baselineFrom([current], undefined, undefined, {
+      ...previous,
+      accepted: [...previous.accepted].reverse(),
+    });
+    expect(forward.accepted[0]?.versions).toEqual(["4.17.10", "4.17.11", "4.17.21"]);
+    expect(serializeBaseline(reverse)).toBe(serializeBaseline(forward));
+    expect(baselineFrom([current], undefined, undefined, previous, tree({ lodash: "4.18.1" })).accepted[0]?.versions)
+      .toEqual(["4.18.1"]);
+  });
+
+  it("keeps versions from alias-rematched records and leaves unknown versions absent", () => {
+    const current = ranked("lodash");
+    const first = baselineFrom([current]);
+    const accepted = { ...first.accepted[0]!, fingerprint: "old-fingerprint" };
+    const previous = { ...first, accepted: [{ ...accepted, versions: ["4.17.11"] }] };
+    expect(baselineFrom([current], undefined, undefined, previous).accepted[0]?.versions).toEqual(["4.17.11"]);
+    expect(baselineFrom([current], undefined, undefined, { ...first, accepted: [accepted] }).accepted[0])
+      .not.toHaveProperty("versions");
+  });
 });
 
 describe("the file", () => {
