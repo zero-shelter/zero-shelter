@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { main } from "../src/cli.js";
-import { explainDependency, renderWhy } from "../src/why.js";
+import { explainDependency, renderWhy, renderWhyJson } from "../src/why.js";
 import { fromPackages } from "../src/lockfile.js";
 import type { ScaFinding } from "../src/finding.js";
 
@@ -55,6 +55,66 @@ describe("dependency explanation", () => {
     });
 
     expect(explainDependency("b", cyclic).paths).toHaveLength(1);
+  });
+
+  it("prints one path when root and parent declarations repeat the same edge", () => {
+    const installed = fromPackages({
+      "": { dependencies: { app: "1" }, devDependencies: { app: "1" } },
+      "node_modules/app": {
+        version: "1.0.0",
+        dependencies: { tar: "^7" },
+        peerDependencies: { tar: "^7" },
+      },
+      "node_modules/tar": { version: "7.5.22" },
+    });
+    const result = explainDependency("tar", installed, [finding("7.5.22")]);
+
+    expect(result.paths).toHaveLength(1);
+    expect(result.paths[0]?.ranges).toEqual(["1", "^7"]);
+    expect(JSON.parse(renderWhyJson(result)).paths).toHaveLength(1);
+    expect(renderWhy(result).split("app 1.0.0 → tar 7.5.22")).toHaveLength(2);
+    expect(result.lowestDirect).toEqual({ packageName: "app", version: "1.0.0" });
+  });
+
+  it.each([
+    { version: "1.0.0", targetVersion: "7.5.22", range: "*", count: 1 },
+    { version: "2.0.0", targetVersion: "7.5.22", range: "*", count: 2 },
+    { version: "1.0.0", targetVersion: "7.5.23", range: "*", count: 2 },
+    { version: "1.0.0", targetVersion: "7.5.22", range: "^1", count: 2 },
+  ])("keeps distinct versions and ranges: $version / $targetVersion / $range", ({ version, targetVersion, range, count }) => {
+    const first = "node_modules/app";
+    const second = "node_modules/other/node_modules/app";
+    const installed = fromPackages({
+      "": { dependencies: { app: "*" } },
+      [first]: { version: "1.0.0", dependencies: { tar: "*" } },
+      [`${first}/node_modules/tar`]: { version: "7.5.22" },
+      [second]: { version, dependencies: { tar: "*" } },
+      [`${second}/node_modules/tar`]: { version: targetVersion },
+    });
+    const graph = new Map(installed.graph);
+    graph.set("", [
+      { name: "app", range: "*", to: first },
+      { name: "app", range, to: second },
+    ]);
+
+    const result = explainDependency("tar", { ...installed, graph });
+    expect(JSON.parse(renderWhyJson(result)).paths).toHaveLength(count);
+    const reversedGraph = new Map(graph);
+    reversedGraph.set("", [...graph.get("")!].reverse());
+    expect(explainDependency("tar", { ...installed, graph: reversedGraph })).toEqual(result);
+  });
+
+  it("keeps dependency and peer paths with different requested ranges", () => {
+    const installed = fromPackages({
+      "": { dependencies: { app: "1" } },
+      "node_modules/app": { version: "1.0.0", dependencies: { tar: "^7" }, peerDependencies: { tar: ">=7.5.22" } },
+      "node_modules/tar": { version: "7.5.22" },
+    });
+
+    expect(explainDependency("tar", installed).paths.map((path) => path.ranges)).toEqual([
+      ["1", "^7"],
+      ["1", ">=7.5.22"],
+    ]);
   });
 });
 
