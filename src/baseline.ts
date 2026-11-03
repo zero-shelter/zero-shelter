@@ -287,11 +287,12 @@ export function serializeBaseline(baseline: Baseline): string {
 function versionsAt(
   packageName: string,
   installed: InstalledVersions | undefined,
-  before: AcceptedFinding | undefined,
+  before: readonly AcceptedFinding[],
 ): { versions?: readonly string[] } {
   const present = installed?.versions.get(packageName);
   if (present !== undefined && present.size > 0) return { versions: [...present].sort() };
-  return before?.versions === undefined ? {} : { versions: before.versions };
+  if (!before.some((entry) => entry.versions !== undefined)) return {};
+  return { versions: [...new Set(before.flatMap((entry) => entry.versions ?? []))].sort() };
 }
 
 function ordered(entry: AcceptedFinding): Record<string, unknown> {
@@ -312,7 +313,8 @@ function ordered(entry: AcceptedFinding): Record<string, unknown> {
 
 /**
  * Preserve reason, acceptedBy, expires and recordedAt from previous
- * acceptances when rebuilding the baseline. See the metadata preservation tests.
+ * acceptances when rebuilding the baseline. Reject conflicting decisions before
+ * the caller writes the file, rather than choosing one or renewing an expiry.
  */
 export function baselineFrom(
   findings: readonly RankedFinding[],
@@ -321,12 +323,35 @@ export function baselineFrom(
   previous?: Baseline,
   installed?: InstalledVersions,
 ): Baseline {
-  const kept = new Map((previous?.accepted ?? []).map((entry) => [entry.fingerprint, entry]));
+  const kept = new Map<string, AcceptedFinding[]>();
+  for (const entry of previous?.accepted ?? []) {
+    const found = kept.get(entry.fingerprint);
+    if (found === undefined) kept.set(entry.fingerprint, [entry]);
+    else found.push(entry);
+  }
+  const byAlias = aliasIndex(previous?.schemaVersion === SCHEMA_VERSION ? previous.accepted : []);
 
   const byFingerprint = new Map<string, AcceptedFinding>();
   for (const { finding } of findings) {
     if (byFingerprint.has(finding.fingerprint)) continue;
-    const before = kept.get(finding.fingerprint);
+    // Keep original records until their decisions are compared, even when
+    // several share a fingerprint. Expired decisions must also be preserved.
+    const covering = new Set(kept.get(finding.fingerprint) ?? []);
+    for (const alias of finding.aliases) {
+      for (const entry of byAlias.get(key(finding.ecosystem, finding.packageName, alias)) ?? []) {
+        covering.add(entry);
+      }
+    }
+    const records = [...covering];
+    const before = records[0];
+    const conflicts = (["reason", "acceptedBy", "expires", "recordedAt"] as const)
+      .filter((field) => records.some((entry) => entry[field] !== before?.[field]));
+    if (conflicts.length > 0) {
+      throw new Error(
+        `conflicting baseline decisions for ${finding.fingerprint}: ${conflicts.join(", ")}; ` +
+          "resolve the existing decisions before re-recording",
+      );
+    }
     byFingerprint.set(finding.fingerprint, {
       fingerprint: finding.fingerprint,
       ecosystem: finding.ecosystem,
@@ -336,7 +361,7 @@ export function baselineFrom(
       severity: finding.severity,
       // What this run can see wins; otherwise keep what an earlier one saw.
       // A run without a lockfile must not erase a version already recorded.
-      ...versionsAt(finding.packageName, installed, before),
+      ...versionsAt(finding.packageName, installed, records),
       ...(before?.recordedAt === undefined
         ? recordedAt === undefined
           ? {}

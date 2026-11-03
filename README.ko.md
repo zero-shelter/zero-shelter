@@ -54,6 +54,15 @@ $ npx zero-shelter judge
   dependencies only — 2 workflow files and anything to do with secrets went unread
 ```
 
+baseline을 다시 기록해도 기존 수용 기록의 `reason`·`acceptedBy`·`expires`와
+원래 `recordedAt`을 보존합니다. fingerprint가 바뀌었지만 공통 alias로 기존
+기록과 다시 일치한 경우에도 같으며, 만료된 수용 기록의 기간을 갱신하지 않습니다.
+같은 Finding에 해당하는 이전 기록들의 값이 다르면 baseline을 쓰기 전에
+종료 코드 `2`로 중단합니다.
+충돌한 기록을 검토해 의도한 위험 결정으로 정리한 뒤 다시 실행하세요. 오류를
+없애려고 만료일을 지우지는 마세요. 일치 조건, 날짜·버전 보충 방식과 파일 쓰기의
+한계는 [재기록 규칙](./docs/specs/247-preserve-baseline-decisions.ko.md)에 있습니다.
+
 새 항목이 있으면 종료 코드가 `1`입니다. CI가 물려받은 백로그가 아니라 **이번
 변경이 들여온 회귀**에서 실패합니다.
 

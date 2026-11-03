@@ -75,6 +75,131 @@ describe("re-recording a baseline", () => {
   });
 });
 
+describe("re-recording alias-rematched decisions", () => {
+  const decision = {
+    reason: "fixture risk decision",
+    acceptedBy: "fixture-reviewer",
+    expires: "2026-09-09",
+    recordedAt: "2026-01-15",
+  };
+  const current = rank(mergeFindings([finding("CVE-1", ["CVE-1", "GHSA-SHARED"])]));
+  const original = baselineFrom(ranked("CVE-1"));
+  const accepted = { ...original.accepted[0]!, fingerprint: "fp-previous", ...decision };
+  const previous = (entries: readonly AcceptedFinding[]) => ({ ...original, accepted: entries });
+
+  it("preserves the decision and its expiry after a scanner adds aliases", () => {
+    expect(current[0]?.finding.fingerprint).not.toBe(accepted.fingerprint);
+    const before = previous([accepted]);
+    const rewritten = baselineFrom(current, ["npm-audit", "osv-scanner"], "2026-09-10", before);
+
+    expect(rewritten.accepted[0]).toMatchObject(decision);
+    expect(applyBaseline(current, before, undefined, "2026-09-10").expired).toHaveLength(1);
+    expect(applyBaseline(current, rewritten, undefined, "2026-09-10").expired).toHaveLength(1);
+    expect(parseBaseline(serializeBaseline(rewritten))).toEqual(rewritten);
+  });
+
+  it("copies one merged decision to each split finding", () => {
+    const split = ranked("CVE-1", "GHSA-SHARED");
+    const merged = { ...baselineFrom(current).accepted[0]!, ...decision };
+    const rewritten = baselineFrom(split, undefined, "2026-09-10", previous([merged]));
+
+    expect(rewritten.accepted).toHaveLength(2);
+    for (const entry of rewritten.accepted) expect(entry).toMatchObject(decision);
+    expect(applyBaseline(split, rewritten, undefined, "2026-09-10").expired).toHaveLength(2);
+  });
+
+  it("merges identical decisions independently of their input order", () => {
+    const second = { ...accepted, fingerprint: "fp-second", aliases: ["GHSA-SHARED"] };
+    const forward = baselineFrom(current, undefined, "2026-09-10", previous([accepted, second]));
+    const reverse = baselineFrom(current, undefined, "2026-09-10", previous([second, accepted]));
+
+    expect(forward.accepted[0]).toMatchObject(decision);
+    expect(serializeBaseline(reverse)).toBe(serializeBaseline(forward));
+  });
+
+  it.each(["reason", "acceptedBy", "expires", "recordedAt"] as const)(
+    "rejects conflicting %s in original records, including duplicate fingerprints",
+    (field) => {
+      const changed = {
+        ...accepted,
+        [field]: field === "expires" ? "2026-12-31" : field === "recordedAt" ? "2026-01-16" : "different fixture value",
+      };
+      for (const fingerprint of [accepted.fingerprint, current[0]!.finding.fingerprint, "fp-second"]) {
+        const second = { ...changed, fingerprint, aliases: ["GHSA-SHARED"] };
+        for (const entries of [[accepted, second], [second, accepted]]) {
+          expect(() => baselineFrom(current, undefined, "2026-09-10", previous(entries))).toThrow(
+            new RegExp(field),
+          );
+        }
+      }
+    },
+  );
+
+  it.each(["reason", "acceptedBy", "expires", "recordedAt"] as const)(
+    "distinguishes a missing %s before applying any date fallback",
+    (field) => {
+      const { [field]: omitted, ...missing } = accepted;
+      const second = { ...missing, fingerprint: "fp-second", aliases: ["GHSA-SHARED"] };
+      expect(omitted).toBeDefined();
+      expect(() => baselineFrom(current, undefined, decision.recordedAt, previous([accepted, second]))).toThrow(
+        new RegExp(field),
+      );
+    },
+  );
+
+  it.each(["reason", "acceptedBy"] as const)("distinguishes missing and empty %s", (field) => {
+    const { [field]: omitted, ...missing } = accepted;
+    const empty = { ...missing, fingerprint: "fp-second", aliases: ["GHSA-SHARED"], [field]: "" };
+    expect(omitted).toBeDefined();
+    expect(() => baselineFrom(current, undefined, "2026-09-10", previous([missing, empty]))).toThrow(
+      new RegExp(field),
+    );
+  });
+
+  it("fills a missing recordedAt only after compatible decisions have been compared", () => {
+    const { recordedAt: omitted, ...missingDate } = accepted;
+    const second = { ...missingDate, fingerprint: "fp-second", aliases: ["GHSA-SHARED"] };
+    expect(omitted).toBeDefined();
+    const rewritten = baselineFrom(current, undefined, "2026-09-10", previous([missingDate, second]));
+    expect(rewritten.accepted[0]).toMatchObject({ ...decision, recordedAt: "2026-09-10" });
+    expect(baselineFrom(current, undefined, undefined, previous([missingDate])).accepted[0]?.recordedAt).toBeUndefined();
+  });
+
+  it.each(["package", "ecosystem", "schema"] as const)("does not widen the %s boundary", (boundary) => {
+    const before = previous([{
+      ...accepted,
+      ...(boundary === "package" ? { package: "another-package" } : {}),
+      ...(boundary === "ecosystem" ? { ecosystem: "another-ecosystem" } : {}),
+    }]);
+    const rewritten = baselineFrom(current, undefined, "2026-09-10", {
+      ...before,
+      ...(boundary === "schema" ? { schemaVersion: "old-schema" } : {}),
+    });
+    expect(rewritten.accepted[0]?.reason).toBeUndefined();
+    expect(rewritten.accepted[0]?.expires).toBeUndefined();
+    expect(rewritten.accepted[0]?.recordedAt).toBe("2026-09-10");
+  });
+
+  it("retains legacy exact-match metadata across schema mismatch", () => {
+    const rewritten = baselineFrom(ranked("CVE-1"), undefined, "2026-09-10", {
+      ...previous([{ ...accepted, fingerprint: ranked("CVE-1")[0]!.finding.fingerprint }]),
+      schemaVersion: "old-schema",
+    });
+    expect(rewritten.accepted[0]).toMatchObject(decision);
+  });
+
+  it("does not follow aliases transitively through earlier records", () => {
+    const first = { ...accepted, aliases: ["CVE-1", "GHSA-BRIDGE"] };
+    const second = {
+      ...accepted,
+      fingerprint: "fp-second",
+      aliases: ["GHSA-BRIDGE", "CVE-OTHER"],
+      reason: "unrelated fixture decision",
+    };
+    expect(baselineFrom(current, undefined, "2026-09-10", previous([first, second])).accepted[0]).toMatchObject(decision);
+  });
+});
+
 /**
  * An expiry decides whether a build goes red. Compared as text, `2027-1-1`
  * sorts after `2027-01-01` and `26-12-31` sorts before everything — so a typo
