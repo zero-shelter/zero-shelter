@@ -40,7 +40,7 @@ export function explainDependency(
     .filter(([, packageInfo]) => packageInfo.name === packageName)
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
 
-  const paths: WhyPath[] = [];
+  const collectedPaths: WhyPath[] = [];
   const graph = installed.graph ?? new Map();
   const directEdges = graph.get("") ?? [];
   const roots = [...directEdges].sort((a, b) => compareText(a.to, b.to));
@@ -48,8 +48,16 @@ export function explainDependency(
   for (const root of roots) {
     const packageInfo = locations.get(root.to);
     if (packageInfo === undefined) continue;
-    walk(root.to, [packageInfo], [root.range], new Set([root.to]), paths, graph, locations, packageName);
+    walk(root.to, [packageInfo], [root.range], new Set([root.to]), collectedPaths, graph, locations, packageName);
   }
+
+  const seenPaths = new Set<string>();
+  const paths = collectedPaths.filter(({ nodes, ranges }) => {
+    const key = JSON.stringify([nodes.map(({ name, version }) => [name, version]), ranges]);
+    if (seenPaths.has(key)) return false;
+    seenPaths.add(key);
+    return true;
+  });
 
   const relevant = findings
     .filter((finding) => finding.packageName === packageName)

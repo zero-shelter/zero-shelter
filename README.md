@@ -288,8 +288,10 @@ runs. Nothing is recorded unless `judge --record` is requested.
 
 `zero-shelter why <package>` reads the local npm lockfile and prints every path
 from a direct dependency to each installed copy of that package. It also shows
-fixed-version context from scanner output when available. Pass `--input` one or
-more times for an offline, repeatable report; without it, the existing scanners
+fixed-version context from scanner output when available. Paths with identical
+package names, versions, and requested ranges appear once; different versions or
+ranges remain separate. Pass `--input` one or more times for an offline,
+repeatable report; without it, the existing scanners
 are collected like `judge` and keep their existing subprocess/network boundary.
 The command never installs packages or adds a registry lookup of its own, and it
 reports only versions the lockfile can establish.
