@@ -62,6 +62,14 @@ risk decision before retrying; do not remove an expiry just to clear the error.
 See the [rewrite rules](./docs/specs/247-preserve-baseline-decisions.md) for
 matching boundaries, date/version fallback, and file-write limits.
 
+When reading a current-schema baseline, conflicting values in those four fields
+for the same fingerprint are also rejected. `judge` exits `2` without producing
+a report, rather than selecting a decision by record order. Review and
+reconcile those records before judging or re-recording. Duplicate records whose
+four decision fields agree remain valid, even if other context differs.
+See the [reader rules](./docs/specs/276-reject-baseline-conflicts.md) for
+normalization, compatibility, and hook behavior.
+
 Exit code is `1` when anything is new, so CI fails on the regression this change
 introduced rather than on the backlog it inherited.
 

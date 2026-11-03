@@ -154,11 +154,33 @@ export function parseBaseline(
     throw new Error(`${at} sources must be an array of strings`);
   }
 
-  return {
+  const baseline: Baseline = {
     schemaVersion,
     accepted: parseAccepted(accepted, at, onNote),
     ...(sources === undefined ? {} : { sources: asStrings(sources)!.sort() }),
   };
+  if (schemaVersion === SCHEMA_VERSION) assertConsistentDecisions(baseline.accepted, at);
+  return baseline;
+}
+
+/** Compare decisions before duplicate fingerprints can hide a conflicting record. */
+function assertConsistentDecisions(accepted: readonly AcceptedFinding[], at = BASELINE_PATH): void {
+  const seen = new Map<string, AcceptedFinding>();
+  for (const entry of accepted) {
+    const before = seen.get(entry.fingerprint);
+    if (before === undefined) {
+      seen.set(entry.fingerprint, entry);
+      continue;
+    }
+    const conflicts = (["reason", "acceptedBy", "expires", "recordedAt"] as const)
+      .filter((field) => entry[field] !== before[field]);
+    if (conflicts.length > 0) {
+      throw new Error(
+        `${at}: conflicting baseline decisions for ${entry.fingerprint}: ${conflicts.join(", ")}; ` +
+          "resolve the existing decisions before judging",
+      );
+    }
+  }
 }
 
 /**
@@ -414,6 +436,7 @@ export function applyBaseline(
     };
   }
 
+  assertConsistentDecisions(baseline.accepted);
   const byFingerprint = new Map(baseline.accepted.map((entry) => [entry.fingerprint, entry]));
   const byAlias = aliasIndex(baseline.accepted);
 
