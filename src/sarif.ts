@@ -33,10 +33,11 @@ function levelOf(severity: string): "error" | "warning" | "note" {
 }
 
 export function renderSarif(result: JudgeResult): string {
+  const fixNowFingerprints = new Set(result.fixNow.map((entry) => entry.finding.fingerprint));
   const rules = result.fixNow.map(toRule);
   const manager = result.packageManager ?? "npm";
   const results = result.fixNow.map((entry, index) =>
-    toResult(entry, index, result.installed, manager),
+    toResult(entry, index, result.installed, manager, fixNowFingerprints),
   );
 
   return `${JSON.stringify(
@@ -111,6 +112,7 @@ function toResult(
   index: number,
   installed: InstalledVersions | undefined,
   manager: PackageManager,
+  fixNowFingerprints: ReadonlySet<string>,
 ) {
   const { finding } = entry;
   // Include remediation guidance in alert text.
@@ -150,7 +152,9 @@ function toResult(
         ? {}
         : { toolVersions }),
       aliases: finding.aliases,
-      possibleDuplicates: finding.relatedTo,
+      possibleDuplicates: finding.relatedTo.filter((fingerprint) =>
+        fixNowFingerprints.has(fingerprint),
+      ),
       // Preserve the advisory's evidence without deriving a floating-point
       // score from it. SARIF consumers can interpret the vector themselves.
       ...(finding.cvssVector === undefined ? {} : { cvssVector: finding.cvssVector }),
