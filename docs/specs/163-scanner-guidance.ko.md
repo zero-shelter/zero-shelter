@@ -6,7 +6,7 @@
 
 - Issue: [#163](https://github.com/zero-shelter/zero-shelter/issues/163)
 - 대상 layer: 로컬 프로젝트 탐색, CLI 출력, setup skill
-- 관련 roadmap: [#125](https://github.com/zero-shelter/zero-shelter/issues/125), [도입 roadmap](./125-adoption-roadmap.md)
+- 관련 roadmap: [#125](https://github.com/zero-shelter/zero-shelter/issues/125), [도입 roadmap](./adoption-roadmap.md)
 - 관련 PR: #163에서 연결합니다. 상태와 담당자는 GitHub에서 관리합니다.
 
 Owner 검토를 위한 구현 계약 제안입니다. 다음 기능 릴리즈(잠정 0.1.0)의
