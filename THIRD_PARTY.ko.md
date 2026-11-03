@@ -11,7 +11,7 @@
 |---|---|---|---|---|---|
 | 1 | @types/node | 22.20.1 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped | 개발·빌드 도구 |
 | 2 | typescript | 5.9.3 | Apache-2.0 | https://github.com/microsoft/TypeScript | 개발·빌드 도구 |
-| 3 | vitest | 4.1.11 | MIT | https://github.com/vitest-dev/vitest | 개발·빌드 도구 |
+| 3 | vitest | 4.1.12 | MIT | https://github.com/vitest-dev/vitest | 개발·빌드 도구 |
 
 ## 외부 실행 도구
 
