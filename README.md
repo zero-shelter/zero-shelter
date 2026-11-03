@@ -80,6 +80,17 @@ If an optional scope check cannot complete, JSON sets `unscanned.complete` to
 `false` and the human line says so; `false` or `0` then is not evidence that an
 artifact is absent.
 
+Projects with a standing reporting rule can commit `.zero-shelter/policy.json`:
+
+```json
+{"version":1,"minimumSeverity":"moderate","ignoreScopes":["dev"]}
+```
+
+The policy filters only the review list. Raw and merged totals still include
+the findings, and the terminal/JSON report names the active rules and filtered
+count. `mixed` dependencies are never ignored. An absent policy changes
+nothing; malformed policy files stop the run with exit code 2.
+
 ## Install
 
 Two things, and the second one is not optional.
