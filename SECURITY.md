@@ -44,4 +44,4 @@ Never commit real secrets, personal data, internal URLs, customer data, or undis
 
 Current v1 provides dependency scanning, judgement, baseline ratcheting, SARIF output, and a non-blocking agent hook. It does not claim complete SAST, secret scanning, prompt intent detection, or privacy compliance by itself.
 
-Future controls require an explicit spec, threat model, tests, and Owner approval.
+Future controls require an explicit spec, threat model, tests, and specific user authorization. Separate teammate approval is not required within that authorized scope.

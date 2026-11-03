@@ -11,23 +11,29 @@
 | Contributor | 제안·구현·테스트·문서 | Issue·PR 생성 |
 | Reviewer | 가정과 근거 검증 | 범위 내 수정 요청·승인 |
 | Maintainer | 분류·조정·일반 변경 merge | 필수 조건 충족 시 merge |
-| Owner | 아키텍처·보안·API·release 보호 | 예약 영역 최종 결정 |
+| Owner | 아키텍처·보안·API·release 보호 | 프로젝트 방향과 위임 범위에 책임 |
 
-역할은 서열이 아니라 책임을 뜻합니다. 파일별 ownership은 담당 영역과 사람이 합의되기 전까지 `CODEOWNERS`에 임의로 넣지 않습니다.
+역할은 서열이 아니라 책임을 뜻합니다. 기여자나 권한을 위임받은 에이전트가 검토할 수 있으며, 별도 팀원 승인을 요구하지 않습니다. `CODEOWNERS`로 모든 팀원에게 자동 리뷰를 요청하지 않습니다.
 
 ## 의사결정 경계
 
 | 변경 | 필요한 결정 |
 |---|---|
-| 문서·테스트·비호환 없는 구현 | CI·리뷰 후 Maintainer 1명 |
-| 새 scanner/input·output 연동 | 명세·QA·layer ownership 확인 |
-| CLI/package API breaking change | Owner 승인 |
-| fingerprint·deterministic scoring·baseline 불변식 | Owner 설계 결정과 회귀 테스트 |
-| network·LLM·telemetry·secret·개인정보 | Owner와 보안/개인정보 리뷰 |
-| npm publish·version release | Owner가 통제하는 release 결정 |
-| repository-wide governance | Owner 승인과 결정 근거 |
+| 문서·테스트·비호환 없는 구현 | 검토 근거와 필수 CI |
+| 새 scanner/input·output 연동 | 명세·QA·영향 영역 검토 |
+| CLI/package API breaking change | 명시한 범위와 호환성 결정 |
+| fingerprint·deterministic scoring·baseline 불변식 | 설계 결정 기록과 회귀 테스트 |
+| network·LLM·telemetry·secret·개인정보 | 명시한 범위와 보안·개인정보 검토 |
+| npm publish·version release | 사용자의 명시적 릴리즈 허가와 필수 검증 |
+| repository-wide governance | 명시적으로 요청한 범위와 결정 근거 |
 
-여러 경계에 걸치면 더 엄격한 규칙을 적용합니다.
+여러 경계에 걸치면 해당 요건을 모두 충족합니다. 한 변경에 대한 허가를 새 대상·권한·데이터 흐름까지 확대하지 않습니다.
+
+## 위임한 작업
+
+관리자는 [#267](https://github.com/zero-shelter/zero-shelter/issues/267)에서 팀원 승인 강제 규칙을 없애도록 요청했습니다. Maintainer와 권한을 위임받은 에이전트는 명시적으로 요청한 범위에서 다른 팀원을 기다리지 않고 구현과 검토를 진행할 수 있습니다. 필수 검증·보안 규칙·충돌 해결은 유지합니다.
+
+에이전트가 PR을 병합하려면 해당 PR에 대한 사용자의 명시적 승인을 받아야 합니다. 일반적인 관리·릴리즈 요청을 병합 승인으로 확대하지 않습니다. GitHub의 PR 경유와 필수 CI는 유지하고, 필수 승인 인원과 팀 지정은 없앱니다.
 
 ## 기여 lifecycle
 
@@ -54,13 +60,13 @@ Maintainer는 범위·영향 layer·CI·QA·보안/개인정보·문서·충돌 
 
 ## 공유 계약과 충돌
 
-Finding field·alias·fingerprint, score·baseline, CLI option·exit code·output schema, hook payload, publish file을 바꾸면 공유합니다. 같은 계약을 두 변경이 건드리면 하나의 interface를 먼저 합의합니다.
+Finding field·alias·fingerprint, score·baseline, CLI option·exit code·output schema, hook payload, publish file을 바꾸면 공유합니다. 같은 계약을 두 변경이 건드리면 병렬 구현을 계속하기 전에 인터페이스 충돌을 해결합니다.
 
 ## 보안과 release
 
 보안 변경은 [`SECURITY.md`](./SECURITY.md)를 따릅니다. 보호 데이터·trust boundary·data-flow·보존·실패 모드·악용 사례·테스트·사용자 제어를 기록합니다.
 
-npm release는 Owner 또는 명시적으로 위임받은 Maintainer가 수행하는 외부 작업입니다. release 전에 test·typecheck·build·package·CLI/hook smoke test·version·호환성·README·번역이 일치해야 합니다.
+npm 릴리즈는 사용자가 명시적으로 허가한 범위에서 Maintainer나 위임받은 에이전트가 수행하는 외부 작업입니다. release 전에 test·typecheck·build·package·CLI/hook smoke test·version·호환성·README·번역이 일치해야 합니다.
 
 ## 의견 충돌
 

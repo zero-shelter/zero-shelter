@@ -93,7 +93,8 @@ still owns the scope, correctness, and final review.
 Changes to judgement contracts (`src/triage.ts`, `src/merge.ts`,
 `src/fingerprint.ts`, `src/baseline.ts`) or public boundaries (`src/cli.ts`,
 `src/report.ts`, `src/sarif.ts`, `src/hook.ts`, `package.json`, `.github/`,
-`skills/`) need explicit scope and the review required by the governance rules.
+`skills/`) need explicit scope and documented review under the governance rules.
+Separate teammate approval is not required within an already authorized scope.
 
 Do not change ranking weights, fingerprints, baseline semantics, exit codes,
 output schemas, or hook behavior just to make a test or report look better.
@@ -132,6 +133,8 @@ Run `npm run qa` when that script is available and the change affects package
 or install behavior. For package or CLI changes, also inspect
 `npm pack --dry-run` and run the published-package smoke path.
 
-Review every changed file as a human contributor and report anything that was
-not verified. Update the English canonical documentation and Korean translation
+Review every changed file and report anything that was not verified. Do not
+claim human review for agent-only checks. An agent must obtain explicit user
+approval for the specific PR before merging it. Update the English canonical
+documentation and Korean translation
 when user-visible behavior changes.

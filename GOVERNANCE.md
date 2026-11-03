@@ -11,23 +11,29 @@ This document defines how zero-shelter is maintained as an open-source project: 
 | Contributor | propose, implement, test, document | open Issues and PRs |
 | Reviewer | attack assumptions and verify evidence | request changes or approve within scope |
 | Maintainer | triage, coordinate, merge normal changes | merge after required checks |
-| Owner | protect architecture, security, API, and release policy | final decision on reserved areas |
+| Owner | protect architecture, security, API, and release policy | accountable for project direction and delegated scope |
 
-Roles describe responsibility, not seniority. File-level ownership is intentionally not encoded in `CODEOWNERS` until the affected areas and people are explicitly agreed.
+Roles describe responsibility, not seniority. Reviews may be performed by the contributor or an authorized agent; a separate teammate approval is not required. `CODEOWNERS` does not automatically request reviews from every team member.
 
 ## Decision boundaries
 
 | Change | Required decision |
 |---|---|
-| Documentation, tests, non-breaking implementation | one Maintainer after CI and review |
-| New scanner/input or output integration | Maintainer confirms spec, QA, and layer ownership |
-| CLI/package API breaking change | Owner approval |
-| Fingerprint, deterministic scoring, or baseline invariant | Owner design decision plus regression tests |
-| Network, LLM, telemetry, secret, or personal-data behavior | Owner plus security/privacy review |
-| npm publish or version release | Owner-controlled release decision |
-| Repository-wide governance | Owner approval and written rationale |
+| Documentation, tests, non-breaking implementation | documented review and required CI |
+| New scanner/input or output integration | spec, QA, and affected-layer review |
+| CLI/package API breaking change | explicit scope and compatibility decision |
+| Fingerprint, deterministic scoring, or baseline invariant | documented design decision plus regression tests |
+| Network, LLM, telemetry, secret, or personal-data behavior | explicit scope plus security/privacy review |
+| npm publish or version release | explicit user authorization and release checks |
+| Repository-wide governance | explicit requested scope and written rationale |
 
-When a change crosses boundaries, use the stricter rule.
+When a change crosses boundaries, satisfy every applicable requirement. Authorization for one change does not extend to new targets, permissions, or data flows.
+
+## Delegated maintenance
+
+The administrator requested removal of mandatory teammate approvals in [#267](https://github.com/zero-shelter/zero-shelter/issues/267). Authorized maintainers and agents may implement and review work within the explicitly requested scope without waiting for another team member. Required validation, security controls, and conflict resolution still apply.
+
+An agent must obtain the user's explicit approval for the specific pull request before merging it. General maintenance or release instructions do not grant merge approval. GitHub retains the pull-request requirement and required CI, with no mandatory reviewer count or team assignment.
 
 ## Contribution lifecycle
 
@@ -58,13 +64,13 @@ A reviewer must be able to describe a failing input or explain what was tried an
 
 Contributors must announce changes to shared contracts such as Finding fields/aliases/fingerprints, scores and baseline semantics, CLI options/exit codes/output schemas, hook payloads, and published package files.
 
-If two changes touch the same contract, agree on one interface before parallel implementation continues.
+If two changes touch the same contract, resolve incompatible interfaces before parallel implementation continues.
 
 ## Security and release
 
 Security-sensitive work follows [`SECURITY.md`](./SECURITY.md). It must document protected data, trust boundary, data flow, retention, failure mode, abuse cases, tests, and user controls.
 
-npm releases are deliberate external actions performed by an Owner or explicitly delegated Maintainer. Before release, test, typecheck, build, package contents, CLI/hook smoke tests, version, compatibility, README, and translations must agree.
+npm releases are deliberate external actions performed within the user's explicit release authorization by a maintainer or delegated agent. Before release, test, typecheck, build, package contents, CLI/hook smoke tests, version, compatibility, README, and translations must agree.
 
 ## Disagreement
 
