@@ -69,7 +69,7 @@ async function run(args: readonly string[]) {
 function expectConflict(result: Awaited<ReturnType<typeof run>>, conflicting: readonly string[]) {
   expect(result.code).toBe(2);
   expect(result.output).toBe("");
-  expect(result.error).toContain("decisions/baseline.json");
+  expect(result.error).toContain(join("decisions", "baseline.json"));
   expect(result.error).toContain(`conflicting baseline decisions for ${first.fingerprint}`);
   for (const field of conflicting) expect(result.error).toContain(field);
   for (const value of [...fields.map((field) => first[field]!), ...Object.values(changed)]) {
