@@ -168,14 +168,16 @@ export async function main(argv: readonly string[]): Promise<number> {
     if (values.input !== undefined && values.input.length > 0) {
       findings = [];
       skipped = [];
+      const contributed = new Set<string>();
       for (const file of values.input) {
-        findings.push(...(await readInput(resolve(cwd, file), declaredDependencies(cwd))));
+        findings.push(...(await readInput(
+          resolve(cwd, file),
+          declaredDependencies(cwd),
+          (source) => contributed.add(source),
+        )));
       }
-      // With --input the files are the sources, and which tool wrote each one
-      // is only knowable from what it contains.
-      sources = [
-        ...new Set(findings.flatMap((finding) => finding.sources.map((s) => s.tool))),
-      ].sort();
+      // Readable reports contribute a source even when they contain no findings.
+      sources = [...contributed].sort();
     } else {
       const collected = await collect({ cwd });
       findings = collected.findings;
@@ -391,6 +393,7 @@ function parseTop(raw: string | undefined): number | undefined | Error {
 async function readInput(
   path: string,
   declared: ReadonlySet<string> | undefined,
+  onSource?: (source: string) => void,
 ): Promise<ScaFinding[]> {
   let raw: string;
   try {
@@ -413,8 +416,16 @@ async function readInput(
   }
 
   const record = probe as Record<string, unknown>;
-  if ("vulnerabilities" in record || "advisories" in record) return parseNpmAudit(raw, declared);
-  if ("results" in record) return parseOsv(raw, undefined, declared);
+  if ("vulnerabilities" in record || "advisories" in record) {
+    const findings = parseNpmAudit(raw, declared);
+    onSource?.("npm-audit");
+    return findings;
+  }
+  if ("results" in record) {
+    const findings = parseOsv(raw, undefined, declared);
+    onSource?.("osv-scanner");
+    return findings;
+  }
 
   // People reach for the file this tool just wrote. Saying "unrecognised" to
   // our own output format is a needlessly puzzling answer to a reasonable move.

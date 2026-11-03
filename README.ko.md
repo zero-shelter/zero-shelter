@@ -260,6 +260,12 @@ $ npx zero-shelter judge --format html --output report.html
 --help                도움말 출력
 ```
 
+`--input` 보고서를 정상적으로 읽었으면 항목이 0개여도 해당 출처를 인정합니다.
+현재·이전 npm audit 형식과 OSV 보고서에 적용되며, 섞거나 반복해서 넘겨도
+출처 목록을 유지합니다. 보고서의 누락 출처 안내와 `--record` 기록에 반영합니다.
+입력 형식을 식별한 것이므로 보고서가 언제, 어디서 생성됐는지는 증명하지 않습니다.
+잘못된 입력은 판정이나 history 기록을 쓰기 전에 오류로 종료합니다.
+
 `--no-color`는 사람이 읽는 text output에만 적용되고 `FORCE_COLOR`보다 우선합니다.
 기존 `NO_COLOR` 환경변수도 계속 지원합니다.
 
